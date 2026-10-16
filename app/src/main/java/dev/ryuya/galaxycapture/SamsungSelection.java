@@ -2,144 +2,49 @@ package dev.ryuya.galaxycapture;
 
 import android.app.Activity;
 import android.content.*;
+import android.media.projection.*;
 import android.os.*;
 import de.robv.android.xposed.*;
-import java.util.*;
 
 final class SamsungSelection {
-  private static final String SELECT = "dev.ryuya.galaxycapture.SELECT_APP",
-      RECEIVER = "galaxy_capture_receiver",
-      REQUEST = "galaxy_capture_request";
-  private static final Handler main = new Handler(Looper.getMainLooper());
-  private static final Set<String> pending = new HashSet<>();
-  private static Target target;
+  record Target(Object cookie, int taskId, int uid, boolean audioOnly) {}
+
+  private static volatile Target target;
+  private static MediaProjection earlyProjection;
+  private static Object earlyOwner;
+  private static Class<?> projectionWrapper;
   private static boolean picking, approved;
 
-  private record Target(Object cookie, int taskId) {}
+  static Target target() {
+    return target;
+  }
 
   static void installSystemUi(HookRuntime rt, ClassLoader loader) {
-    Class<?> selector =
-        XposedHelpers.findClass(
-            "com.android.systemui.mediaprojection.appselector.MediaProjectionAppSelectorActivity",
-            loader);
-    Class<?> aospRecorder =
+    Class<?> recorder =
         XposedHelpers.findClass("com.android.systemui.screenrecord.ScreenMediaRecorder", loader);
     XposedBridge.hookAllMethods(
-        aospRecorder,
+        recorder,
         "start",
         new XC_MethodHook() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
             if (!rt.options.enabled() || !rt.options.singleWindow()) return;
             try {
-              Bundle health =
+              Bundle b =
                   rt.context.getContentResolver().call(ConfigProvider.URI, "config", null, null);
-              if (health == null || !health.getBoolean("framework_ready", false))
+              if (b == null || !b.getBoolean("framework_ready", false))
                 p.setThrowable(
-                    new java.io.IOException("Window capture requires system framework restart"));
+                    new java.io.IOException("Window recording requires framework reload"));
             } catch (Throwable error) {
-              p.setThrowable(new java.io.IOException("Window capture unavailable", error));
+              p.setThrowable(new java.io.IOException("Window recording unavailable", error));
             }
           }
         });
-    XposedBridge.hookAllMethods(
-        selector,
-        "returnSelectedApp",
-        new XC_MethodHook() {
-          @Override
-          protected void beforeHookedMethod(MethodHookParam p) {
-            Activity activity = (Activity) p.thisObject;
-            Intent intent = activity.getIntent();
-            String id = intent.getStringExtra(REQUEST);
-            if (id == null) return;
-            if (!pending.remove(id)) {
-              activity.finish();
-              p.setResult(null);
-              return;
-            }
-            ResultReceiver receiver = intent.getParcelableExtra(RECEIVER, ResultReceiver.class);
-            if (receiver == null) {
-              activity.finish();
-              p.setResult(null);
-              return;
-            }
-            try {
-              Bundle result = new Bundle();
-              result.putBinder(
-                  "cookie", (IBinder) XposedHelpers.getObjectField(p.args[0], "binder"));
-              result.putInt("task_id", (int) p.args[1]);
-              XposedHelpers.setBooleanField(activity, "taskSelected", true);
-              receiver.send(Activity.RESULT_OK, result);
-              activity.finish();
-              p.setResult(null);
-              rt.guard.finish();
-              rt.report("AOSP app selected");
-            } catch (Throwable error) {
-              receiver.send(Activity.RESULT_CANCELED, Bundle.EMPTY);
-              activity.finish();
-              p.setResult(null);
-              rt.fail(error);
-            }
-          }
-        });
-    XposedBridge.hookAllMethods(
-        selector,
-        "onDestroy",
-        new XC_MethodHook() {
-          @Override
-          protected void beforeHookedMethod(MethodHookParam p) {
-            Activity activity = (Activity) p.thisObject;
-            String id = activity.getIntent().getStringExtra(REQUEST);
-            if (activity.isFinishing() && id != null && pending.remove(id)) {
-              ResultReceiver receiver =
-                  activity.getIntent().getParcelableExtra(RECEIVER, ResultReceiver.class);
-              if (receiver != null) receiver.send(Activity.RESULT_CANCELED, Bundle.EMPTY);
-            }
-          }
-        });
-    rt.context.registerReceiver(
-        new BroadcastReceiver() {
-          @Override
-          public void onReceive(Context context, Intent request) {
-            ResultReceiver result = request.getParcelableExtra(RECEIVER, ResultReceiver.class);
-            if (result == null) return;
-            if (!rt.options.enabled() || !rt.options.samsungApp() || !rt.guard.allowed()) {
-              result.send(Activity.RESULT_CANCELED, Bundle.EMPTY);
-              return;
-            }
-            String id = UUID.randomUUID().toString();
-            pending.add(id);
-            Intent chooser =
-                new Intent()
-                    .setClassName("com.android.systemui", selector.getName())
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    .putExtra("screen_share_type", "ScreenRecord")
-                    .putExtra(RECEIVER, result)
-                    .putExtra(REQUEST, id);
-            try {
-              chooser.putExtra("launched_from_user_handle", android.os.Process.myUserHandle());
-              chooser.putExtra(
-                  "launched_from_host_uid",
-                  context
-                      .getPackageManager()
-                      .getApplicationInfo("com.samsung.android.app.smartcapture", 0)
-                      .uid);
-              rt.guard.arm();
-              context.startActivity(chooser);
-            } catch (Throwable error) {
-              pending.remove(id);
-              result.send(Activity.RESULT_CANCELED, Bundle.EMPTY);
-              rt.fail(error);
-            }
-          }
-        },
-        new IntentFilter(SELECT),
-        "android.permission.MANAGE_MEDIA_PROJECTION",
-        main,
-        Context.RECEIVER_EXPORTED);
+    AudioScope.installAosp(rt, loader);
   }
 
   static void installRecorder(HookRuntime rt, ClassLoader loader) {
+    SamsungRecordingUi.install(rt, loader);
     Class<?> controller =
         XposedHelpers.findClass(
             "com.samsung.android.app.smartcapture.screenrecorder.ScreenRecorderController", loader);
@@ -154,29 +59,26 @@ final class SamsungSelection {
               return;
             }
             if (!rt.options.enabled() || !rt.options.samsungApp()) return;
+            SamsungRecordingUi.State state = SamsungRecordingUi.state(p.thisObject);
+            if (state == null || state.mode < 2) {
+              target = null;
+              return;
+            }
             p.setResult(null);
             if (picking) return;
+            if (state.selected == null) {
+              cancel(p.thisObject);
+              return;
+            }
             picking = true;
             target = null;
             Object owner = p.thisObject;
-            try {
-              Bundle health =
-                  rt.context.getContentResolver().call(ConfigProvider.URI, "config", null, null);
-              if (health == null || !health.getBoolean("framework_ready", false)) {
-                picking = false;
-                cancel(owner);
-                rt.report("Restart required: system framework is unavailable");
-                return;
-              }
-            } catch (Throwable error) {
-              picking = false;
-              cancel(owner);
-              rt.fail(error);
-              return;
-            }
-            ResultReceiver receiver =
-                new ResultReceiver(main) {
-                  private boolean done;
+            Bundle request = new Bundle();
+            request.putString("id", state.selected);
+            request.putBoolean("windows", state.mode == 3);
+            ResultReceiver result =
+                new ResultReceiver(new Handler(Looper.getMainLooper())) {
+                  boolean done;
 
                   @Override
                   protected void onReceiveResult(int code, Bundle result) {
@@ -185,37 +87,38 @@ final class SamsungSelection {
                     picking = false;
                     if (code != Activity.RESULT_OK
                         || result == null
-                        || !rt.guard.allowed()
-                        || !rt.options.enabled()) {
+                        || !rt.options.enabled()
+                        || !rt.guard.allowed()) {
                       cancel(owner);
+                      rt.report("Selected target unavailable; recording canceled");
                       return;
                     }
                     try {
                       IBinder binder = result.getBinder("cookie");
-                      int task = result.getInt("task_id", -1);
-                      if (binder == null || task < 0)
-                        throw new IllegalStateException("No selected app");
-                      Class<?> cookie =
-                          XposedHelpers.findClass("android.app.ActivityOptions$LaunchCookie", null);
-                      target = new Target(XposedHelpers.newInstance(cookie, binder), task);
+                      int task = result.getInt("task_id", -1), uid = result.getInt("uid", -1);
+                      if (binder == null || uid < 0)
+                        throw new IllegalStateException("Invalid capture target");
+                      Object cookie =
+                          XposedHelpers.newInstance(
+                              XposedHelpers.findClass(
+                                  "android.app.ActivityOptions$LaunchCookie", null),
+                              binder);
+                      target = new Target(cookie, task, uid, state.audioOnly);
                       rt.guard.arm();
                       approved = true;
                       XposedHelpers.callMethod(owner, "startCountDownTimer");
-                      rt.report("Selected app; countdown started");
+                      rt.report("Selected target; countdown started; app audio=" + state.audioOnly);
                     } catch (Throwable error) {
                       approved = false;
-                      target = null;
                       cancel(owner);
                       rt.fail(error);
                     }
                   }
                 };
             try {
-              rt.context.sendBroadcast(
-                  new Intent(SELECT)
-                      .setPackage("com.android.systemui")
-                      .putExtra(RECEIVER, receiver));
-              main.postDelayed(() -> receiver.send(Activity.RESULT_CANCELED, Bundle.EMPTY), 60000);
+              TargetBridge.request(rt, "activate", request, result);
+              new Handler(Looper.getMainLooper())
+                  .postDelayed(() -> result.send(Activity.RESULT_CANCELED, Bundle.EMPTY), 5000);
             } catch (Throwable error) {
               picking = false;
               cancel(owner);
@@ -223,28 +126,33 @@ final class SamsungSelection {
             }
           }
         });
-    Class<?> projection =
+    projectionWrapper =
         XposedHelpers.findClass(
             "com.samsung.android.app.smartcapture.baseutil.sep.SepWrapper$MediaProjectionManager",
             loader);
     XposedBridge.hookAllMethods(
-        projection,
+        projectionWrapper,
         "semGetMediaProjection",
         new XC_MethodHook() {
           @Override
+          protected void beforeHookedMethod(MethodHookParam p) {
+            if (earlyProjection != null) p.setResult(earlyProjection);
+          }
+
+          @Override
           protected void afterHookedMethod(MethodHookParam p) {
-            Target selected = target;
-            if (selected == null || p.hasThrowable() || p.getResult() == null) return;
+            Target t = target;
+            if (t == null || p.hasThrowable() || p.getResult() == null) return;
             try {
               Object impl = XposedHelpers.callMethod(p.getResult(), "getProjection");
-              XposedHelpers.callMethod(impl, "setLaunchCookie", selected.cookie());
-              XposedHelpers.callMethod(impl, "setTaskId", selected.taskId());
+              XposedHelpers.callMethod(impl, "setLaunchCookie", t.cookie());
+              XposedHelpers.callMethod(impl, "setTaskId", t.taskId());
             } catch (Throwable error) {
               try {
                 XposedHelpers.callMethod(p.getResult(), "stop");
               } catch (Throwable ignored) {
               }
-              p.setThrowable(new IllegalStateException("App capture target rejected", error));
+              p.setThrowable(new IllegalStateException("Capture target rejected", error));
               rt.fail(error);
             }
           }
@@ -261,18 +169,41 @@ final class SamsungSelection {
           protected void afterHookedMethod(MethodHookParam p) {
             target = null;
             approved = false;
+            earlyProjection = null;
+            earlyOwner = null;
             rt.guard.finish();
           }
         });
+    AudioScope.installSamsung(rt, loader);
   }
 
-  private static void cancel(Object controller) {
+  static synchronized MediaProjection audioProjection(Object owner) {
+    if (owner == earlyOwner && earlyProjection != null) return earlyProjection;
+    MediaProjection projection =
+        (MediaProjection) XposedHelpers.getObjectField(owner, "mMediaProjection");
+    if (projection == null) {
+      Context c = (Context) XposedHelpers.getObjectField(owner, "mContext");
+      projection =
+          (MediaProjection)
+              XposedHelpers.callStaticMethod(
+                  projectionWrapper,
+                  "semGetMediaProjection",
+                  c.getSystemService(MediaProjectionManager.class),
+                  0);
+      if (projection == null) throw new IllegalStateException("Audio projection unavailable");
+      XposedHelpers.setObjectField(owner, "mMediaProjection", projection);
+    }
+    earlyOwner = owner;
+    earlyProjection = projection;
+    return projection;
+  }
+
+  private static void cancel(Object owner) {
     target = null;
     approved = false;
     try {
-      android.app.Service service =
-          (android.app.Service) XposedHelpers.getObjectField(controller, "mScreenRecorderService");
-      service.stopSelf();
+      ((android.app.Service) XposedHelpers.getObjectField(owner, "mScreenRecorderService"))
+          .stopSelf();
     } catch (Throwable ignored) {
     }
   }

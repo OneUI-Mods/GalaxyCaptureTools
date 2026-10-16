@@ -22,8 +22,22 @@ public final class ConfigProvider extends ContentProvider {
     if (method.equals("config")) {
       var p = c.getSharedPreferences("config", 0);
       var b = new Bundle();
-      for (String k : new String[] {"enabled", "rotation", "samsung_app", "single_window"})
-        b.putBoolean(k, p.getBoolean(k, !k.equals("enabled") && !k.equals("single_window")));
+      for (String k :
+          new String[] {
+            "enabled",
+            "rotation",
+            "samsung_app",
+            "single_window",
+            "app_audio_only",
+            "ignore_half_turns"
+          })
+        b.putBoolean(
+            k,
+            p.getBoolean(
+                k,
+                !k.equals("enabled")
+                    && !k.equals("single_window")
+                    && !k.equals("ignore_half_turns")));
       b.putString("reset", p.getString("reset", ""));
       var status = c.getSharedPreferences("status", 0);
       int boot =

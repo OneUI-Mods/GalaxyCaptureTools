@@ -12,6 +12,7 @@ import com.google.android.material.materialswitch.MaterialSwitch;
 
 public final class MainActivity extends AppCompatActivity {
   private TextView status;
+  private LinearLayout individual;
 
   @Override
   public void onCreate(Bundle state) {
@@ -36,17 +37,39 @@ public final class MainActivity extends AppCompatActivity {
     var bar = new MaterialToolbar(this);
     bar.setTitle(R.string.app_name);
     column.addView(bar);
-    var intro = new TextView(this);
+    var intro = new com.google.android.material.textview.MaterialTextView(this);
     intro.setText(R.string.intro);
     intro.setTextSize(16);
     intro.setPadding(0, dp(12), 0, dp(24));
     column.addView(intro);
     addSwitch(column, "enabled", R.string.enabled, R.string.enabled_detail, false);
-    addSwitch(column, "rotation", R.string.rotation, R.string.rotation_detail, true);
-    addSwitch(column, "samsung_app", R.string.samsung_app, R.string.samsung_app_detail, true);
+    individual = new LinearLayout(this);
+    individual.setOrientation(LinearLayout.VERTICAL);
+    column.addView(individual);
+    var heading = new com.google.android.material.textview.MaterialTextView(this);
+    heading.setText(R.string.individual_settings);
+    heading.setTextAppearance(
+        com.google.android.material.R.style.TextAppearance_Material3_TitleMedium);
+    heading.setPadding(dp(4), 0, 0, dp(12));
+    individual.addView(heading);
+    addSwitch(individual, "rotation", R.string.rotation, R.string.rotation_detail, true);
     addSwitch(
-        column, "single_window", R.string.single_window, R.string.single_window_detail, false);
-    status = new TextView(this);
+        individual,
+        "ignore_half_turns",
+        R.string.ignore_half_turns,
+        R.string.ignore_half_turns_detail,
+        false);
+    addSwitch(individual, "samsung_app", R.string.samsung_app, R.string.samsung_app_detail, true);
+    addSwitch(
+        individual, "single_window", R.string.single_window, R.string.single_window_detail, false);
+    addSwitch(
+        individual,
+        "app_audio_only",
+        R.string.app_audio_only,
+        R.string.app_audio_only_detail,
+        true);
+    updateEnabled();
+    status = new com.google.android.material.textview.MaterialTextView(this);
     status.setTextSize(14);
     status.setPadding(dp(16), dp(16), dp(16), dp(16));
     var card = new MaterialCardView(this);
@@ -127,14 +150,28 @@ public final class MainActivity extends AppCompatActivity {
         (b, on) -> {
           getSharedPreferences("config", 0).edit().putBoolean(key, on).apply();
           notifyConfig();
+          if (key.equals("enabled")) updateEnabled();
         });
     box.addView(toggle);
-    var desc = new TextView(this);
+    var desc = new com.google.android.material.textview.MaterialTextView(this);
     desc.setText(detail);
     box.addView(desc);
     var lp = new LinearLayout.LayoutParams(-1, -2);
     lp.bottomMargin = dp(16);
     parent.addView(card, lp);
+  }
+
+  private void updateEnabled() {
+    if (individual == null) return;
+    boolean enabled = getSharedPreferences("config", 0).getBoolean("enabled", false);
+    setChildrenEnabled(individual, enabled);
+    individual.setAlpha(enabled ? 1f : .38f);
+  }
+
+  private void setChildrenEnabled(android.view.View view, boolean enabled) {
+    view.setEnabled(enabled);
+    if (view instanceof android.view.ViewGroup g)
+      for (int i = 0; i < g.getChildCount(); i++) setChildrenEnabled(g.getChildAt(i), enabled);
   }
 
   private void notifyConfig() {

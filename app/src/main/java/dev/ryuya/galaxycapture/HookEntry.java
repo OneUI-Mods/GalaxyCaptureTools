@@ -26,6 +26,7 @@ public final class HookEntry implements IXposedHookLoadPackage {
                   Context c =
                       (Context) XposedHelpers.getObjectField(param.thisObject, "mSystemContext");
                   FrameworkHooks.runtime = new HookRuntime(c, "framework");
+                  CaptureTargets.install(FrameworkHooks.runtime, p.classLoader);
                 } catch (Throwable e) {
                   XposedBridge.log("GalaxyCapture framework unavailable: " + e);
                 }

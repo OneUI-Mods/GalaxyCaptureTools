@@ -1,14 +1,14 @@
 <resources>
 <string name="app_name">Galaxy Capture Tools</string>
 <string name="intro">旋转手机时保持视频画幅不变。使用 Android 系统选择器选择应用。设置在下次录制时生效。实验版：Android 16 / One UI 8.5，SM-S948Q。在 Vector 中为系统框架、SystemUI 和三星截屏启用模块后重启手机。</string>
-<string name="enabled">启用录屏扩展</string>
-<string name="enabled_detail">扩展 Android 和 Galaxy 的录屏功能。关闭后，下次录制使用标准行为。</string>
+<string name="enabled">所有录屏扩展</string>
+<string name="enabled_detail">总开关。关闭时停止以下功能并禁用各项设置，保留设置值。</string>
 <string name="rotation">旋转时去除黑边</string>
 <string name="rotation_detail">保持开始时的视频宽高，随设备将画面旋转90度。不会改变手机本身的方向。</string>
-<string name="samsung_app">Galaxy 录屏选择应用</string>
-<string name="samsung_app_detail">录制前打开 Android 应用选择器。取消选择也会取消录制。关闭后录制整个屏幕。</string>
-<string name="single_window">固定所选窗口</string>
-<string name="single_window_detail">将应用录制固定到最初选择的主窗口。切换到同一应用的其他页面也不会更换目标。关闭后使用 Android 标准任务录制。</string>
+<string name="samsung_app">扩展录制区域选项</string>
+<string name="samsung_app_detail">直接在 Galaxy 录制开始界面添加应用和窗口选择。</string>
+<string name="single_window">启用单窗口录制</string>
+<string name="single_window_detail">在录制区域中添加窗口选项。固定所选窗口，不跟随同一应用的其他页面。</string>
 <string name="status">模块状态</string>
 <string name="not_loaded">尚未加载</string>
 <string name="refresh">刷新状态</string>
@@ -16,4 +16,22 @@
 <string name="reset_detail">允许重新尝试挂钩。重置后请重启手机。</string>
 <string name="licenses">许可证</string>
 <string name="license_detail">本项目：MIT。Material Components 和 AndroidX：Apache License 2.0。Xposed API 仅在编译时使用。</string>
+<string name="individual_settings">单项设置 · 总开关开启时生效</string>
+<string name="app_audio_only">应用录制默认仅录目标音频</string>
+<string name="app_audio_only_detail">适用于 Android 应用录制。Galaxy 可在开始界面选择目标应用或所有应用音频。麦克风另行设置。</string>
+<string name="ignore_half_turns">忽略180度旋转</string>
+<string name="ignore_half_turns_detail">在相同横竖方向间反转设备时保持视频方向。横向开始时，即使黑边校正关闭也可使用。</string>
+<string name="area_full">全屏</string>
+<string name="area_partial">区域</string>
+<string name="area_app">应用</string>
+<string name="area_window">窗口</string>
+<string name="choose_target">选择录制目标</string>
+<string name="search_apps">搜索目标</string>
+<string name="audio_scope">录制的应用音频</string>
+<string name="audio_target_only">仅目标应用</string>
+<string name="audio_every_app">所有应用</string>
+<string name="loading_targets">正在加载目标…</string>
+<string name="target_unavailable">无法获取目标，请检查模块状态。</string>
+<string name="no_targets">没有可选窗口，请先打开应用。</string>
+<string name="selected_target">已选：%1$s</string>
 </resources>

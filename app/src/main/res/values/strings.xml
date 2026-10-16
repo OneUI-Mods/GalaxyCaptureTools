@@ -1,14 +1,14 @@
 <resources>
 <string name="app_name">Galaxy Capture Tools</string>
-<string name="intro">Keep the video frame fixed while the phone rotates. Choose an app using the Android system picker. Settings apply to the next recording. Experimental: Android 16 / One UI 8.5, SM-S948Q. Enable this module for System Framework, SystemUI, and Samsung Capture, then restart the phone.</string>
-<string name="enabled">Enable recording tools</string>
-<string name="enabled_detail">Extend supported Android and Galaxy screen recorders. Turn off to use their standard behavior for new recordings.</string>
+<string name="intro">Keep the video frame fixed while the phone rotates. Choose an app using the Android system picker. Settings apply to the next recording. Experimental: Android 16 / One UI 8.5, SM-S948Q. Enable this module for System Framework, SystemUI, and Samsung Capture, then soft-reboot the phone.</string>
+<string name="enabled">All recording extensions</string>
+<string name="enabled_detail">Master switch. When off, every extension below is disabled. Individual choices are kept for the next time you enable it.</string>
 <string name="rotation">Rotate footage without letterboxing</string>
 <string name="rotation_detail">Keep the initial video dimensions and rotate captured footage with the phone. Does not change the orientation of the phone itself.</string>
-<string name="samsung_app">Choose an app for Galaxy recording</string>
-<string name="samsung_app_detail">Use the Android app picker before recording starts. Canceling the picker cancels the recording. Turn off to record the entire display as usual.</string>
-<string name="single_window">Keep only the selected window</string>
-<string name="single_window_detail">For app recordings, capture the initially selected main window instead of following other screens in the same app. Turn off to use Android task capture.</string>
+<string name="samsung_app">Extend the recording area choices</string>
+<string name="samsung_app_detail">Add app and window targets directly to the Galaxy recording start dialog.</string>
+<string name="single_window">Allow individual window recording</string>
+<string name="single_window_detail">Add Window to the recording-area choices. Capture one selected window rather than following other screens in the same app.</string>
 <string name="status">Module status</string>
 <string name="not_loaded">Not loaded yet</string>
 <string name="refresh">Refresh status</string>
@@ -16,4 +16,22 @@
 <string name="reset_detail">Allow hooks to be tried again. Restart the phone after resetting.</string>
 <string name="licenses">Licenses</string>
 <string name="license_detail">MIT project. Material Components and AndroidX: Apache License 2.0. Xposed API is used only at compile time.</string>
+<string name="individual_settings">Individual features · active only when the master switch is on</string>
+<string name="app_audio_only">Default to target app audio</string>
+<string name="app_audio_only_detail">For Android app recordings, capture the selected app audio. Galaxy recordings can choose target app audio or all app audio in the start dialog. Microphone selection is separate.</string>
+<string name="ignore_half_turns">Ignore 180° turns</string>
+<string name="ignore_half_turns_detail">Keep footage in the same direction when switching between opposite portrait or landscape orientations. Works with either recording start orientation, including landscape starts with black-bar correction off.</string>
+<string name="area_full">Full screen</string>
+<string name="area_partial">Area</string>
+<string name="area_app">App</string>
+<string name="area_window">Window</string>
+<string name="choose_target">Choose a recording target</string>
+<string name="search_apps">Search targets</string>
+<string name="audio_scope">App audio to record</string>
+<string name="audio_target_only">Target app only</string>
+<string name="audio_every_app">All apps</string>
+<string name="loading_targets">Loading targets…</string>
+<string name="target_unavailable">Targets are unavailable. Check module status.</string>
+<string name="no_targets">No selectable windows. Open the app first.</string>
+<string name="selected_target">Selected: %1$s</string>
 </resources>

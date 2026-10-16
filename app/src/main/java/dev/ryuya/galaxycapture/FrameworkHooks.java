@@ -17,15 +17,20 @@ final class FrameworkHooks {
     final Object recordingSession, activity;
     final Options options;
     final int rotation;
+    final RotationPolicy rotationPolicy;
     Object window;
+    final boolean mainWindow;
 
     Session(
         Object recordingSession, Object activity, Object window, Options options, int rotation) {
       this.recordingSession = recordingSession;
       this.activity = activity;
       this.window = window;
+      this.mainWindow = activity != null && window == call(activity, "findMainWindow");
       this.options = options;
       this.rotation = rotation;
+      this.rotationPolicy =
+          new RotationPolicy(rotation, options.rotation(), options.ignoreHalfTurns());
     }
   }
 
@@ -96,21 +101,36 @@ final class FrameworkHooks {
               if (type != 0 && type != 1)
                 return; // Do not expand Samsung's partial-area/overlay recordings.
               Options options = old == null ? rt.options : old.options;
-              if (!options.rotation() && !(options.singleWindow() && type == 1)) return;
+
               if (old == null) {
                 Object task =
                     type == 1
                         ? XposedHelpers.callStaticMethod(
                             containerClass, "fromBinder", call(nativeSession, "getTokenToRecord"))
                         : null;
+                int owner =
+                    XposedHelpers.getIntField(
+                        field(field(recorder, "mDisplayContent"), "mDisplayInfo"), "ownerUid");
+                CaptureTargets.Selection choice =
+                    task == null
+                        ? null
+                        : CaptureTargets.take(owner, XposedHelpers.getIntField(task, "mTaskId"));
+                boolean lock = choice == null ? options.singleWindow() : choice.strict();
+                if (!options.rotation() && !options.ignoreHalfTurns() && (task == null || !lock))
+                  return;
                 Object activity =
-                    options.singleWindow() && task != null
-                        ? call(task, "getTopMostActivity")
+                    lock && task != null
+                        ? (choice != null && choice.activity() != null
+                            ? choice.activity()
+                            : call(task, "getTopMostActivity"))
                         : null;
-                Object window = activity == null ? null : call(activity, "findMainWindow");
-                if (options.singleWindow()
-                    && type == 1
-                    && (window == null || !validWindow(window))) {
+                Object window =
+                    activity == null
+                        ? null
+                        : (choice != null && choice.window() != null
+                            ? choice.window()
+                            : call(activity, "findMainWindow"));
+                if (lock && type == 1 && (window == null || !validWindow(window))) {
                   p.setResult(null);
                   return;
                 }
@@ -130,7 +150,7 @@ final class FrameworkHooks {
                 sessions.put(recorder, old);
               }
               if (old.activity != null) {
-                Object current = call(old.activity, "findMainWindow");
+                Object current = old.mainWindow ? call(old.activity, "findMainWindow") : old.window;
                 if (!(boolean) call(old.activity, "isAttached")) {
                   p.setResult(null);
                   stop(recorder);
@@ -208,7 +228,7 @@ final class FrameworkHooks {
             if (s == null
                 && runtime != null
                 && runtime.options.enabled()
-                && runtime.options.rotation()
+                && (runtime.options.rotation() || runtime.options.ignoreHalfTurns())
                 && supported(p.thisObject)) {
               try {
                 Object nativeSession = field(p.thisObject, "mContentRecordingSession");
@@ -234,8 +254,7 @@ final class FrameworkHooks {
                 source = (Rect) field(field(s.window, "mWindowFrames"), "mFrame");
               }
               Point output = (Point) p.args[2];
-              int q =
-                  s.options.rotation() ? Math.floorMod(rotation(p.thisObject) - s.rotation, 4) : 0;
+              int q = s.rotationPolicy.update(rotation(p.thisObject));
               var t =
                   RecordingTransform.fit(source.width(), source.height(), output.x, output.y, q);
               call(p.args[0], "setWindowCrop", surface, source.width(), source.height());
