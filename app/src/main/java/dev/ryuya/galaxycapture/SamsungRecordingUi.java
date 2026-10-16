@@ -102,7 +102,14 @@ final class SamsungRecordingUi {
   private static void attach(HookRuntime rt, Object controller, View root) throws Exception {
     Context host = root.getContext();
     Context module = host.createPackageContext(BuildConfig.APPLICATION_ID, 0);
-    Context c = new ContextThemeWrapper(module, R.style.AppTheme);
+    Context c =
+        new ContextThemeWrapper(module, R.style.AppTheme) {
+          @Override
+          public ClassLoader getClassLoader() {
+            // The recorder does not contain our version of Material's internal XML views.
+            return SamsungRecordingUi.class.getClassLoader();
+          }
+        };
     View full = root.findViewById(id(host, "radio_button_full_screen")),
         partial = root.findViewById(id(host, "radio_button_partial_screen"));
     if (full == null || partial == null || full.getParent() != partial.getParent()) return;
