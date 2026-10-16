@@ -1,0 +1,19 @@
+<resources>
+<string name="app_name">Galaxy Capture Tools</string>
+<string name="intro">旋轉手機時保持影片畫幅不變。使用 Android 系統選擇器選擇應用程式。設定於下次錄製生效。實驗版：Android 16 / One UI 8.5，SM-S948Q。在 Vector 為系統框架、SystemUI 和三星截圖啟用模組後重新啟動手機。</string>
+<string name="enabled">啟用錄影擴充</string>
+<string name="enabled_detail">擴充 Android 和 Galaxy 的螢幕錄影功能。關閉後，下次錄製使用標準行為。</string>
+<string name="rotation">旋轉時移除黑邊</string>
+<string name="rotation_detail">保持開始時的影片寬高，隨裝置將畫面旋轉90度。不會改變手機本身的方向。</string>
+<string name="samsung_app">Galaxy 錄影選擇應用程式</string>
+<string name="samsung_app_detail">錄製前開啟 Android 應用程式選擇器。取消選擇也會取消錄製。關閉後錄製整個螢幕。</string>
+<string name="single_window">固定所選視窗</string>
+<string name="single_window_detail">將應用程式錄製固定到最初選擇的主視窗。切換到同一應用程式的其他畫面也不會更換目標。關閉後使用 Android 標準工作錄製。</string>
+<string name="status">模組狀態</string>
+<string name="not_loaded">尚未載入</string>
+<string name="refresh">重新整理狀態</string>
+<string name="reset_guard">重設當機保護</string>
+<string name="reset_detail">允許重新嘗試掛鉤。重設後請重新啟動手機。</string>
+<string name="licenses">授權條款</string>
+<string name="license_detail">本專案：MIT。Material Components 和 AndroidX：Apache License 2.0。Xposed API 僅在編譯時使用。</string>
+</resources>

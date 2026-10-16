@@ -1,0 +1,19 @@
+<resources>
+<string name="app_name">Galaxy Capture Tools</string>
+<string name="intro">端末を回しても動画の枠はそのままに。録画対象はAndroid標準の画面で選べます。設定の変更は次の録画から反映します。実験版：Android 16 / One UI 8.5、SM-S948Q。Vectorでシステムフレームワーク・SystemUI・Samsungキャプチャを対象に設定し、端末を再起動してください。</string>
+<string name="enabled">録画の拡張を使う</string>
+<string name="enabled_detail">Android・Galaxyの対応する画面録画を拡張します。OFFでは次の録画から標準の動作に戻ります。</string>
+<string name="rotation">回転時の黒帯をなくす</string>
+<string name="rotation_detail">動画の幅と高さを開始時に固定し、端末に合わせて映像を90度回します。端末自体の向きは変更しません。</string>
+<string name="samsung_app">Galaxy録画でアプリを選ぶ</string>
+<string name="samsung_app_detail">録画前にAndroid標準の選択画面を開きます。選択をキャンセルすると録画も中止します。OFFでは従来どおり画面全体を録画します。</string>
+<string name="single_window">選んだウィンドウに固定</string>
+<string name="single_window_detail">アプリ単位の録画を、選択時のメインウィンドウに固定。同じアプリの別画面へ移っても対象を切り替えません。OFFではAndroid標準のタスク単位録画になります。</string>
+<string name="status">モジュールの状態</string>
+<string name="not_loaded">まだ読み込まれていません</string>
+<string name="refresh">状態を更新</string>
+<string name="reset_guard">クラッシュ保護を解除</string>
+<string name="reset_detail">フックの再試行を許可します。解除後は端末を再起動してください。</string>
+<string name="licenses">ライセンス</string>
+<string name="license_detail">本アプリ：MIT。Material Components・AndroidX：Apache License 2.0。Xposed APIはコンパイル時のみ利用します。</string>
+</resources>

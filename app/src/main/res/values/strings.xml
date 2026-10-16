@@ -1,0 +1,19 @@
+<resources>
+<string name="app_name">Galaxy Capture Tools</string>
+<string name="intro">Keep the video frame fixed while the phone rotates. Choose an app using the Android system picker. Settings apply to the next recording. Experimental: Android 16 / One UI 8.5, SM-S948Q. Enable this module for System Framework, SystemUI, and Samsung Capture, then restart the phone.</string>
+<string name="enabled">Enable recording tools</string>
+<string name="enabled_detail">Extend supported Android and Galaxy screen recorders. Turn off to use their standard behavior for new recordings.</string>
+<string name="rotation">Rotate footage without letterboxing</string>
+<string name="rotation_detail">Keep the initial video dimensions and rotate captured footage with the phone. Does not change the orientation of the phone itself.</string>
+<string name="samsung_app">Choose an app for Galaxy recording</string>
+<string name="samsung_app_detail">Use the Android app picker before recording starts. Canceling the picker cancels the recording. Turn off to record the entire display as usual.</string>
+<string name="single_window">Keep only the selected window</string>
+<string name="single_window_detail">For app recordings, capture the initially selected main window instead of following other screens in the same app. Turn off to use Android task capture.</string>
+<string name="status">Module status</string>
+<string name="not_loaded">Not loaded yet</string>
+<string name="refresh">Refresh status</string>
+<string name="reset_guard">Reset crash protection</string>
+<string name="reset_detail">Allow hooks to be tried again. Restart the phone after resetting.</string>
+<string name="licenses">Licenses</string>
+<string name="license_detail">MIT project. Material Components and AndroidX: Apache License 2.0. Xposed API is used only at compile time.</string>
+</resources>

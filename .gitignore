@@ -1,0 +1,13 @@
+.gradle/
+**/build/
+local.properties
+evidence/device/
+*.jks
+.DS_Store
+dist/
+build-*.log
+build-runtime-dependencies.txt
+*.keystore
+*.p12
+.signing/
+__pycache__/

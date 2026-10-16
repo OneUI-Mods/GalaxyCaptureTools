@@ -1,0 +1,116 @@
+package dev.ryuya.galaxycapture;
+
+import android.content.Context;
+import android.os.Process;
+import android.util.AtomicFile;
+import java.io.*;
+import java.util.Properties;
+
+/** Durable before the first recording mutation; an unclean recording marks a restart. */
+final class HostGuard {
+  private final AtomicFile file;
+  private final Properties state = new Properties();
+  private boolean blocked;
+
+  HostGuard(Context context, String host) {
+    File base =
+        host.equals("framework")
+            ? new File("/data/system/galaxycapture/guard.properties")
+            : new File(
+                context.createDeviceProtectedStorageContext().getFilesDir(),
+                "galaxycapture-guard.properties");
+    file = new AtomicFile(base);
+    try {
+      if (file.getBaseFile().exists()) {
+        if (file.getBaseFile().length() > 8192) throw new IOException();
+        try (var in = file.openRead()) {
+          state.load(in);
+        }
+      }
+      long now = System.currentTimeMillis();
+      int pid = Process.myPid();
+      boolean interrupted =
+          Boolean.parseBoolean(state.getProperty("active", "false"))
+              && !state.getProperty("pid", "").equals(Integer.toString(pid));
+      if (interrupted) {
+        long last = Long.parseLong(state.getProperty("time", "0"));
+        int count =
+            (now >= last && now - last < 120000)
+                ? Integer.parseInt(state.getProperty("count", "0")) + 1
+                : 1;
+        state.setProperty("count", Integer.toString(count));
+        if (count >= 3) state.setProperty("blocked", "true");
+      }
+      blocked = Boolean.parseBoolean(state.getProperty("blocked", "false"));
+      state.setProperty("active", "false");
+      state.setProperty("pid", Integer.toString(pid));
+      save();
+    } catch (Throwable error) {
+      blocked = true;
+    }
+  }
+
+  synchronized boolean allowed() {
+    return !blocked;
+  }
+
+  synchronized void reset(String token) {
+    if (token.isEmpty() || token.equals(state.getProperty("reset", ""))) return;
+    state.setProperty("reset", token);
+    state.setProperty("blocked", "false");
+    state.setProperty("count", "0");
+    state.setProperty("active", "false");
+    blocked = false;
+    try {
+      save();
+    } catch (Throwable error) {
+      blocked = true;
+    }
+  }
+
+  synchronized void arm() throws IOException {
+    if (blocked) throw new IOException("Guard blocked");
+    state.setProperty("active", "true");
+    state.setProperty("time", Long.toString(System.currentTimeMillis()));
+    save();
+  }
+
+  synchronized void finish() {
+    state.setProperty("active", "false");
+    try {
+      save();
+    } catch (Throwable error) {
+      blocked = true;
+    }
+  }
+
+  synchronized void fail() {
+    blocked = true;
+    state.setProperty("blocked", "true");
+    state.setProperty("active", "false");
+    try {
+      save();
+    } catch (Throwable ignored) {
+    }
+  }
+
+  private void save() throws IOException {
+    File parent = file.getBaseFile().getParentFile();
+    if (!parent.isDirectory() && !parent.mkdirs()) throw new IOException("Guard directory");
+    parent.setReadable(false, false);
+    parent.setWritable(false, false);
+    parent.setExecutable(false, false);
+    parent.setReadable(true, true);
+    parent.setWritable(true, true);
+    parent.setExecutable(true, true);
+    FileOutputStream out = null;
+    try {
+      out = file.startWrite();
+      state.store(out, "Galaxy Capture crash protection");
+      file.finishWrite(out);
+    } catch (Throwable error) {
+      if (out != null) file.failWrite(out);
+      throw new IOException("Guard persistence", error);
+    }
+  }
+}
