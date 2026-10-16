@@ -45,11 +45,12 @@ final class SamsungRecordingUi {
     }
   }
 
-  private static final Map<Object, State> states = new WeakHashMap<>();
+  private static final Map<Object, java.lang.ref.WeakReference<State>> states = new WeakHashMap<>();
   private static final Handler main = new Handler(Looper.getMainLooper());
 
   static State state(Object controller) {
-    return states.get(controller);
+    var reference = states.get(controller);
+    return reference == null ? null : reference.get();
   }
 
   static void install(HookRuntime rt, ClassLoader loader) {
@@ -76,7 +77,7 @@ final class SamsungRecordingUi {
         new XC_MethodHook() {
           @Override
           protected void afterHookedMethod(MethodHookParam p) {
-            State s = states.get(p.thisObject);
+            State s = state(p.thisObject);
             if (s != null) updateStart(s);
           }
         });
@@ -173,7 +174,7 @@ final class SamsungRecordingUi {
       audio.addView(b, new LinearLayout.LayoutParams(0, dp(c, 48), 1));
     }
     State s = new State(controller, c, targetBox, rows, message, modes, audio);
-    states.put(controller, s);
+    states.put(controller, new java.lang.ref.WeakReference<>(s));
     s.audioOnly = rt.options.appAudioOnly();
     audio.check(audio.getChildAt(s.audioOnly ? 0 : 1).getId());
     audio.addOnButtonCheckedListener(

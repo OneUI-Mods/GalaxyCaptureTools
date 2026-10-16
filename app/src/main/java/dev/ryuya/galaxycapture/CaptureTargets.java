@@ -198,6 +198,11 @@ final class CaptureTargets {
     entries.sort(
         Comparator.comparing(b -> b.getString("label", ""), java.text.Collator.getInstance()));
     catalogs.put(owner, cache);
+    rt.worker.postDelayed(
+        () -> {
+          if (catalogs.get(owner) == cache) catalogs.remove(owner);
+        },
+        300000);
     Bundle out = new Bundle();
     out.putParcelableArrayList("entries", entries);
     return out;
