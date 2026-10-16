@@ -217,6 +217,7 @@ final class SamsungRecordingUi {
                 s.selected = null;
                 s.entries.clear();
                 s.generation++;
+                edit.setText("");
                 for (int n = 0; n < modes.size(); n++)
                   XposedHelpers.callMethod(modes.get(n), "setScreenButtonSelectedState", n == mode);
                 targetBox.setVisibility(mode >= 2 ? View.VISIBLE : View.GONE);

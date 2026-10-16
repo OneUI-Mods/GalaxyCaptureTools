@@ -14,6 +14,7 @@ public class SettingsHierarchyTest {
     var context = InstrumentationRegistry.getInstrumentation().getTargetContext();
     var prefs = context.getSharedPreferences("config", 0);
     boolean original = prefs.getBoolean("enabled", false);
+    boolean originalRotation = prefs.getBoolean("rotation", true);
     try (var activity = ActivityScenario.launch(MainActivity.class)) {
       activity.onActivity(
           a -> {
@@ -41,10 +42,25 @@ public class SettingsHierarchyTest {
             assertTrue(
                 find(a.getWindow().getDecorView(), a.getString(R.string.ignore_half_turns))
                     .isEnabled());
+            MaterialSwitch rotation =
+                find(a.getWindow().getDecorView(), a.getString(R.string.rotation));
+            if (rotation.isChecked()) rotation.performClick();
+            assertTrue(
+                find(a.getWindow().getDecorView(), a.getString(R.string.ignore_half_turns))
+                    .isEnabled());
+            if (rotation.isChecked() != originalRotation) rotation.performClick();
             if (master.isChecked() != original) master.performClick();
           });
     } finally {
-      prefs.edit().putBoolean("enabled", original).commit();
+      prefs
+          .edit()
+          .putBoolean("enabled", original)
+          .putBoolean("rotation", originalRotation)
+          .commit();
+      for (String pkg :
+          new String[] {"android", "com.android.systemui", "com.samsung.android.app.smartcapture"})
+        context.sendBroadcast(
+            new android.content.Intent(HookRuntime.CONFIG_CHANGED).setPackage(pkg));
     }
   }
 
