@@ -9,11 +9,47 @@ import android.view.*;
 
 /** Internal test APK only. A new Activity must never leak into a window-locked recording. */
 public class CaptureFixtureActivity extends Activity {
+  private android.media.AudioTrack tone;
+
   @Override
   public void onCreate(Bundle b) {
     super.onCreate(b);
     if (b != null) getIntent().putExtra("rotation", b.getInt("rotation", 0));
     apply(getIntent());
+    if (getIntent().getBooleanExtra("tone", false)) {
+      tone =
+          new android.media.AudioTrack.Builder()
+              .setAudioAttributes(
+                  new android.media.AudioAttributes.Builder()
+                      .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                      .setAllowedCapturePolicy(android.media.AudioAttributes.ALLOW_CAPTURE_BY_ALL)
+                      .build())
+              .setAudioFormat(
+                  new android.media.AudioFormat.Builder()
+                      .setSampleRate(48000)
+                      .setChannelMask(android.media.AudioFormat.CHANNEL_OUT_MONO)
+                      .setEncoding(android.media.AudioFormat.ENCODING_PCM_16BIT)
+                      .build())
+              .setBufferSizeInBytes(96000)
+              .setTransferMode(android.media.AudioTrack.MODE_STATIC)
+              .build();
+      short[] samples = new short[48000];
+      for (int n = 0; n < samples.length; n++)
+        samples[n] = (short) (1400 * Math.sin(2 * Math.PI * 440 * n / 48000));
+      tone.write(samples, 0, samples.length);
+      tone.setLoopPoints(0, samples.length, -1);
+      tone.play();
+    }
+  }
+
+  @Override
+  protected void onDestroy() {
+    if (tone != null) {
+      tone.stop();
+      tone.release();
+      tone = null;
+    }
+    super.onDestroy();
   }
 
   @Override

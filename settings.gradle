@@ -2,3 +2,8 @@ pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal()
 dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
 rootProject.name = 'GalaxyCaptureTools'
 include ':app'
+// Opt-in verification APK; never part of the app's release assembly or distribution.
+if (providers.gradleProperty('captureFixtures').isPresent()) {
+ include ':audioFixture'
+ project(':audioFixture').projectDir = file('tools/fixtures/audio')
+}

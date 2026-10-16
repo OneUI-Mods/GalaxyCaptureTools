@@ -47,3 +47,9 @@
 
 - 利用者の指定に合わせ、Galaxy開始画面へ追加する検索・一覧・音声範囲もSamsungのContextと標準部品へ統一。音声範囲には既存の音声選択と同じEnhancedRadioButtonを使い、Materialの別テーマを混在させない。設定アプリはMaterial 3を維持する。
 - 設定画面の全体スイッチ階層のinstrumentationは実機で成功（1件）。
+
+## 音声の検証素材
+
+`-PcaptureFixtures`でのみ別UIDの880Hz音声テストAPKをビルドする。アプリ本体へは依存させず、配布手順にも含めない。androidTest側の映像fixtureはtone=trueで440Hzを再生する。対象のみで440Hz、端末全体で440Hzと880Hzの両方を収録できることをスペクトルで比較する予定。別UIDの音は60秒で自動停止する。
+
+SamsungのDisplayManagerServiceは通常の逆コンパイル結果で条件が逆転していた。fallbackの分岐を確認し、launch cookieが存在する場合にcreateTaskSessionへ進むことを確認した。
