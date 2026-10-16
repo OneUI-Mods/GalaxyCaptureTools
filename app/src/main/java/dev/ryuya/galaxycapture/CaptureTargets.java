@@ -141,7 +141,7 @@ final class CaptureTargets {
         for (Object task : tasks) {
           Object activity = call(task, "getTopMostActivity");
           if (activity == null) continue;
-          Object w = call(activity, "findMainWindow");
+          Object w = call(activity, "findMainWindow", false);
           if (!allowedWindow(w)) continue;
           int id = XposedHelpers.getIntField(task, "mTaskId");
           if (!ids.add(id)) continue;

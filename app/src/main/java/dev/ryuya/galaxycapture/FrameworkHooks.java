@@ -26,7 +26,7 @@ final class FrameworkHooks {
       this.recordingSession = recordingSession;
       this.activity = activity;
       this.window = window;
-      this.mainWindow = activity != null && window == call(activity, "findMainWindow");
+      this.mainWindow = activity != null && window == call(activity, "findMainWindow", false);
       this.options = options;
       this.rotation = rotation;
       this.rotationPolicy =
@@ -129,7 +129,7 @@ final class FrameworkHooks {
                         ? null
                         : (choice != null && choice.window() != null
                             ? choice.window()
-                            : call(activity, "findMainWindow"));
+                            : call(activity, "findMainWindow", false));
                 if (lock && type == 1 && (window == null || !validWindow(window))) {
                   p.setResult(null);
                   return;
@@ -150,7 +150,8 @@ final class FrameworkHooks {
                 sessions.put(recorder, old);
               }
               if (old.activity != null) {
-                Object current = old.mainWindow ? call(old.activity, "findMainWindow") : old.window;
+                Object current =
+                    old.mainWindow ? call(old.activity, "findMainWindow", false) : old.window;
                 if (!(boolean) call(old.activity, "isAttached")) {
                   p.setResult(null);
                   stop(recorder);

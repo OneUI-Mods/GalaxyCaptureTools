@@ -53,3 +53,7 @@
 `-PcaptureFixtures`でのみ別UIDの880Hz音声テストAPKをビルドする。アプリ本体へは依存させず、配布手順にも含めない。androidTest側の映像fixtureはtone=trueで440Hzを再生する。対象のみで440Hz、端末全体で440Hzと880Hzの両方を収録できることをスペクトルで比較する予定。別UIDの音は60秒で自動停止する。
 
 SamsungのDisplayManagerServiceは通常の逆コンパイル結果で条件が逆転していた。fallbackの分岐を確認し、launch cookieが存在する場合にcreateTaskSessionへ進むことを確認した。
+
+## 対象一覧の実機修正
+
+ログからActivityRecord.findMainWindowの引数不一致を確認。このビルドにはfindMainWindow(boolean)だけが存在するため、一覧取得・固定対象の初期化・再生成時の取得をすべてfalse付きへ統一した。元の無引数呼び出しでは一覧取得が中止されていた。
