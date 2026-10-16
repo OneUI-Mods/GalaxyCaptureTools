@@ -30,11 +30,7 @@ final class SamsungSelection {
           protected void beforeHookedMethod(MethodHookParam p) {
             if (!rt.options.enabled() || !rt.options.singleWindow()) return;
             try {
-              Bundle b =
-                  rt.context.getContentResolver().call(ConfigProvider.URI, "config", null, null);
-              if (b == null || !b.getBoolean("framework_ready", false))
-                p.setThrowable(
-                    new java.io.IOException("Window recording requires framework reload"));
+              TargetBridge.requireReady(rt);
             } catch (Throwable error) {
               p.setThrowable(new java.io.IOException("Window recording unavailable", error));
             }

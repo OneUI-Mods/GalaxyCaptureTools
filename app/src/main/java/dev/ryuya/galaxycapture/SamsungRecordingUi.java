@@ -21,7 +21,8 @@ final class SamsungRecordingUi {
     final LinearLayout targetBox;
     final androidx.recyclerview.widget.RecyclerView rows;
     final MaterialTextView message;
-    final MaterialButtonToggleGroup modes, audio;
+    final List<View> modes;
+    final MaterialButtonToggleGroup audio;
     final List<Bundle> entries = new ArrayList<>();
     String selected;
     int mode, generation;
@@ -33,7 +34,7 @@ final class SamsungRecordingUi {
         LinearLayout targetBox,
         androidx.recyclerview.widget.RecyclerView rows,
         MaterialTextView message,
-        MaterialButtonToggleGroup modes,
+        List<View> modes,
         MaterialButtonToggleGroup audio) {
       this.controller = controller;
       this.context = context;
@@ -114,27 +115,27 @@ final class SamsungRecordingUi {
     lp.setMargins(dp(c, 16), dp(c, 8), dp(c, 16), dp(c, 4));
     parent.addView(area, index + 1, lp);
     original.setVisibility(View.GONE);
-    MaterialButtonToggleGroup modes = new MaterialButtonToggleGroup(c);
-    modes.setSingleSelection(true);
-    modes.setSelectionRequired(true);
-    area.addView(modes, new LinearLayout.LayoutParams(-1, -2));
-    int[] labels = {
-      R.string.area_full, R.string.area_partial, R.string.area_app, R.string.area_window
-    };
-    for (int i = 0; i < (rt.options.singleWindow() ? 4 : 3); i++) {
-      MaterialButton b =
-          new MaterialButton(
-              c, null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
-      b.setId(View.generateViewId());
-      b.setTag(i);
-      b.setText(labels[i]);
-      b.setTextSize(13);
-      b.setMinWidth(0);
-      b.setMinimumWidth(0);
-      b.setPadding(dp(c, 7), 0, dp(c, 7), 0);
-      b.setInsetTop(0);
-      b.setInsetBottom(0);
-      modes.addView(b, new LinearLayout.LayoutParams(0, dp(c, 44), 1));
+    // Preserve the actual Samsung controls and their native graphics, typography and radio state.
+    List<View> modes = new ArrayList<>();
+    View.OnClickListener fullClick = listener(full), partialClick = listener(partial);
+    original.removeView(full);
+    original.removeView(partial);
+    modes.add(full);
+    modes.add(partial);
+    modes.add(graphicalChoice(host, c.getString(R.string.area_app), full, false));
+    if (rt.options.singleWindow())
+      modes.add(graphicalChoice(host, c.getString(R.string.area_window), full, true));
+    for (int i = 0; i < modes.size(); i += 2) {
+      LinearLayout row = new LinearLayout(host);
+      row.setGravity(Gravity.TOP);
+      area.addView(row, new LinearLayout.LayoutParams(-1, -2));
+      for (int j = i; j < Math.min(i + 2, modes.size()); j++) {
+        View choice = modes.get(j);
+        choice.setId(j < 2 ? choice.getId() : View.generateViewId());
+        row.addView(choice, new LinearLayout.LayoutParams(0, -2, 1));
+      }
+      if (i + 1 == modes.size())
+        row.addView(new View(host), new LinearLayout.LayoutParams(0, 1, 1));
     }
     LinearLayout targetBox = new LinearLayout(c);
     targetBox.setOrientation(LinearLayout.VERTICAL);
@@ -183,22 +184,28 @@ final class SamsungRecordingUi {
         });
     int initial = checked(partial) ? 1 : 0;
     s.mode = initial;
-    modes.check(modes.getChildAt(initial).getId());
     targetBox.setVisibility(View.GONE);
-    modes.addOnButtonCheckedListener(
-        (g, buttonId, on) -> {
-          if (!on) return;
-          View button = g.findViewById(buttonId);
-          s.mode = (int) button.getTag();
-          s.selected = null;
-          s.entries.clear();
-          s.generation++;
-          targetBox.setVisibility(s.mode >= 2 ? View.VISIBLE : View.GONE);
-          if (s.mode == 1) partial.performClick();
-          else full.performClick();
-          if (s.mode >= 2) load(rt, s);
-          else updateStart(s);
-        });
+    for (int i = 0; i < modes.size(); i++) {
+      final int mode = i;
+      XposedHelpers.callMethod(modes.get(i), "setScreenButtonSelectedState", i == initial);
+      modes
+          .get(i)
+          .setOnClickListener(
+              v -> {
+                if (mode == s.mode) return;
+                if (mode == 1) partialClick.onClick(partial);
+                else fullClick.onClick(full);
+                s.mode = mode;
+                s.selected = null;
+                s.entries.clear();
+                s.generation++;
+                for (int n = 0; n < modes.size(); n++)
+                  XposedHelpers.callMethod(modes.get(n), "setScreenButtonSelectedState", n == mode);
+                targetBox.setVisibility(mode >= 2 ? View.VISIBLE : View.GONE);
+                if (mode >= 2) load(rt, s);
+                else updateStart(s);
+              });
+    }
     edit.addTextChangedListener(
         new TextWatcher() {
           public void beforeTextChanged(CharSequence x, int a, int count, int after) {}
@@ -209,6 +216,34 @@ final class SamsungRecordingUi {
 
           public void afterTextChanged(Editable e) {}
         });
+  }
+
+  private static View.OnClickListener listener(View v) {
+    Object info = XposedHelpers.callMethod(v, "getListenerInfo");
+    View.OnClickListener result =
+        (View.OnClickListener) XposedHelpers.getObjectField(info, "mOnClickListener");
+    if (result == null) throw new IllegalStateException("Native recording-area listener missing");
+    return result;
+  }
+
+  private static View graphicalChoice(Context host, String label, View model, boolean window) {
+    View choice = (View) XposedHelpers.newInstance(model.getClass(), host);
+    ImageView modelImage = (ImageView) XposedHelpers.getObjectField(model, "imageView");
+    ImageView image = (ImageView) XposedHelpers.getObjectField(choice, "imageView");
+    TextView text = (TextView) XposedHelpers.getObjectField(choice, "textView");
+    text.setText(label);
+    text.setTextSize(
+        android.util.TypedValue.COMPLEX_UNIT_PX,
+        ((TextView) XposedHelpers.getObjectField(model, "textView")).getTextSize());
+    ViewGroup.LayoutParams size = image.getLayoutParams();
+    size.width = modelImage.getLayoutParams().width;
+    size.height = modelImage.getLayoutParams().height;
+    image.setLayoutParams(size);
+    image.setPadding(0, 0, 0, 0);
+    image.setImageDrawable(new RecordingAreaGraphic(window));
+    choice.setContentDescription(label);
+    choice.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+    return choice;
   }
 
   private static void load(HookRuntime rt, State s) {

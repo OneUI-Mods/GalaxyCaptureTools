@@ -58,6 +58,7 @@ final class CaptureTargets {
                         catalog(rt, uid, data != null && data.getBoolean("windows", false));
                     case "activate" -> activate(rt, uid, data);
                     case "audio_uid" -> audioUid(uid);
+                    case "health" -> Bundle.EMPTY;
                     default -> throw new IllegalArgumentException("Unknown target operation");
                   };
               receiver.send(Activity.RESULT_OK, result);
