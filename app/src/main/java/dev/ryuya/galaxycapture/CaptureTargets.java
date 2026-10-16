@@ -44,6 +44,8 @@ final class CaptureTargets {
             if (packages == null
                 || (!Arrays.asList(packages).contains("com.samsung.android.app.smartcapture")
                     && !Arrays.asList(packages).contains("com.android.systemui"))) {
+              de.robv.android.xposed.XposedBridge.log(
+                  "GalaxyCapture target sender rejected; uid=" + uid);
               receiver.send(Activity.RESULT_CANCELED, Bundle.EMPTY);
               return;
             }
@@ -63,6 +65,9 @@ final class CaptureTargets {
                   };
               receiver.send(Activity.RESULT_OK, result);
             } catch (Throwable error) {
+              de.robv.android.xposed.XposedBridge.log(
+                  "GalaxyCapture target request failed: " + error);
+              de.robv.android.xposed.XposedBridge.log(error);
               Bundle result = new Bundle();
               result.putString("error", "Target unavailable");
               receiver.send(Activity.RESULT_CANCELED, result);

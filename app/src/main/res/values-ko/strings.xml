@@ -1,6 +1,6 @@
 <resources>
 <string name="app_name">Galaxy Capture Tools</string>
-<string name="intro">휴대전화를 회전해도 동영상 크기를 유지합니다. Android 시스템 선택기로 앱을 선택합니다. 변경 사항은 다음 녹화부터 적용됩니다. 실험 버전: Android 16 / One UI 8.5, SM-S948Q. Vector에서 시스템 프레임워크, SystemUI, Samsung Capture를 활성화한 뒤 재부팅하세요.</string>
+<string name="intro">휴대전화를 회전해도 동영상 크기를 유지합니다. Galaxy 녹화 시작 화면에서 앱이나 창을 선택합니다. 변경 사항은 다음 녹화부터 적용됩니다. 실험 버전: Android 16 / One UI 8.5, SM-S948Q. Vector에서 시스템 프레임워크, SystemUI, Samsung Capture를 활성화한 뒤 재부팅하세요.</string>
 <string name="enabled">모든 녹화 확장</string>
 <string name="enabled_detail">전체 스위치입니다. 끄면 아래 기능을 중지하고 개별 설정을 비활성화합니다. 설정값은 유지됩니다.</string>
 <string name="rotation">회전 시 검은 여백 제거</string>
@@ -13,7 +13,7 @@
 <string name="not_loaded">아직 로드되지 않음</string>
 <string name="refresh">상태 새로고침</string>
 <string name="reset_guard">충돌 보호 해제</string>
-<string name="reset_detail">후킹을 다시 시도하도록 허용합니다. 해제 후 기기를 재부팅하세요.</string>
+<string name="reset_detail">후킹을 다시 시도하도록 허용합니다. 해제 후 소프트 재부팅하세요.</string>
 <string name="licenses">라이선스</string>
 <string name="license_detail">프로젝트: MIT. Material Components 및 AndroidX: Apache License 2.0. Xposed API는 컴파일 시에만 사용됩니다.</string>
 <string name="individual_settings">개별 설정 · 전체 스위치가 켜져 있을 때 활성화</string>
