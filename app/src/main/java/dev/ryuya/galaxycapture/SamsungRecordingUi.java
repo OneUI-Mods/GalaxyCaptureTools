@@ -6,10 +6,6 @@ import android.os.*;
 import android.text.*;
 import android.view.*;
 import android.widget.*;
-import androidx.appcompat.view.ContextThemeWrapper;
-import com.google.android.material.button.*;
-import com.google.android.material.textfield.*;
-import com.google.android.material.textview.MaterialTextView;
 import de.robv.android.xposed.*;
 import java.util.*;
 
@@ -19,10 +15,10 @@ final class SamsungRecordingUi {
     final Object controller;
     final Context context;
     final LinearLayout targetBox;
-    final androidx.recyclerview.widget.RecyclerView rows;
-    final MaterialTextView message;
+    final ListView rows;
+    final TextView message;
     final List<View> modes;
-    final MaterialButtonToggleGroup audio;
+    final Context strings;
     final List<Bundle> entries = new ArrayList<>();
     String selected;
     int mode, generation;
@@ -32,17 +28,17 @@ final class SamsungRecordingUi {
         Object controller,
         Context context,
         LinearLayout targetBox,
-        androidx.recyclerview.widget.RecyclerView rows,
-        MaterialTextView message,
+        ListView rows,
+        TextView message,
         List<View> modes,
-        MaterialButtonToggleGroup audio) {
+        Context strings) {
       this.controller = controller;
       this.context = context;
       this.targetBox = targetBox;
       this.rows = rows;
       this.message = message;
       this.modes = modes;
-      this.audio = audio;
+      this.strings = strings;
     }
   }
 
@@ -101,15 +97,8 @@ final class SamsungRecordingUi {
 
   private static void attach(HookRuntime rt, Object controller, View root) throws Exception {
     Context host = root.getContext();
-    Context module = host.createPackageContext(BuildConfig.APPLICATION_ID, 0);
-    Context c =
-        new ContextThemeWrapper(module, R.style.AppTheme) {
-          @Override
-          public ClassLoader getClassLoader() {
-            // The recorder does not contain our version of Material's internal XML views.
-            return SamsungRecordingUi.class.getClassLoader();
-          }
-        };
+    Context c = host;
+    Context strings = host.createPackageContext(BuildConfig.APPLICATION_ID, 0);
     View full = root.findViewById(id(host, "radio_button_full_screen")),
         partial = root.findViewById(id(host, "radio_button_partial_screen"));
     if (full == null || partial == null || full.getParent() != partial.getParent()) return;
@@ -129,9 +118,9 @@ final class SamsungRecordingUi {
     original.removeView(partial);
     modes.add(full);
     modes.add(partial);
-    modes.add(graphicalChoice(host, c.getString(R.string.area_app), full, false));
+    modes.add(graphicalChoice(host, strings.getString(R.string.area_app), full, false));
     if (rt.options.singleWindow())
-      modes.add(graphicalChoice(host, c.getString(R.string.area_window), full, true));
+      modes.add(graphicalChoice(host, strings.getString(R.string.area_window), full, true));
     for (int i = 0; i < modes.size(); i += 2) {
       LinearLayout row = new LinearLayout(host);
       row.setGravity(Gravity.TOP);
@@ -147,48 +136,70 @@ final class SamsungRecordingUi {
     LinearLayout targetBox = new LinearLayout(c);
     targetBox.setOrientation(LinearLayout.VERTICAL);
     area.addView(targetBox, new LinearLayout.LayoutParams(-1, -2));
-    MaterialTextView message = new MaterialTextView(c);
-    message.setText(R.string.choose_target);
-    message.setPadding(0, dp(c, 10), 0, dp(c, 4));
+    TextView message = nativeText(host, full);
+    message.setText(strings.getString(R.string.choose_target));
+    message.setPadding(0, dp(c, 12), 0, dp(c, 8));
     targetBox.addView(message);
-    TextInputLayout search = new TextInputLayout(c);
-    search.setHint(c.getString(R.string.search_apps));
-    TextInputEditText edit = new TextInputEditText(search.getContext());
+    EditText edit = new EditText(host);
+    edit.setHint(strings.getString(R.string.search_apps));
     edit.setSingleLine(true);
     edit.setTextSize(14);
-    search.addView(edit);
-    targetBox.addView(search, new LinearLayout.LayoutParams(-1, -2));
-    androidx.recyclerview.widget.RecyclerView rows =
-        new androidx.recyclerview.widget.RecyclerView(c);
-    rows.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(c));
-    targetBox.addView(rows, new LinearLayout.LayoutParams(-1, dp(c, 174)));
-    MaterialTextView audioLabel = new MaterialTextView(c);
-    audioLabel.setText(R.string.audio_scope);
-    audioLabel.setPadding(0, dp(c, 10), 0, dp(c, 4));
+    edit.setTypeface(message.getTypeface());
+    targetBox.addView(edit, new LinearLayout.LayoutParams(-1, -2));
+    ListView rows = new ListView(host);
+    rows.setDivider(null);
+    targetBox.addView(rows, new LinearLayout.LayoutParams(-1, dp(c, 180)));
+    // The outer native dialog scrolls too. Let the bounded list handle drags within its rows.
+    rows.setOnTouchListener(
+        (v, e) -> {
+          v.getParent()
+              .requestDisallowInterceptTouchEvent(
+                  e.getActionMasked() != MotionEvent.ACTION_UP
+                      && e.getActionMasked() != MotionEvent.ACTION_CANCEL);
+          return false;
+        });
+    TextView audioLabel = nativeText(host, full);
+    audioLabel.setText(strings.getString(R.string.audio_scope));
+    audioLabel.setPadding(0, dp(c, 16), 0, dp(c, 8));
     targetBox.addView(audioLabel);
-    MaterialButtonToggleGroup audio = new MaterialButtonToggleGroup(c);
-    audio.setSingleSelection(true);
-    audio.setSelectionRequired(true);
+    View soundModel = root.findViewById(id(host, "radio_button_sound_media"));
+    if (soundModel == null) throw new IllegalStateException("Native sound control missing");
+    LinearLayout audio = new LinearLayout(host);
     targetBox.addView(audio, new LinearLayout.LayoutParams(-1, -2));
+    List<View> audioChoices = new ArrayList<>();
     for (int label : new int[] {R.string.audio_target_only, R.string.audio_every_app}) {
-      MaterialButton b =
-          new MaterialButton(
-              c, null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
-      b.setId(View.generateViewId());
-      b.setText(label);
-      b.setTextSize(13);
-      b.setMinWidth(0);
-      b.setMinimumWidth(0);
-      audio.addView(b, new LinearLayout.LayoutParams(0, dp(c, 48), 1));
+      View choice = (View) XposedHelpers.newInstance(soundModel.getClass(), host);
+      ImageView modelImage = (ImageView) XposedHelpers.getObjectField(soundModel, "imageView");
+      ImageView image = (ImageView) XposedHelpers.getObjectField(choice, "imageView");
+      ViewGroup.LayoutParams size = image.getLayoutParams();
+      size.width = modelImage.getLayoutParams().width;
+      size.height = modelImage.getLayoutParams().height;
+      image.setLayoutParams(size);
+      image.setImageDrawable(
+          modelImage.getDrawable().getConstantState().newDrawable(host.getResources()).mutate());
+      TextView text = (TextView) XposedHelpers.getObjectField(choice, "textView");
+      text.setText(strings.getString(label));
+      text.setTextSize(
+          android.util.TypedValue.COMPLEX_UNIT_PX,
+          ((TextView) XposedHelpers.getObjectField(soundModel, "textView")).getTextSize());
+      audio.addView(choice, new LinearLayout.LayoutParams(0, -2, 1));
+      audioChoices.add(choice);
     }
-    State s = new State(controller, c, targetBox, rows, message, modes, audio);
+    State s = new State(controller, c, targetBox, rows, message, modes, strings);
     states.put(controller, new java.lang.ref.WeakReference<>(s));
     s.audioOnly = rt.options.appAudioOnly();
-    audio.check(audio.getChildAt(s.audioOnly ? 0 : 1).getId());
-    audio.addOnButtonCheckedListener(
-        (g, viewId, on) -> {
-          if (on) s.audioOnly = viewId == audio.getChildAt(0).getId();
-        });
+    for (int i = 0; i < audioChoices.size(); i++) {
+      final boolean only = i == 0;
+      View choice = audioChoices.get(i);
+      XposedHelpers.callMethod(choice, "setSoundButtonSelectedState", s.audioOnly == only);
+      choice.setOnClickListener(
+          v -> {
+            s.audioOnly = only;
+            for (int n = 0; n < audioChoices.size(); n++)
+              XposedHelpers.callMethod(
+                  audioChoices.get(n), "setSoundButtonSelectedState", (n == 0) == only);
+          });
+    }
     int initial = checked(partial) ? 1 : 0;
     s.mode = initial;
     targetBox.setVisibility(View.GONE);
@@ -255,7 +266,7 @@ final class SamsungRecordingUi {
 
   private static void load(HookRuntime rt, State s) {
     int generation = s.generation;
-    s.message.setText(R.string.loading_targets);
+    s.message.setText(s.strings.getString(R.string.loading_targets));
     s.rows.setAdapter(null);
     updateStart(s);
     Bundle query = new Bundle();
@@ -269,16 +280,17 @@ final class SamsungRecordingUi {
           protected void onReceiveResult(int code, Bundle result) {
             if (generation != s.generation) return;
             if (code != android.app.Activity.RESULT_OK) {
-              s.message.setText(R.string.target_unavailable);
+              s.message.setText(s.strings.getString(R.string.target_unavailable));
               return;
             }
             ArrayList<Bundle> entries = result.getParcelableArrayList("entries", Bundle.class);
             s.entries.clear();
             if (entries != null) s.entries.addAll(entries);
             s.message.setText(
-                entries == null || entries.isEmpty()
-                    ? R.string.no_targets
-                    : R.string.choose_target);
+                s.strings.getString(
+                    entries == null || entries.isEmpty()
+                        ? R.string.no_targets
+                        : R.string.choose_target));
             render(s, "");
           }
         });
@@ -292,59 +304,71 @@ final class SamsungRecordingUi {
           .toLowerCase(Locale.ROOT)
           .contains(filter)) filtered.add(e);
     s.rows.setAdapter(
-        new androidx.recyclerview.widget.RecyclerView.Adapter<Row>() {
+        new BaseAdapter() {
           @Override
-          public Row onCreateViewHolder(ViewGroup parent, int type) {
-            MaterialButton b =
-                new MaterialButton(
-                    s.context,
-                    null,
-                    com.google.android.material.R.attr.materialButtonOutlinedStyle);
-            b.setTextSize(14);
-            b.setMaxLines(2);
-            b.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-            b.setCheckable(true);
-            b.setIconSize(dp(s.context, 28));
-            b.setIconTint(null);
-            b.setLayoutParams(
-                new androidx.recyclerview.widget.RecyclerView.LayoutParams(-1, dp(s.context, 58)));
-            return new Row(b);
+          public int getCount() {
+            return filtered.size();
           }
 
           @Override
-          public void onBindViewHolder(Row row, int position) {
+          public Object getItem(int position) {
+            return filtered.get(position);
+          }
+
+          @Override
+          public long getItemId(int position) {
+            return position;
+          }
+
+          @Override
+          public View getView(int position, View recycled, ViewGroup parent) {
             Bundle entry = filtered.get(position);
-            MaterialButton b = (MaterialButton) row.itemView;
-            String name = entry.getString("label", "");
-            String detail = entry.getString("detail", "");
-            b.setText(name + (detail.isEmpty() ? "" : "\n" + detail));
-            b.setChecked(Objects.equals(s.selected, entry.getString("id")));
-            b.setIcon(null);
+            LinearLayout row = new LinearLayout(s.context);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setMinimumHeight(dp(s.context, 60));
+            row.setPadding(dp(s.context, 8), dp(s.context, 6), dp(s.context, 8), dp(s.context, 6));
+            ImageView icon = new ImageView(s.context);
             try {
-              b.setIcon(
+              icon.setImageDrawable(
                   s.context.getPackageManager().getApplicationIcon(entry.getString("package", "")));
             } catch (Exception ignored) {
             }
-            b.setOnClickListener(
+            row.addView(icon, new LinearLayout.LayoutParams(dp(s.context, 32), dp(s.context, 32)));
+            TextView text = nativeText(s.context, s.modes.get(0));
+            String name = entry.getString("label", ""), detail = entry.getString("detail", "");
+            text.setText(name + (detail.isEmpty() ? "" : "\n" + detail));
+            text.setTextSize(14);
+            text.setMaxLines(2);
+            text.setEllipsize(TextUtils.TruncateAt.END);
+            text.setPadding(dp(s.context, 12), 0, dp(s.context, 8), 0);
+            row.addView(text, new LinearLayout.LayoutParams(0, -2, 1));
+            RadioButton radio = new RadioButton(s.context);
+            RadioButton model =
+                (RadioButton) XposedHelpers.getObjectField(s.modes.get(0), "radioButton");
+            radio.setButtonTintList(model.getButtonTintList());
+            radio.setChecked(Objects.equals(s.selected, entry.getString("id")));
+            radio.setClickable(false);
+            radio.setFocusable(false);
+            row.addView(radio, new LinearLayout.LayoutParams(-2, dp(s.context, 48)));
+            row.setOnClickListener(
                 v -> {
                   s.selected = entry.getString("id");
-                  s.message.setText(s.context.getString(R.string.selected_target, name));
+                  s.message.setText(s.strings.getString(R.string.selected_target, name));
                   notifyDataSetChanged();
                   updateStart(s);
                 });
-          }
-
-          @Override
-          public int getItemCount() {
-            return filtered.size();
+            return row;
           }
         });
   }
 
-  private static final class Row extends androidx.recyclerview.widget.RecyclerView.ViewHolder {
-    Row(View view) {
-      super(view);
-    }
+  private static TextView nativeText(Context c, View model) {
+    TextView text = new TextView(c);
+    TextView original = (TextView) XposedHelpers.getObjectField(model, "textView");
+    text.setTypeface(original.getTypeface());
+    text.setTextColor((int) XposedHelpers.getIntField(model, "unselectedColor"));
+    text.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, original.getTextSize());
+    return text;
   }
 
   static void updateStart(State s) {
