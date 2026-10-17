@@ -131,3 +131,16 @@ API 82のcompileOnly JAR、legacy manifest metadataとassets/xposed_initを除�
 引数変更、戻り値、原処理の省略、意図した拒否、例外とcleanup、反射のオーバーロード・継承・静的呼び出し、登録失敗時の部分解除を回帰テストする。配布チェックはmodern metadataと旧APIの混入を検査。ライセンス一覧のcompile-only参照も102へ更新した。
 
 API 102向けの単体テストはbefore/after adapter・反射・登録解除の15件を含む。rootなしのAndroid 16エミュレーターで起動・設定・ライセンス画面が起動し、UIテストBar8件／Capture4件成功。最初のBar実行はADBサーバー側の接続断で途中終了し、残り7件を再実行して成功。
+
+
+## 音声・自動復帰・API 102の最終実機確認（0.2.0）
+
+Samsungのアプリ対象・対象UIDの音声・メディアとマイクで実録画。speaker_media=ONではイヤホン接続／切断後も440Hzが継続した。OFFではスピーカー時の表示が「マイクのみ」、イヤホン接続時は「メディアとマイク」へ戻った。OFF録画は接続中に440Hzを維持し、切断後はその成分が低下してマイク収録が続いた。Samsung標準の48kHz stereo AACを保持し、独自PCMミキサーは含めない。ON/OFFの録画はそれぞれ13.36秒／73.6秒。保存は非同期のため、新しいファイル名の確定後に取得した。
+
+Android標準のアプリ対象・MIC_AND_INTERNALを実録画。別UIDの880Hzを並行再生しても対象440Hzが約508、880Hzは0.051未満で、マイクも有効だった。44.1kHz mono AACという標準の形式を維持する。AOSPのworkerは内部音声とマイクを混ぜ、Samsungのスピーカー時のみマイクにする分岐は存在しない。独自のゲイン・追加バッファを導入していない。主観的な遅延比較や全音声機器の品質保証までは行っていない。
+
+API 102版の署名済みreleaseを既存アプリへ上書きしてソフトリブート。解除後、設定画面を開く前にframework／SystemUI／SamsungがReadyへ復帰し、Vectorのmodern loaderとAPI登録を確認。Samsungの別画面の対象一覧・選択・開始・保存と、Android標準の対象Task録画・保存を再確認した。Samsungは4.22秒の対象アプリ録画と追加の全画面録画、AOSPは7.45秒の対象アプリ録画を保存した。対象Task／UIDはdumpsysで一致。AOSPは440Hzが約1522、880Hzは0.004未満だった（追加の別UID音はこの短い再試験では再生していない）。Samsungは標準の録音音量係数に従うため、メディア音量0では内部音声も低下する。音量7で440Hzを収録した。両ホストとframeworkに保護停止・例外はなかった。
+
+単体テスト39件とLint成功。API 102版のrootなし画面試験4件成功。配布用APKの非debuggable・検証Activity除外・modern metadata・旧API参照なし・ライセンス一覧・16KiB zipalign・v3署名を検証。
+
+終了時に録画停止を確認し、speaker_mediaをONへ戻した。元のスピーカー音量・回転設定・Samsung開始画面の全画面／メディア選択を復元。映像／別UID音声のテストAPKと一時dex・UI dumpを実機から削除し、保存済み録画は残した。Android標準UIでの録画ごとの音声範囲の画面比較と、右側キャストアイコンの表示比較は今回も未実施。
