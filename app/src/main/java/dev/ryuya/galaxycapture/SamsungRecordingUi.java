@@ -438,7 +438,9 @@ final class SamsungRecordingUi {
     List<Bundle> filtered = new ArrayList<>();
     String filter = query.strip().toLowerCase(Locale.ROOT);
     boolean search = !filter.isEmpty();
+    Set<String> shownApps = new HashSet<>();
     for (Bundle e : s.entries) {
+      if (s.pickerMode == 2 && !shownApps.add(e.getString("package", ""))) continue;
       if (s.pickerMode != 3 && !s.allApps && !search && e.getInt("recent_order", -1) < 0) continue;
       if ((e.getString("label", "")
               + " "

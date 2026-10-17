@@ -5,7 +5,6 @@ import static org.junit.Assert.*;
 import android.app.UiAutomation;
 import android.os.Bundle;
 import android.os.SystemClock;
-import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import androidx.test.platform.app.InstrumentationRegistry;
 import java.util.function.Predicate;
@@ -36,27 +35,33 @@ public class NativePickerNavigationTest {
     assertTrue(edit.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, query));
     await(text(R.string.search_results));
     String label = strings.getString(R.string.app_name);
-    click(n -> label.contentEquals(n.getText()));
+    click(n -> android.text.TextUtils.equals(label, n.getText()));
     String summary = strings.getString(R.string.selected_target, label) + "  ›";
-    await(n -> summary.contentEquals(n.getText()));
+    await(n -> android.text.TextUtils.equals(summary, n.getText()));
     assertNull(find(n -> "android.widget.EditText".contentEquals(n.getClassName())));
     assertTrue(find(n -> "android:id/button1".equals(n.getViewIdResourceName())).isEnabled());
-    click(n -> summary.contentEquals(n.getText()));
+    click(n -> android.text.TextUtils.equals(summary, n.getText()));
     await(text(R.string.choose_app));
     click(text(R.string.back_to_recording));
-    await(n -> summary.contentEquals(n.getText()));
+    await(n -> android.text.TextUtils.equals(summary, n.getText()));
     assertTrue(find(n -> "android:id/button1".equals(n.getViewIdResourceName())).isEnabled());
     click(text(R.string.area_app));
     await(text(R.string.choose_app));
-    ui.injectInputEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK), true);
-    ui.injectInputEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BACK), true);
-    await(n -> summary.contentEquals(n.getText()));
+    // Exercise Android's normal Back dispatch, including predictive-back compatible dialogs.
+    try (var command =
+        new android.os.ParcelFileDescriptor.AutoCloseInputStream(
+            ui.executeShellCommand("input keyevent KEYCODE_BACK"))) {
+      command.readAllBytes();
+    } catch (java.io.IOException error) {
+      throw new AssertionError(error);
+    }
+    await(n -> android.text.TextUtils.equals(summary, n.getText()));
     assertNull(find(n -> "android.widget.EditText".contentEquals(n.getClassName())));
   }
 
   private Predicate<AccessibilityNodeInfo> text(int resource) {
     String expected = strings.getString(resource);
-    return n -> expected.contentEquals(n.getText());
+    return n -> android.text.TextUtils.equals(expected, n.getText());
   }
 
   private AccessibilityNodeInfo await(Predicate<AccessibilityNodeInfo> predicate) {
