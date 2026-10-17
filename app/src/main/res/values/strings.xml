@@ -34,4 +34,14 @@
 <string name="target_unavailable">Targets are unavailable. Check module status.</string>
 <string name="no_targets">No selectable windows. Open the app first.</string>
 <string name="selected_target">Selected: %1$s</string>
+<string name="choose_app">Choose an app</string>
+<string name="choose_window">Choose a window</string>
+<string name="back_to_recording">Back</string>
+<string name="recent_apps">Recent apps</string>
+<string name="other_apps">Other apps</string>
+<string name="all_apps">All apps</string>
+<string name="search_results">Search results</string>
+<string name="no_recent_apps">No recent apps. Search or choose Other apps.</string>
+<string name="no_search_results">No matching apps.</string>
+<string name="change_target">Change target: %1$s</string>
 </resources>

@@ -34,4 +34,14 @@
 <string name="target_unavailable">対象を取得できません。モジュールの状態を確認してください。</string>
 <string name="no_targets">選べるウィンドウがありません。先にアプリを開いてください。</string>
 <string name="selected_target">選択中：%1$s</string>
+<string name="choose_app">録画するアプリ</string>
+<string name="choose_window">録画するウィンドウ</string>
+<string name="back_to_recording">戻る</string>
+<string name="recent_apps">最近使ったアプリ</string>
+<string name="other_apps">その他のアプリ</string>
+<string name="all_apps">すべてのアプリ</string>
+<string name="search_results">検索結果</string>
+<string name="no_recent_apps">履歴にアプリがありません。検索または「その他のアプリ」から選べます。</string>
+<string name="no_search_results">一致するアプリがありません。</string>
+<string name="change_target">録画対象を変更：%1$s</string>
 </resources>

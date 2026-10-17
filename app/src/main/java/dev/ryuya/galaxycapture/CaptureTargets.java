@@ -3,6 +3,7 @@ package dev.ryuya.galaxycapture;
 import static dev.ryuya.galaxycapture.FrameworkHooks.*;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.*;
 import android.content.pm.*;
 import android.os.*;
@@ -20,6 +21,7 @@ final class CaptureTargets {
       String pkg,
       String label,
       String detail,
+      int recentOrder,
       Object window,
       Object activity,
       long expires) {}
@@ -109,8 +111,17 @@ final class CaptureTargets {
     Object wm = wm();
     List<Object> tasks = new ArrayList<>(), visible = new ArrayList<>();
     List<Candidate> result = new ArrayList<>();
+    List<ActivityManager.RecentTaskInfo> recents;
+    Map<Integer, Integer> recentOrder = new HashMap<>();
     long expires = SystemClock.elapsedRealtime() + 300000;
     synchronized (field(wm, "mGlobalLock")) {
+      Object recentTasks = field(field(wm, "mAtmService"), "mRecentTasks");
+      // Native Recents filtering excludes home, unavailable tasks and other users.
+      recents =
+          new ArrayList<>(
+              (List<ActivityManager.RecentTaskInfo>)
+                  call(recentTasks, "getRecentTasksImpl", 100, 2, owner / 100000, owner, true));
+      for (int i = 0; i < recents.size(); i++) recentOrder.put(recents.get(i).taskId, i);
       Object root = field(wm, "mRoot");
       Object dc = call(root, "getDisplayContent", 0);
       visit(dc, tasks, visible, Collections.newSetFromMap(new IdentityHashMap<>()));
@@ -132,36 +143,40 @@ final class CaptureTargets {
                   info.packageName,
                   info.name,
                   title,
+                  recentOrder.getOrDefault(XposedHelpers.getIntField(task, "mTaskId"), -1),
                   w,
-                  activity,
-                  expires));
-        }
-      } else {
-        Set<Integer> ids = new HashSet<>();
-        for (Object task : tasks) {
-          Object activity = call(task, "getTopMostActivity");
-          if (activity == null) continue;
-          Object w = call(activity, "findMainWindow", false);
-          if (!allowedWindow(w)) continue;
-          int id = XposedHelpers.getIntField(task, "mTaskId");
-          if (!ids.add(id)) continue;
-          ActivityInfo info = (ActivityInfo) field(activity, "info");
-          if (info.applicationInfo.uid / 100000 != owner / 100000) continue;
-          result.add(
-              new Candidate(
-                  UUID.randomUUID().toString(),
-                  info.applicationInfo.uid,
-                  id,
-                  info.packageName,
-                  info.name,
-                  "",
-                  null,
                   activity,
                   expires));
         }
       }
     }
     PackageManager pm = rt.context.getPackageManager();
+    if (!windows) {
+      for (int i = 0; i < recents.size(); i++) {
+        ActivityManager.RecentTaskInfo task = recents.get(i);
+        if (XposedHelpers.getIntField(task, "userId") != owner / 100000) continue;
+        ComponentName component = task.topActivity != null ? task.topActivity : task.baseActivity;
+        if (component == null && task.baseIntent != null)
+          component = task.baseIntent.getComponent();
+        if (component == null) continue;
+        try {
+          ApplicationInfo info = pm.getApplicationInfo(component.getPackageName(), 0);
+          result.add(
+              new Candidate(
+                  UUID.randomUUID().toString(),
+                  info.uid,
+                  task.taskId,
+                  component.getPackageName(),
+                  component.getClassName(),
+                  "",
+                  i,
+                  null,
+                  null,
+                  expires));
+        } catch (PackageManager.NameNotFoundException ignored) {
+        }
+      }
+    }
     Set<String> running = new HashSet<>();
     for (Candidate c : result) running.add(c.pkg);
     if (!windows) {
@@ -177,6 +192,7 @@ final class CaptureTargets {
                 info.packageName,
                 info.name,
                 "",
+                -1,
                 null,
                 null,
                 expires));
@@ -196,17 +212,30 @@ final class CaptureTargets {
         entry.putString("detail", detail);
         entry.putString("package", c.pkg);
         entry.putInt("uid", c.uid);
+        entry.putInt("recent_order", c.recentOrder);
+        entry.putString(
+            "key",
+            c.pkg + ":" + c.task + ":" + (windows ? System.identityHashCode(c.window) : "app"));
         entries.add(entry);
         cache.put(c.id, c);
       } catch (PackageManager.NameNotFoundException ignored) {
       }
     }
     entries.sort(
-        Comparator.comparing(b -> b.getString("label", ""), java.text.Collator.getInstance()));
-    catalogs.put(owner, cache);
+        Comparator.<Bundle>comparingInt(
+                b ->
+                    b.getInt("recent_order", -1) < 0 ? Integer.MAX_VALUE : b.getInt("recent_order"))
+            .thenComparing(b -> b.getString("label", ""), java.text.Collator.getInstance()));
+    // Reopening/cancelling the picker must not invalidate the previously confirmed choice.
+    Map<String, Candidate> retained = catalogs.computeIfAbsent(owner, ignored -> new HashMap<>());
+    retained.values().removeIf(c -> c.expires < SystemClock.elapsedRealtime());
+    retained.putAll(cache);
     rt.worker.postDelayed(
         () -> {
-          if (catalogs.get(owner) == cache) catalogs.remove(owner);
+          Map<String, Candidate> current = catalogs.get(owner);
+          if (current == null) return;
+          current.values().removeIf(c -> c.expires <= SystemClock.elapsedRealtime());
+          if (current.isEmpty()) catalogs.remove(owner);
         },
         300000);
     Bundle out = new Bundle();

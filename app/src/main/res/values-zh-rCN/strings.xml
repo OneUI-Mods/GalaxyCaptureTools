@@ -34,4 +34,14 @@
 <string name="target_unavailable">无法获取目标，请检查模块状态。</string>
 <string name="no_targets">没有可选窗口，请先打开应用。</string>
 <string name="selected_target">已选：%1$s</string>
+<string name="choose_app">选择录制应用</string>
+<string name="choose_window">选择录制窗口</string>
+<string name="back_to_recording">返回</string>
+<string name="recent_apps">最近使用的应用</string>
+<string name="other_apps">其他应用</string>
+<string name="all_apps">所有应用</string>
+<string name="search_results">搜索结果</string>
+<string name="no_recent_apps">没有最近使用的应用。请搜索或选择其他应用。</string>
+<string name="no_search_results">没有匹配的应用。</string>
+<string name="change_target">更改录制目标：%1$s</string>
 </resources>

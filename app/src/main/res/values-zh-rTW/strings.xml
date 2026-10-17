@@ -34,4 +34,14 @@
 <string name="target_unavailable">無法取得目標，請檢查模組狀態。</string>
 <string name="no_targets">沒有可選視窗，請先開啟應用程式。</string>
 <string name="selected_target">已選：%1$s</string>
+<string name="choose_app">選擇錄製應用程式</string>
+<string name="choose_window">選擇錄製視窗</string>
+<string name="back_to_recording">返回</string>
+<string name="recent_apps">最近使用的應用程式</string>
+<string name="other_apps">其他應用程式</string>
+<string name="all_apps">所有應用程式</string>
+<string name="search_results">搜尋結果</string>
+<string name="no_recent_apps">沒有最近使用的應用程式。請搜尋或選擇其他應用程式。</string>
+<string name="no_search_results">沒有符合的應用程式。</string>
+<string name="change_target">變更錄製目標：%1$s</string>
 </resources>

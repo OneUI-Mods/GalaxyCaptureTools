@@ -9,18 +9,23 @@ import android.widget.*;
 import de.robv.android.xposed.*;
 import java.util.*;
 
-/** Lives inside Samsung's existing recording-area section; never opens another picker Activity. */
+/** Samsung-native recording choices and a separate, reversible target-selection dialog. */
 final class SamsungRecordingUi {
   static final class State {
     final Object controller;
     final Context context;
     final LinearLayout targetBox;
-    final ListView rows;
-    final TextView message;
+    final TextView summary;
+    ListView rows;
+    TextView message, section, other;
+    Dialog picker;
     final List<View> modes;
     final Context strings;
     final List<Bundle> entries = new ArrayList<>();
     String selected;
+    String selectedLabel, selectedKey;
+    boolean allApps;
+    int pickerMode;
     String query = "";
     int mode, generation;
     boolean audioOnly;
@@ -29,15 +34,13 @@ final class SamsungRecordingUi {
         Object controller,
         Context context,
         LinearLayout targetBox,
-        ListView rows,
-        TextView message,
+        TextView summary,
         List<View> modes,
         Context strings) {
       this.controller = controller;
       this.context = context;
       this.targetBox = targetBox;
-      this.rows = rows;
-      this.message = message;
+      this.summary = summary;
       this.modes = modes;
       this.strings = strings;
     }
@@ -137,28 +140,11 @@ final class SamsungRecordingUi {
     LinearLayout targetBox = new LinearLayout(c);
     targetBox.setOrientation(LinearLayout.VERTICAL);
     area.addView(targetBox, new LinearLayout.LayoutParams(-1, -2));
-    TextView message = nativeText(host, full);
-    message.setText(strings.getString(R.string.choose_target));
-    message.setPadding(0, dp(c, 12), 0, dp(c, 8));
-    targetBox.addView(message);
-    EditText edit = new EditText(host);
-    edit.setHint(strings.getString(R.string.search_apps));
-    edit.setSingleLine(true);
-    edit.setTextSize(14);
-    edit.setTypeface(message.getTypeface());
-    targetBox.addView(edit, new LinearLayout.LayoutParams(-1, -2));
-    ListView rows = new ListView(host);
-    rows.setDivider(null);
-    targetBox.addView(rows, new LinearLayout.LayoutParams(-1, dp(c, 180)));
-    // The outer native dialog scrolls too. Let the bounded list handle drags within its rows.
-    rows.setOnTouchListener(
-        (v, e) -> {
-          v.getParent()
-              .requestDisallowInterceptTouchEvent(
-                  e.getActionMasked() != MotionEvent.ACTION_UP
-                      && e.getActionMasked() != MotionEvent.ACTION_CANCEL);
-          return false;
-        });
+    TextView summary = nativeText(host, full);
+    summary.setPadding(0, dp(c, 12), 0, dp(c, 12));
+    summary.setMinimumHeight(dp(c, 48));
+    selectable(summary);
+    targetBox.addView(summary);
     TextView audioLabel = nativeText(host, full);
     audioLabel.setText(strings.getString(R.string.audio_scope));
     audioLabel.setPadding(0, dp(c, 16), 0, dp(c, 8));
@@ -186,7 +172,7 @@ final class SamsungRecordingUi {
       audio.addView(choice, new LinearLayout.LayoutParams(0, -2, 1));
       audioChoices.add(choice);
     }
-    State s = new State(controller, c, targetBox, rows, message, modes, strings);
+    State s = new State(controller, c, targetBox, summary, modes, strings);
     states.put(controller, new java.lang.ref.WeakReference<>(s));
     s.audioOnly = rt.options.appAudioOnly();
     for (int i = 0; i < audioChoices.size(); i++) {
@@ -204,6 +190,8 @@ final class SamsungRecordingUi {
     int initial = checked(partial) ? 1 : 0;
     s.mode = initial;
     targetBox.setVisibility(View.GONE);
+    Runnable selectFull = () -> fullClick.onClick(full);
+    summary.setOnClickListener(v -> openPicker(rt, s, s.mode, selectFull));
     for (int i = 0; i < modes.size(); i++) {
       final int mode = i;
       XposedHelpers.callMethod(modes.get(i), "setScreenButtonSelectedState", i == initial);
@@ -211,31 +199,159 @@ final class SamsungRecordingUi {
           .get(i)
           .setOnClickListener(
               v -> {
-                if (mode == s.mode) return;
+                if (mode >= 2) {
+                  openPicker(rt, s, mode, selectFull);
+                  return;
+                }
                 if (mode == 1) partialClick.onClick(partial);
                 else fullClick.onClick(full);
                 s.mode = mode;
                 s.selected = null;
-                s.entries.clear();
-                s.generation++;
-                edit.setText("");
-                for (int n = 0; n < modes.size(); n++)
-                  XposedHelpers.callMethod(modes.get(n), "setScreenButtonSelectedState", n == mode);
-                targetBox.setVisibility(mode >= 2 ? View.VISIBLE : View.GONE);
-                if (mode >= 2) load(rt, s);
-                else updateStart(s);
+                s.selectedLabel = null;
+                refreshSelection(s);
               });
     }
-    edit.addTextChangedListener(
-        new TextWatcher() {
-          public void beforeTextChanged(CharSequence x, int a, int count, int after) {}
+  }
 
-          public void onTextChanged(CharSequence x, int start, int before, int count) {
-            render(s, x.toString());
-          }
+  private static void refreshSelection(State s) {
+    for (int i = 0; i < s.modes.size(); i++)
+      XposedHelpers.callMethod(s.modes.get(i), "setScreenButtonSelectedState", i == s.mode);
+    s.targetBox.setVisibility(s.mode >= 2 ? View.VISIBLE : View.GONE);
+    s.summary.setText(s.strings.getString(R.string.selected_target, s.selectedLabel) + "  ›");
+    s.summary.setContentDescription(s.strings.getString(R.string.change_target, s.selectedLabel));
+    updateStart(s);
+  }
 
-          public void afterTextChanged(Editable e) {}
-        });
+  private static void selectable(View v) {
+    android.util.TypedValue value = new android.util.TypedValue();
+    if (v.getContext()
+        .getTheme()
+        .resolveAttribute(android.R.attr.selectableItemBackground, value, true))
+      v.setBackgroundResource(value.resourceId);
+  }
+
+  private static void openPicker(HookRuntime rt, State s, int mode, Runnable selectFull) {
+    if (s.picker != null) return;
+    try {
+      Dialog parent =
+          (Dialog) XposedHelpers.getObjectField(s.controller, "mSoundSettingSuggestionPopup");
+      if (parent == null || !parent.isShowing()) return;
+      // Use the very same Samsung AlertDialog builder and theme as the recording start dialog.
+      int theme =
+          s.context
+              .getResources()
+              .getIdentifier(
+                  "RecorderDialogAlertTheme", "style", "com.samsung.android.app.smartcapture");
+      Object builder =
+          XposedHelpers.newInstance(
+              XposedHelpers.findClass("M4.c", s.controller.getClass().getClassLoader()),
+              s.context,
+              theme);
+      Object params = XposedHelpers.getObjectField(builder, "f6412b");
+      Context themed = (Context) XposedHelpers.getObjectField(params, "f22202a");
+      XposedHelpers.setObjectField(
+          params,
+          "f22205d",
+          s.strings.getString(mode == 3 ? R.string.choose_window : R.string.choose_app));
+      XposedHelpers.setObjectField(params, "i", s.strings.getString(R.string.back_to_recording));
+      LinearLayout content = new LinearLayout(themed);
+      content.setOrientation(LinearLayout.VERTICAL);
+      content.setPadding(dp(themed, 24), 0, dp(themed, 24), 0);
+      s.pickerMode = mode;
+      s.query = "";
+      s.allApps = false;
+      s.entries.clear();
+      EditText search = new EditText(themed);
+      search.setHint(s.strings.getString(R.string.search_apps));
+      search.setSingleLine(true);
+      search.setTextSize(16);
+      search.setTypeface(s.summary.getTypeface());
+      search.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH);
+      content.addView(search, new LinearLayout.LayoutParams(-1, dp(themed, 56)));
+      LinearLayout heading = new LinearLayout(themed);
+      heading.setGravity(Gravity.CENTER_VERTICAL);
+      s.section = nativeText(themed, s.modes.get(0));
+      s.section.setTextSize(14);
+      heading.addView(s.section, new LinearLayout.LayoutParams(0, dp(themed, 48), 1));
+      s.section.setGravity(Gravity.CENTER_VERTICAL);
+      s.other = nativeText(themed, s.modes.get(0));
+      s.other.setTextSize(14);
+      s.other.setGravity(Gravity.CENTER);
+      s.other.setPadding(dp(themed, 12), 0, 0, 0);
+      s.other.setTextColor(XposedHelpers.getIntField(s.modes.get(0), "selectedColor"));
+      selectable(s.other);
+      heading.addView(s.other, new LinearLayout.LayoutParams(-2, dp(themed, 48)));
+      content.addView(heading);
+      FrameLayout listBox = new FrameLayout(themed);
+      s.rows = new ListView(themed);
+      s.rows.setDivider(null);
+      s.rows.setClipToPadding(false);
+      s.rows.setPadding(0, 0, 0, dp(themed, 8));
+      listBox.addView(s.rows, new FrameLayout.LayoutParams(-1, -1));
+      s.message = nativeText(themed, s.modes.get(0));
+      s.message.setTextSize(14);
+      s.message.setGravity(Gravity.CENTER);
+      s.message.setPadding(dp(themed, 8), dp(themed, 16), dp(themed, 8), dp(themed, 16));
+      listBox.addView(s.message, new FrameLayout.LayoutParams(-1, -1));
+      s.rows.setEmptyView(s.message);
+      content.addView(listBox, new LinearLayout.LayoutParams(-1, 0, 1));
+      int available = themed.getResources().getDisplayMetrics().heightPixels;
+      int height =
+          Math.max(
+              dp(themed, 180),
+              Math.min(dp(themed, 520), (int) (available * .82f) - dp(themed, 140)));
+      FrameLayout frame = new FrameLayout(themed);
+      frame.addView(content, new FrameLayout.LayoutParams(-1, height));
+      XposedHelpers.setObjectField(params, "f22214o", frame);
+      Dialog picker = (Dialog) XposedHelpers.callMethod(builder, "f");
+      s.picker = picker;
+      Window window = picker.getWindow();
+      window.setType(parent.getWindow().getAttributes().type);
+      window.setSoftInputMode(
+          WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+              | WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+      picker.setCanceledOnTouchOutside(false);
+      View decor = parent.getWindow().getDecorView();
+      View.OnAttachStateChangeListener lifecycle =
+          new View.OnAttachStateChangeListener() {
+            public void onViewAttachedToWindow(View v) {}
+
+            public void onViewDetachedFromWindow(View v) {
+              picker.dismiss();
+            }
+          };
+      decor.addOnAttachStateChangeListener(lifecycle);
+      picker.setOnDismissListener(
+          d -> {
+            decor.removeOnAttachStateChangeListener(lifecycle);
+            if (s.picker != picker) return;
+            s.picker = null;
+            s.generation++;
+            if (decor.isAttachedToWindow()) parent.show();
+          });
+      s.other.setOnClickListener(
+          v -> {
+            s.allApps = !s.allApps;
+            render(s, s.query, selectFull);
+          });
+      search.addTextChangedListener(
+          new TextWatcher() {
+            public void beforeTextChanged(CharSequence x, int a, int count, int after) {}
+
+            public void onTextChanged(CharSequence x, int start, int before, int count) {
+              render(s, x.toString(), selectFull);
+            }
+
+            public void afterTextChanged(Editable e) {}
+          });
+      picker.show();
+      // hide() keeps Samsung's cancellation/service lifecycle intact; dismiss() would abort setup.
+      parent.hide();
+      load(rt, s, selectFull);
+    } catch (Throwable error) {
+      if (s.picker != null) s.picker.dismiss();
+      rt.fail(error);
+    }
   }
 
   private static View.OnClickListener listener(View v) {
@@ -266,13 +382,20 @@ final class SamsungRecordingUi {
     return choice;
   }
 
-  private static void load(HookRuntime rt, State s) {
-    int generation = s.generation;
+  private static void load(HookRuntime rt, State s, Runnable selectFull) {
+    int generation = ++s.generation;
     s.message.setText(s.strings.getString(R.string.loading_targets));
     s.rows.setAdapter(null);
-    updateStart(s);
+    updateHeading(s);
     Bundle query = new Bundle();
-    query.putBoolean("windows", s.mode == 3);
+    query.putBoolean("windows", s.pickerMode == 3);
+    boolean[] received = {false};
+    main.postDelayed(
+        () -> {
+          if (!received[0] && generation == s.generation && s.picker != null)
+            s.message.setText(s.strings.getString(R.string.target_unavailable));
+        },
+        5000);
     TargetBridge.request(
         rt,
         "list",
@@ -280,7 +403,8 @@ final class SamsungRecordingUi {
         new ResultReceiver(main) {
           @Override
           protected void onReceiveResult(int code, Bundle result) {
-            if (generation != s.generation) return;
+            if (generation != s.generation || s.picker == null) return;
+            received[0] = true;
             if (code != android.app.Activity.RESULT_OK) {
               s.message.setText(s.strings.getString(R.string.target_unavailable));
               return;
@@ -288,24 +412,50 @@ final class SamsungRecordingUi {
             ArrayList<Bundle> entries = result.getParcelableArrayList("entries", Bundle.class);
             s.entries.clear();
             if (entries != null) s.entries.addAll(entries);
-            s.message.setText(
-                s.strings.getString(
-                    entries == null || entries.isEmpty()
-                        ? R.string.no_targets
-                        : R.string.choose_target));
-            render(s, s.query);
+            render(s, s.query, selectFull);
           }
         });
   }
 
-  private static void render(State s, String query) {
+  private static void updateHeading(State s) {
+    boolean search = !s.query.isBlank();
+    s.section.setText(
+        s.strings.getString(
+            s.pickerMode == 3
+                ? R.string.area_window
+                : search
+                    ? R.string.search_results
+                    : s.allApps ? R.string.all_apps : R.string.recent_apps));
+    s.other.setVisibility(s.pickerMode == 3 || search ? View.GONE : View.VISIBLE);
+    s.other.setText(s.strings.getString(s.allApps ? R.string.recent_apps : R.string.other_apps));
+  }
+
+  private static void render(State s, String query, Runnable selectFull) {
     s.query = query;
+    updateHeading(s);
     List<Bundle> filtered = new ArrayList<>();
-    String filter = query.toLowerCase(Locale.ROOT);
-    for (Bundle e : s.entries)
-      if ((e.getString("label", "") + " " + e.getString("detail", ""))
+    String filter = query.strip().toLowerCase(Locale.ROOT);
+    boolean search = !filter.isEmpty();
+    for (Bundle e : s.entries) {
+      if (s.pickerMode != 3 && !s.allApps && !search && e.getInt("recent_order", -1) < 0) continue;
+      if ((e.getString("label", "")
+              + " "
+              + e.getString("detail", "")
+              + " "
+              + e.getString("package", ""))
           .toLowerCase(Locale.ROOT)
           .contains(filter)) filtered.add(e);
+    }
+    if (s.allApps || search)
+      filtered.sort(
+          Comparator.comparing(b -> b.getString("label", ""), java.text.Collator.getInstance()));
+    s.message.setText(
+        s.strings.getString(
+            search
+                ? R.string.no_search_results
+                : s.pickerMode == 3
+                    ? R.string.no_targets
+                    : s.allApps ? R.string.no_search_results : R.string.no_recent_apps));
     s.rows.setAdapter(
         new BaseAdapter() {
           @Override
@@ -326,39 +476,46 @@ final class SamsungRecordingUi {
           @Override
           public View getView(int position, View recycled, ViewGroup parent) {
             Bundle entry = filtered.get(position);
-            LinearLayout row = new LinearLayout(s.context);
+            Context c = parent.getContext();
+            LinearLayout row = new LinearLayout(c);
             row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setMinimumHeight(dp(s.context, 60));
-            row.setPadding(dp(s.context, 8), dp(s.context, 6), dp(s.context, 8), dp(s.context, 6));
-            ImageView icon = new ImageView(s.context);
+            row.setMinimumHeight(dp(c, 64));
+            row.setPadding(dp(c, 4), dp(c, 8), dp(c, 4), dp(c, 8));
+            selectable(row);
+            ImageView icon = new ImageView(c);
             try {
               icon.setImageDrawable(
-                  s.context.getPackageManager().getApplicationIcon(entry.getString("package", "")));
+                  c.getPackageManager().getApplicationIcon(entry.getString("package", "")));
             } catch (Exception ignored) {
             }
-            row.addView(icon, new LinearLayout.LayoutParams(dp(s.context, 32), dp(s.context, 32)));
-            TextView text = nativeText(s.context, s.modes.get(0));
+            row.addView(icon, new LinearLayout.LayoutParams(dp(c, 36), dp(c, 36)));
+            TextView text = nativeText(c, s.modes.get(0));
             String name = entry.getString("label", ""), detail = entry.getString("detail", "");
             text.setText(name + (detail.isEmpty() ? "" : "\n" + detail));
-            text.setTextSize(14);
+            text.setTextSize(16);
             text.setMaxLines(2);
             text.setEllipsize(TextUtils.TruncateAt.END);
-            text.setPadding(dp(s.context, 12), 0, dp(s.context, 8), 0);
+            text.setPadding(dp(c, 16), 0, dp(c, 8), 0);
             row.addView(text, new LinearLayout.LayoutParams(0, -2, 1));
-            RadioButton radio = new RadioButton(s.context);
+            RadioButton radio = new RadioButton(c);
             RadioButton model =
                 (RadioButton) XposedHelpers.getObjectField(s.modes.get(0), "radioButton");
             radio.setButtonTintList(model.getButtonTintList());
-            radio.setChecked(Objects.equals(s.selected, entry.getString("id")));
+            radio.setChecked(
+                s.mode == s.pickerMode && Objects.equals(s.selectedKey, entry.getString("key")));
             radio.setClickable(false);
             radio.setFocusable(false);
-            row.addView(radio, new LinearLayout.LayoutParams(-2, dp(s.context, 48)));
+            radio.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            row.addView(radio, new LinearLayout.LayoutParams(-2, dp(c, 48)));
             row.setOnClickListener(
                 v -> {
+                  selectFull.run();
+                  s.mode = s.pickerMode;
                   s.selected = entry.getString("id");
-                  s.message.setText(s.strings.getString(R.string.selected_target, name));
-                  notifyDataSetChanged();
-                  updateStart(s);
+                  s.selectedLabel = name;
+                  s.selectedKey = entry.getString("key");
+                  refreshSelection(s);
+                  if (s.picker != null) s.picker.dismiss();
                 });
             return row;
           }

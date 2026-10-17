@@ -34,4 +34,14 @@
 <string name="target_unavailable">대상을 가져올 수 없습니다. 모듈 상태를 확인하세요.</string>
 <string name="no_targets">선택할 창이 없습니다. 앱을 먼저 여세요.</string>
 <string name="selected_target">선택: %1$s</string>
+<string name="choose_app">녹화할 앱</string>
+<string name="choose_window">녹화할 창</string>
+<string name="back_to_recording">뒤로</string>
+<string name="recent_apps">최근 앱</string>
+<string name="other_apps">다른 앱</string>
+<string name="all_apps">모든 앱</string>
+<string name="search_results">검색 결과</string>
+<string name="no_recent_apps">최근 앱이 없습니다. 검색하거나 다른 앱을 선택하세요.</string>
+<string name="no_search_results">일치하는 앱이 없습니다.</string>
+<string name="change_target">녹화 대상 변경: %1$s</string>
 </resources>
