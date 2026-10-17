@@ -33,7 +33,10 @@ public class SettingsHierarchyTest {
                   R.string.speaker_media,
                   R.string.hide_duplicate_indicator,
                   R.string.exclude_capture_controls,
-                  R.string.hide_recording_controls
+                  R.string.hide_recording_controls,
+                  R.string.secure_recording,
+                  R.string.secure_screenshot,
+                  R.string.recording_volume
                 }) {
               MaterialSwitch control = find(a.getWindow().getDecorView(), a.getString(label));
               assertNotNull(control);

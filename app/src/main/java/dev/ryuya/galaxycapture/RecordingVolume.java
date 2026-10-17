@@ -12,7 +12,9 @@ final class RecordingVolume {
       Class<?> type = Reflect.findClass(base + name, loader);
       Hooks.hookAllMethods(type, "createAudioRecord", new HookCallback() {
         @Override protected void beforeHookedMethod(MethodHookParam p) {
-          Reflect.setAdditionalInstanceField(p.thisObject, LEVELS, AudioLevels.from(rt.options));
+          // A route change may rebuild AudioRecord on the same recorder instance.
+          if (Reflect.getAdditionalInstanceField(p.thisObject, LEVELS) == null)
+            Reflect.setAdditionalInstanceField(p.thisObject, LEVELS, AudioLevels.from(rt.options));
         }
       });
     }

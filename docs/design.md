@@ -184,4 +184,10 @@ MainActivityの機能タブを共通／Galaxyへ再構成。共通はrotation・
 - Samsungの:settings processにあるSettingsFragmentへホストのSESL SwitchPreferenceCompat/SeekBarPreferenceを挿入する。設定はmodule providerの同じallowlist・SharedPreferencesで管理し、native側とmodule側の表示も設定変更通知で更新する。初期化時は書き込まない。
 - captureの同期処理はHostGuardの操作カウンタで囲み、既存録画のactive状態を上書きしない。
 
-検証結果は実機確認後に追記する。
+実機で次を確認した。
+- SystemUIの通常スクショはOFFで保存されず、ONで4色のFLAG_SECUREテスト画面を保存できた。shell screencapは同じ状態でも黒のまま。
+- AOSP録画はスクショON/録画OFFで黒、スクショOFF/録画ONで4色を保存。Samsungのアプリ限定録画でも保護テスト画面を保存できた。
+- Samsungの対象アプリ音声のみ＋メディアとマイクで、media100/mic0とmedia25/mic0を比較。440Hz振幅比0.24805、別UIDの880Hzはいずれも対象音の0.1%未満。media0/mic0は復号PCMが全サンプル0。48kHz/stereo/AACのnative形式を保持した。検証では本体音量を設定するコマンドを使用していない。
+- Native音声ページで23%/77%を保存し、module storeで同じ値を確認。Native masterのOFF/ONと、module UIのcountdown変更をNative UIへ戻って確認。カテゴリの戻る→元画面への戻るが機能する。
+- 初期クリック時にobfuscated OnPreferenceClickListener.bをObject callback扱いする不具合を検出し修正。HostCallbacksの型・Objectメソッド分離・例外隔離の回帰テスト3件を追加。
+- カスタム画面はSettingsFragmentのPreferenceScreenを切り替えて表示する。純正のRecyclerView・丸角装飾・左右余白・FloatingToolbarLayout・インセットを再利用し、独自のDialogやtoolbarを作らない。全体スイッチ行は純正settings_sub_layoutからinflateし、横向きの重みや余白もホストのリソースを使う。4カテゴリに分割し、純正ツールバーとシステムBackでカテゴリ→カスタム一覧→元の設定へ戻す。破棄時は再bindを予約しない。

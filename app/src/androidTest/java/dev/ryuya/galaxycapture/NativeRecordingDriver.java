@@ -12,7 +12,7 @@ public class NativeRecordingDriver {
   @Test
   public void enterTargetQuery() {
     var instrumentation = InstrumentationRegistry.getInstrumentation();
-    var root = instrumentation.getUiAutomation().getRootInActiveWindow();
+    var root = captureRoot();
     assertNotNull(root);
     assertEquals("com.samsung.android.app.smartcapture", root.getPackageName().toString());
     var edit = findEdit(root);
@@ -27,7 +27,7 @@ public class NativeRecordingDriver {
   @Test
   public void inspectCaptureControls() {
     var instrumentation = InstrumentationRegistry.getInstrumentation();
-    var root = instrumentation.getUiAutomation().getRootInActiveWindow();
+    var root = captureRoot();
     assertNotNull(root);
     String pkg = root.getPackageName().toString();
     assertTrue(pkg.equals("com.android.systemui")
@@ -43,7 +43,8 @@ public class NativeRecordingDriver {
       var matches = root.findAccessibilityNodeInfosByText(label);
       AccessibilityNodeInfo target = null;
       for (var node : matches)
-        if (node.getText() != null && node.getText().toString().equals(label)) {
+        if ((node.getText() != null && node.getText().toString().equals(label))
+            || (node.getContentDescription() != null && node.getContentDescription().toString().equals(label))) {
           target = node;
           break;
         }
@@ -54,6 +55,33 @@ public class NativeRecordingDriver {
     }
   }
 
+  @Test public void setVisibleRecordingLevel() {
+    var root = captureRoot();
+    assertNotNull(root);
+    assertEquals("com.samsung.android.app.smartcapture", String.valueOf(root.getPackageName()));
+    String label = InstrumentationRegistry.getArguments().getString("label");
+    var nodes = root.findAccessibilityNodeInfosByText(label);
+    AccessibilityNodeInfo row = null;
+    for (var node : nodes)
+      if (label.equals(String.valueOf(node.getText()))) { row = node; break; }
+    assertNotNull(row);
+    AccessibilityNodeInfo slider = null;
+    while (row != null && slider == null) { slider = findRange(row); row = row.getParent(); }
+    assertNotNull(slider);
+    Bundle value = new Bundle();
+    value.putFloat(AccessibilityNodeInfo.ACTION_ARGUMENT_PROGRESS_VALUE,
+        Float.parseFloat(InstrumentationRegistry.getArguments().getString("value")));
+    assertTrue(slider.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_PROGRESS.getId(), value));
+  }
+  private AccessibilityNodeInfo findRange(AccessibilityNodeInfo node) {
+    if (node.getRangeInfo() != null && node.isEnabled()) return node;
+    for (int i = 0; i < node.getChildCount(); i++) {
+      var child = node.getChild(i);
+      if (child != null) { var result = findRange(child); if (result != null) return result; }
+    }
+    return null;
+  }
+
   @Test
   public void restoreCaptureControlDefaults() {
     var context = InstrumentationRegistry.getInstrumentation().getTargetContext();
@@ -61,6 +89,25 @@ public class NativeRecordingDriver {
         .putBoolean("countdown", true).putBoolean("hide_recording_controls", false)
         .putBoolean("exclude_capture_controls", true).commit());
     Startup.notifyHosts(context);
+  }
+
+  private AccessibilityNodeInfo captureRoot() {
+    var automation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
+    var info = automation.getServiceInfo();
+    info.flags |= android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
+    automation.setServiceInfo(info);
+    AccessibilityNodeInfo active = null;
+    for (int attempt = 0; attempt < 30; attempt++) {
+      for (var window : automation.getWindows()) {
+        var root = window.getRoot();
+        if (root != null && "com.samsung.android.app.smartcapture".equals(String.valueOf(root.getPackageName()))) return root;
+      }
+      active = automation.getRootInActiveWindow();
+      if (active != null && ("com.android.systemui".equals(String.valueOf(active.getPackageName()))
+          || "dev.ryuya.galaxycapture".equals(String.valueOf(active.getPackageName())))) return active;
+      android.os.SystemClock.sleep(100);
+    }
+    return active;
   }
 
   private void describe(AccessibilityNodeInfo node, StringBuilder lines) {

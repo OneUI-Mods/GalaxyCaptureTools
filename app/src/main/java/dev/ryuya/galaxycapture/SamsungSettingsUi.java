@@ -1,23 +1,29 @@
 package dev.ryuya.galaxycapture;
 
-import android.app.Dialog;
+import android.app.Activity;
 import android.content.*;
-import android.graphics.drawable.ColorDrawable;
 import android.os.*;
-import android.util.TypedValue;
 import android.view.*;
 import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.graphics.drawable.Drawable;
 import dev.ryuya.galaxycapture.hook.*;
 import java.util.*;
 
-/** A native Samsung settings entry opens a separate, categorized custom settings window. */
+/** Custom pages reuse Samsung's preference surface, floating toolbar, insets and rounding. */
 final class SamsungSettingsUi {
   private static final String STATE = "galaxycapture.settings";
   private static final String KEY = "galaxycapture.";
+  private static final String ACTIVITY_STATE = STATE + ".activity";
   static void install(HookRuntime rt, ClassLoader loader) {
     Class<?> fragment = Reflect.findClass("com.samsung.android.app.settings.SettingsFragment", loader);
+    Class<?> activity = Reflect.findClass("com.samsung.android.app.settings.SettingsActivity", loader);
+    Hooks.hookAllMethods(activity, "onOptionsItemSelected", new HookCallback() {
+      @Override protected void beforeHookedMethod(MethodHookParam p) {
+        State state = (State) Reflect.getAdditionalInstanceField(p.thisObject, ACTIVITY_STATE);
+        if (state != null && state.active && ((MenuItem) p.args[0]).getItemId() == android.R.id.home) {
+          state.back(); p.setResult(true);
+        }
+      }
+    });
     Hooks.hookAllMethods(fragment, "onCreate", new HookCallback() {
       @Override protected void afterHookedMethod(MethodHookParam p) {
         if (p.hasThrowable()) return;
@@ -43,7 +49,7 @@ final class SamsungSettingsUi {
     Hooks.hookAllMethods(fragment, "onDestroy", new HookCallback() {
       @Override protected void beforeHookedMethod(MethodHookParam p) {
         State state = (State) Reflect.getAdditionalInstanceField(p.thisObject, STATE);
-        if (state != null) { state.pause(); state.close(); }
+        if (state != null) { state.pause(); state.destroy(); }
       }
     });
   }
@@ -54,10 +60,14 @@ final class SamsungSettingsUi {
     final Context host, strings;
     final Map<String, Object> preferences = new LinkedHashMap<>();
     final Map<String, Object> screens = new LinkedHashMap<>();
-    boolean registered, master;
-    Object manager, toolbar, list;
-    View switchBar;
-    Dialog dialog;
+    boolean registered, master, active;
+    Object manager, originalScreen;
+    View list, switchBar, switchRow;
+    ViewGroup listParent;
+    ViewGroup.LayoutParams originalListParams;
+    LinearLayout customContainer;
+    CharSequence originalTitle;
+    final android.window.OnBackInvokedCallback backCallback = this::back;
     String currentPage = "home";
     final BroadcastReceiver updates = new BroadcastReceiver() {
       @Override public void onReceive(Context c, Intent i) { refresh(); }
@@ -101,7 +111,7 @@ final class SamsungSettingsUi {
       Reflect.callMethod(pref, "setOnPreferenceClickListener", listener);
     }
     void buildPages() {
-      manager = Reflect.newInstance(Reflect.findClass("androidx.preference.PreferenceManager", loader), host);
+      manager = Reflect.callMethod(fragment, "getPreferenceManager");
       Object home = screen("home");
       String[][] groups = {
         {"video", "rotation", "ignore_half_turns", "single_window", "secure_recording"},
@@ -142,22 +152,28 @@ final class SamsungSettingsUi {
         }
       }
     }
+    int resource(String type, String name) {
+      int id = host.getResources().getIdentifier(name, type, host.getPackageName());
+      if (id == 0) throw new IllegalStateException("Samsung resource unavailable: " + type + "/" + name);
+      return id;
+    }
     void open() {
+      if (active) return;
       try {
-        if (dialog != null && dialog.isShowing()) return;
         if (screens.isEmpty()) buildPages();
-        dialog = new Dialog(host);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        var root = new LinearLayout(host); root.setOrientation(LinearLayout.VERTICAL);
-        TypedValue color = new TypedValue(); host.getTheme().resolveAttribute(android.R.attr.colorBackground, color, true);
-        root.setBackgroundColor(color.data);
-        toolbar = Reflect.newInstance(Reflect.findClass("androidx.appcompat.widget.Toolbar", loader), host, null);
-        Reflect.callMethod(toolbar, "setTitle", strings.getText(R.string.custom_settings_entry));
-        Reflect.callMethod(toolbar, "setNavigationIcon", backIcon());
-        Reflect.callMethod(toolbar, "setNavigationContentDescription", strings.getText(R.string.custom_back));
-        Reflect.callMethod(toolbar, "setNavigationOnClickListener", (View.OnClickListener) v -> back());
-        root.addView((View) toolbar, new LinearLayout.LayoutParams(-1, dp(64)));
-        switchBar = (View) Reflect.newInstance(Reflect.findClass("androidx.appcompat.widget.SeslSwitchBar", loader), host, null);
+        Activity activity = (Activity) host;
+        originalScreen = Reflect.callMethod(fragment, "getPreferenceScreen");
+        originalTitle = activity.getTitle();
+        list = (View) Reflect.callMethod(fragment, "getListView");
+        listParent = (ViewGroup) list.getParent();
+        originalListParams = list.getLayoutParams();
+        // Inflate the same switch-bar row used by Samsung's own sub-settings. Its theme,
+        // landscape weights, background and spacing remain owned by the host resources.
+        View nativeSubPage = activity.getLayoutInflater().inflate(resource("layout", "settings_sub_layout"), null);
+        switchBar = nativeSubPage.findViewById(resource("id", "switch_bar"));
+        if (switchBar == null) throw new IllegalStateException("Samsung switch bar unavailable");
+        switchRow = (View) switchBar.getParent();
+        ((ViewGroup) switchRow.getParent()).removeView(switchRow);
         Reflect.callMethod(switchBar, "setSessionDescription", strings.getString(R.string.enabled));
         Class<?> listener = Reflect.findClass("androidx.appcompat.widget.SeslSwitchBar$OnSwitchChangeListener", loader);
         Reflect.callMethod(switchBar, "c", HostCallbacks.create(loader, listener, (proxy, method, args) -> {
@@ -165,53 +181,31 @@ final class SamsungSettingsUi {
           if (!save(update)) refresh();
           return null;
         }));
-        var scope = new TextView(host); scope.setText(strings.getText(R.string.enabled));
-        scope.setTextSize(12); scope.setPadding(dp(24), 0, dp(24), dp(4));
-        root.addView(scope);
-        root.addView(switchBar, new LinearLayout.LayoutParams(-1, -2));
-        list = Reflect.newInstance(Reflect.findClass("androidx.recyclerview.widget.RecyclerView", loader), host, null);
-        Reflect.callMethod(list, "setLayoutManager", Reflect.newInstance(Reflect.findClass("androidx.recyclerview.widget.LinearLayoutManager", loader), 1));
-        root.addView((View) list, new LinearLayout.LayoutParams(-1, 0, 1));
-        dialog.setContentView(root);
-        dialog.setOnKeyListener((d, key, event) -> {
-          if (key != KeyEvent.KEYCODE_BACK) return false;
-          if (event.getAction() == KeyEvent.ACTION_UP) back();
-          return true;
-        });
-        dialog.setOnDismissListener(d -> {
-          if (screens.get(currentPage) != null) Reflect.callMethod(screens.get(currentPage), "onDetached");
-          if (list != null) Reflect.callMethod(list, "setAdapter", (Object) null);
-          switchBar = null; toolbar = null; list = null; dialog = null;
-        });
-        Window window = dialog.getWindow();
-        window.setBackgroundDrawable(new ColorDrawable(color.data));
-        window.setDecorFitsSystemWindows(false);
-        root.setOnApplyWindowInsetsListener((v, insets) -> {
-          var bounds = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
-          v.setPadding(bounds.left, bounds.top, bounds.right, bounds.bottom); return insets;
-        });
-        dialog.show();
-        window.setLayout(-1, -1); root.requestApplyInsets();
-        // Own the dialog's predictive/system back callback without changing the parent Activity.
-        window.getOnBackInvokedDispatcher().registerOnBackInvokedCallback(0, this::back);
-        showPage("home"); refresh();
+        customContainer = new LinearLayout(host);
+        customContainer.setOrientation(LinearLayout.VERTICAL);
+        int position = listParent.indexOfChild(list);
+        listParent.removeView(list);
+        customContainer.addView(switchRow, new LinearLayout.LayoutParams(-1, -2));
+        customContainer.addView(list, new LinearLayout.LayoutParams(-1, 0, 1));
+        listParent.addView(customContainer, position, originalListParams);
+        active = true;
+        Reflect.setAdditionalInstanceField(activity, ACTIVITY_STATE, this);
+        activity.getOnBackInvokedDispatcher().registerOnBackInvokedCallback(1, backCallback);
+        showPage("home");
       } catch (Throwable e) {
         Hooks.log("GalaxyCapture custom settings: " + e); close();
       }
     }
-    Drawable backIcon() {
-      int attr = host.getResources().getIdentifier("homeAsUpIndicator", "attr", host.getPackageName());
-      if (attr != 0) {
-        var values = host.obtainStyledAttributes(new int[] {attr});
-        try { Drawable drawable = values.getDrawable(0); if (drawable != null) return drawable; }
-        finally { values.recycle(); }
-      }
-      return strings.getResources().getDrawable(R.drawable.ic_back, host.getTheme());
+    void title(CharSequence title) {
+      Activity activity = (Activity) host;
+      activity.setTitle(title);
+      Object actionBar = Reflect.callMethod(activity, "getSupportActionBar");
+      if (actionBar != null) Reflect.callMethod(actionBar, "p", title);
+      View collapsing = activity.findViewById(resource("id", "collapsing_toolbar"));
+      if (collapsing != null) Reflect.callMethod(collapsing, "setTitle", title);
     }
-
     void showPage(String name) {
-      if (list == null) return;
-      if (screens.get(currentPage) != null) Reflect.callMethod(screens.get(currentPage), "onDetached");
+      if (!active) return;
       currentPage = name;
       int title = switch (name) {
         case "video" -> R.string.custom_video;
@@ -220,14 +214,37 @@ final class SamsungSettingsUi {
         case "screenshots" -> R.string.section_screenshot;
         default -> R.string.custom_settings_entry;
       };
-      Reflect.callMethod(toolbar, "setTitle", strings.getText(title));
-      Object screen = screens.get(name);
-      Reflect.callMethod(screen, "onAttached");
-      Reflect.callMethod(list, "setAdapter", Reflect.newInstance(Reflect.findClass("androidx.preference.PreferenceGroupAdapter", loader), screen));
+      title(strings.getText(title));
+      Reflect.callMethod(fragment, "setPreferenceScreen", screens.get(name));
+      // The original list retains Samsung's divider, rounded corners, horizontal fill,
+      // floating-toolbar linkage, scroll behaviour and accessibility semantics.
+      list.post(() -> Reflect.callMethod(list, "scrollToPosition", 0));
       refresh();
     }
     void back() { if (currentPage.equals("home")) close(); else showPage("home"); }
-    void close() { if (dialog != null) dialog.dismiss(); }
+    void close() {
+      if (active) {
+        active = false;
+        ((Activity) host).getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback);
+        Reflect.setAdditionalInstanceField(host, ACTIVITY_STATE, null);
+        Reflect.callMethod(fragment, "setPreferenceScreen", originalScreen);
+        title(originalTitle);
+      }
+      if (customContainer != null && customContainer.getParent() == listParent) {
+        int position = listParent.indexOfChild(customContainer);
+        customContainer.removeView(list);
+        listParent.removeView(customContainer);
+        listParent.addView(list, position, originalListParams);
+      }
+      switchBar = null; switchRow = null; customContainer = null; list = null;
+    }
+    void destroy() {
+      if (active) ((Activity) host).getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback);
+      active = false;
+      Reflect.setAdditionalInstanceField(host, ACTIVITY_STATE, null);
+      // The fragment view is already destroyed here: never schedule a new preference bind.
+      switchBar = null; switchRow = null; customContainer = null; list = null;
+    }
     boolean save(Bundle update) {
       try { host.getContentResolver().call(ConfigProvider.URI, "native_settings", null, update); return true; }
       catch (Throwable e) { Hooks.log("GalaxyCapture settings save: " + e); return false; }
@@ -260,6 +277,5 @@ final class SamsungSettingsUi {
       refresh();
     }
     void pause() { if (registered) host.unregisterReceiver(updates); registered = false; }
-    int dp(int value) { return Math.round(value * host.getResources().getDisplayMetrics().density); }
   }
 }
