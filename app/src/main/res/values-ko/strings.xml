@@ -96,4 +96,13 @@
     <string name="custom_settings_title">Galaxy Capture Tools · 사용자 설정</string>
     <string name="master_on">켜짐</string>
     <string name="master_off">꺼짐</string>
+    <string name="custom_settings_entry">사용자 설정</string>
+    <string name="custom_settings_summary">Samsung 기본 설정과 별도로 Galaxy Capture Tools 확장을 조절합니다.</string>
+    <string name="custom_video">영상</string>
+    <string name="custom_controls">녹화 시작 및 조작</string>
+    <string name="custom_video_detail">회전, 창 고정 및 녹화 제한</string>
+    <string name="custom_audio_detail">앱 오디오 범위, 스피커 동작 및 녹화 음량</string>
+    <string name="custom_controls_detail">영역 선택, 카운트다운, 표시 및 도구 모음</string>
+    <string name="custom_screenshot_detail">스크린샷 제한 및 조작 UI 제외</string>
+    <string name="custom_back">뒤로</string>
 </resources>

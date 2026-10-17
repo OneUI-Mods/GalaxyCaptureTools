@@ -96,4 +96,13 @@
     <string name="custom_settings_title">Galaxy Capture Tools · Custom settings</string>
     <string name="master_on">On</string>
     <string name="master_off">Off</string>
+    <string name="custom_settings_entry">Custom settings</string>
+    <string name="custom_settings_summary">Galaxy Capture Tools extensions, separate from Samsung defaults</string>
+    <string name="custom_video">Video</string>
+    <string name="custom_controls">Recording start and controls</string>
+    <string name="custom_video_detail">Rotation, window lock, recording restrictions</string>
+    <string name="custom_audio_detail">App audio scope, speaker behavior, recording levels</string>
+    <string name="custom_controls_detail">Area choices, countdown, recording indicators and toolbar</string>
+    <string name="custom_screenshot_detail">Screenshot restrictions and capture UI exclusion</string>
+    <string name="custom_back">Back</string>
 </resources>

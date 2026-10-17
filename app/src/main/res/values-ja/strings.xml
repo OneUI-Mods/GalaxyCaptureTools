@@ -96,4 +96,13 @@
     <string name="custom_settings_title">Galaxy Capture Tools · カスタム設定</string>
     <string name="master_on">ON</string>
     <string name="master_off">OFF</string>
+    <string name="custom_settings_entry">カスタム設定</string>
+    <string name="custom_settings_summary">Galaxy Capture Toolsの追加機能。純正の設定とは別に変更できます。</string>
+    <string name="custom_video">映像</string>
+    <string name="custom_controls">録画の開始・操作</string>
+    <string name="custom_video_detail">回転・ウィンドウ固定・録画の制限解除</string>
+    <string name="custom_audio_detail">対象アプリの音声・スピーカー時の動作・録画用の音量</string>
+    <string name="custom_controls_detail">エリアの選択肢・カウントダウン・アイコンと操作バー</string>
+    <string name="custom_screenshot_detail">スクショの制限解除・操作UIの映り込み</string>
+    <string name="custom_back">戻る</string>
 </resources>
