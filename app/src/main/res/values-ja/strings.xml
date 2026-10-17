@@ -1,7 +1,7 @@
 <resources>
 <string name="app_name">Galaxy Capture Tools</string>
 <string name="intro">端末を回しても動画の枠はそのままに。Galaxyの録画開始画面でアプリやウィンドウを選べます。設定の変更は次の録画から反映します。実験版：Android 16 / One UI 8.5、SM-S948Q。Vectorでシステムフレームワーク・SystemUI・Samsungキャプチャを対象に設定し、ソフトリブートしてください。</string>
-<string name="enabled">すべての録画拡張</string>
+<string name="enabled">すべてのカスタム機能</string>
 <string name="enabled_detail">全体スイッチです。OFF中は下の各機能を停止し、個別設定を操作できません。設定値は保存しておきます。</string>
 <string name="rotation">回転時の黒帯をなくす</string>
 <string name="rotation_detail">動画の幅と高さを開始時に固定し、端末に合わせて映像を90度回します。端末自体の向きは変更しません。</string>

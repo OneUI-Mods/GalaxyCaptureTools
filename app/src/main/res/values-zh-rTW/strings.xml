@@ -1,7 +1,7 @@
 <resources>
 <string name="app_name">Galaxy Capture Tools</string>
 <string name="intro">旋轉手機時保持影片畫幅不變。直接在 Galaxy 錄製開始畫面選擇應用程式或視窗。設定於下次錄製生效。實驗版：Android 16 / One UI 8.5，SM-S948Q。在 Vector 為系統框架、SystemUI 和三星截圖啟用模組後重新啟動手機。</string>
-<string name="enabled">所有錄影擴充</string>
+<string name="enabled">所有自訂功能</string>
 <string name="enabled_detail">總開關。關閉時停止下方功能並停用個別設定，保留設定值。</string>
 <string name="rotation">旋轉時移除黑邊</string>
 <string name="rotation_detail">保持開始時的影片寬高，隨裝置將畫面旋轉90度。不會改變手機本身的方向。</string>

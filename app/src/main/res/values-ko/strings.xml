@@ -1,7 +1,7 @@
 <resources>
 <string name="app_name">Galaxy Capture Tools</string>
 <string name="intro">휴대전화를 회전해도 동영상 크기를 유지합니다. Galaxy 녹화 시작 화면에서 앱이나 창을 선택합니다. 변경 사항은 다음 녹화부터 적용됩니다. 실험 버전: Android 16 / One UI 8.5, SM-S948Q. Vector에서 시스템 프레임워크, SystemUI, Samsung Capture를 활성화한 뒤 재부팅하세요.</string>
-<string name="enabled">모든 녹화 확장</string>
+<string name="enabled">모든 사용자 기능</string>
 <string name="enabled_detail">전체 스위치입니다. 끄면 아래 기능을 중지하고 개별 설정을 비활성화합니다. 설정값은 유지됩니다.</string>
 <string name="rotation">회전 시 검은 여백 제거</string>
 <string name="rotation_detail">시작 시 동영상 크기를 유지하고 휴대전화에 맞춰 영상을 90도 회전합니다. 기기 자체의 방향은 변경하지 않습니다.</string>

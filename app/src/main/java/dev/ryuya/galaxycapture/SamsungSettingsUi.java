@@ -7,6 +7,8 @@ import android.os.*;
 import android.util.TypedValue;
 import android.view.*;
 import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.graphics.drawable.Drawable;
 import dev.ryuya.galaxycapture.hook.*;
 import java.util.*;
 
@@ -151,7 +153,7 @@ final class SamsungSettingsUi {
         root.setBackgroundColor(color.data);
         toolbar = Reflect.newInstance(Reflect.findClass("androidx.appcompat.widget.Toolbar", loader), host, null);
         Reflect.callMethod(toolbar, "setTitle", strings.getText(R.string.custom_settings_entry));
-        Reflect.callMethod(toolbar, "setNavigationIcon", strings.getResources().getDrawable(R.drawable.ic_back, host.getTheme()));
+        Reflect.callMethod(toolbar, "setNavigationIcon", backIcon());
         Reflect.callMethod(toolbar, "setNavigationContentDescription", strings.getText(R.string.custom_back));
         Reflect.callMethod(toolbar, "setNavigationOnClickListener", (View.OnClickListener) v -> back());
         root.addView((View) toolbar, new LinearLayout.LayoutParams(-1, dp(64)));
@@ -163,6 +165,9 @@ final class SamsungSettingsUi {
           if (!save(update)) refresh();
           return null;
         }));
+        var scope = new TextView(host); scope.setText(strings.getText(R.string.enabled));
+        scope.setTextSize(12); scope.setPadding(dp(24), 0, dp(24), dp(4));
+        root.addView(scope);
         root.addView(switchBar, new LinearLayout.LayoutParams(-1, -2));
         list = Reflect.newInstance(Reflect.findClass("androidx.recyclerview.widget.RecyclerView", loader), host, null);
         Reflect.callMethod(list, "setLayoutManager", Reflect.newInstance(Reflect.findClass("androidx.recyclerview.widget.LinearLayoutManager", loader), 1));
@@ -194,6 +199,16 @@ final class SamsungSettingsUi {
         Hooks.log("GalaxyCapture custom settings: " + e); close();
       }
     }
+    Drawable backIcon() {
+      int attr = host.getResources().getIdentifier("homeAsUpIndicator", "attr", host.getPackageName());
+      if (attr != 0) {
+        var values = host.obtainStyledAttributes(new int[] {attr});
+        try { Drawable drawable = values.getDrawable(0); if (drawable != null) return drawable; }
+        finally { values.recycle(); }
+      }
+      return strings.getResources().getDrawable(R.drawable.ic_back, host.getTheme());
+    }
+
     void showPage(String name) {
       if (list == null) return;
       if (screens.get(currentPage) != null) Reflect.callMethod(screens.get(currentPage), "onDetached");
