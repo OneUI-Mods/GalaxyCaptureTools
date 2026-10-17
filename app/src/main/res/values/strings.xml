@@ -8,7 +8,7 @@
 <string name="samsung_app">Extend the recording area choices</string>
 <string name="samsung_app_detail">Add app and window targets directly to the Galaxy recording start dialog.</string>
 <string name="single_window">Allow individual window recording</string>
-<string name="single_window_detail">Add Window to the recording-area choices. Capture one selected window rather than following other screens in the same app.</string>
+<string name="single_window_detail">For Galaxy, adds the Window recording area. For Android (AOSP), locks app recording to the main window selected at the start. Other screens in the same app are not substituted.</string>
 <string name="status">Module status</string>
 <string name="not_loaded">Not loaded yet</string>
 <string name="refresh">Refresh status</string>
@@ -72,4 +72,16 @@
 <string name="hide_recording_controls_detail">Hide the floating recording controls on the phone. Stop recording from the notification or the Screen recorder tile in Quick Settings. Applies to the next recording.</string>
 <string name="countdown">Countdown before Galaxy recording</string>
 <string name="countdown_detail">When off, Galaxy recording starts without the three-second countdown after you confirm the recording area and sound. Applies to the next recording.</string>
+<string name="tab_common">Shared</string>
+<string name="tab_galaxy">Galaxy</string>
+<string name="scope_common_title">Android (AOSP) and Galaxy</string>
+<string name="scope_common_detail">Settings on this page apply to both recorders. Samsung Capture settings are in the Galaxy tab.</string>
+<string name="scope_galaxy_title">Samsung Capture only</string>
+<string name="scope_galaxy_detail">Applies to Galaxy recording and the controls shown after screenshots. Does not change Android (AOSP) recording controls.</string>
+<string name="section_video">Video and recording area</string>
+<string name="section_audio_display">Audio and status bar</string>
+<string name="section_recording_start">Starting a recording</string>
+<string name="section_audio">Audio</string>
+<string name="section_capture_controls">Recording controls and screenshots</string>
+<string name="master_scope_detail">Turn all extensions for Android (AOSP) and Galaxy on or off together.</string>
 </resources>

@@ -165,3 +165,12 @@ FloatingButtonView.initViewとガイドpopup、ServiceFragmentForStandAloneのre
 - カウントダウンOFFは開始操作完了から0.36秒の確認でprojectionが存在。ONは0.20／0.74／1.30／1.92／2.50秒で未開始、3.13秒で開始を確認した。両方とも純正の開始画面の確定操作を通す。
 - 署名をそろえたandroidTest APKで、実機releaseアプリの設定階層テスト1件成功。全体OFF中は追加3項目を含む全個別スイッチが無効で、保存値を保持した。UI取得中の1回のassertion失敗は別タスクのTail ADBが前面になったためで、アプリの例外ではない。純正の録画timerでUIAutomatorのidle待ちが失敗した際は古いdumpを使わず、UiAutomationの現在のrootを取得して操作した。
 - 終了時はカウントダウンON・操作バー表示・映り込み防止ONへ復元。既存の個別設定、回転設定、通知許可は変更せず、録画停止とテストAPKの削除を確認する。端末再起動は行わない。
+
+
+## 0.2.2: AOSP／Samsungの設定範囲を画面で区別
+
+MainActivityの機能タブを共通／Galaxyへ再構成。共通はrotation・ignore_half_turns・single_window・app_audio_only・hide_duplicate_indicator。Galaxyはsamsung_app・countdown・speaker_media・exclude_capture_controls・hide_recording_controls。適用範囲はMaterial 3のscope cardで表示し、Galaxy内は開始・音声・操作UIに分類する。AOSP専用の独立した設定値はないため、空のAOSPタブや共通スイッチの重複は作らない。single_windowの説明はAOSP側のメインウィンドウ固定も明記した。
+
+全体スイッチをTabLayoutの外、toolbarとtabsの間へ移した。どのタブでも表示される。scope説明は全体OFFでも読めるようindividualコンテナの外へ置き、個別スイッチの無効化と保存値の保持は既存の処理を使う。設定キー・初期値・hook・provider・録画処理は変更しない。全5言語へ反映。
+
+独立したAndroid 16 Play Store ARM64エミュレーターで画面試験5件成功。共通とGalaxyの項目配置、全体スイッチの表示維持、OFF時の全個別項目の無効化、設定値保持、タブ／scroll復元、ライセンス表示、起動設定の保持を確認。日本語・ダークテーマを描画して確認。単体テスト44件とLint成功。

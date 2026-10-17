@@ -36,68 +36,73 @@ public final class MainActivity extends AppCompatActivity {
     var bar = new MaterialToolbar(this);
     bar.setTitle(R.string.app_name);
     safe.addView(bar, new LinearLayout.LayoutParams(-1, dp(64)));
+    var master = new LinearLayout(this);
+    master.setOrientation(LinearLayout.VERTICAL);
+    master.setPadding(dp(20), 0, dp(20), 0);
+    safe.addView(master);
+    addSwitch(master, "enabled", R.string.enabled, R.string.master_scope_detail, false);
     pages = new SettingsTabs(this, safe, state);
-    LinearLayout recording = pages.page(R.string.tab_recording);
-    LinearLayout audioDisplay = pages.page(R.string.tab_audio_display);
+    LinearLayout common = pages.page(R.string.tab_common);
+    LinearLayout galaxy = pages.page(R.string.tab_galaxy);
     LinearLayout operation = pages.page(R.string.tab_status);
     LinearLayout information = pages.page(R.string.tab_about);
-    addSwitch(recording, "enabled", R.string.enabled, R.string.enabled_detail, false);
-    LinearLayout recordingOptions = new LinearLayout(this);
-    recordingOptions.setOrientation(LinearLayout.VERTICAL);
-    recording.addView(recordingOptions);
-    LinearLayout audioOptions = new LinearLayout(this);
-    audioOptions.setOrientation(LinearLayout.VERTICAL);
-    audioDisplay.addView(audioOptions);
-    individual.add(recordingOptions);
-    individual.add(audioOptions);
-    var heading = new com.google.android.material.textview.MaterialTextView(this);
-    heading.setText(R.string.individual_settings);
-    heading.setTextAppearance(
-        com.google.android.material.R.style.TextAppearance_Material3_TitleMedium);
-    heading.setPadding(dp(4), 0, 0, dp(12));
-    recordingOptions.addView(heading);
-    addSwitch(recordingOptions, "rotation", R.string.rotation, R.string.rotation_detail, true);
+    addScope(common, R.string.scope_common_title, R.string.scope_common_detail);
+    addScope(galaxy, R.string.scope_galaxy_title, R.string.scope_galaxy_detail);
+    LinearLayout commonOptions = new LinearLayout(this);
+    commonOptions.setOrientation(LinearLayout.VERTICAL);
+    common.addView(commonOptions);
+    LinearLayout galaxyOptions = new LinearLayout(this);
+    galaxyOptions.setOrientation(LinearLayout.VERTICAL);
+    galaxy.addView(galaxyOptions);
+    individual.add(commonOptions);
+    individual.add(galaxyOptions);
+    addHeading(commonOptions, R.string.section_video);
+    addSwitch(commonOptions, "rotation", R.string.rotation, R.string.rotation_detail, true);
     addSwitch(
-        recordingOptions,
+        commonOptions,
         "ignore_half_turns",
         R.string.ignore_half_turns,
         R.string.ignore_half_turns_detail,
         false);
     addSwitch(
-        recordingOptions, "samsung_app", R.string.samsung_app, R.string.samsung_app_detail, true);
-    addSwitch(
-        recordingOptions,
+        commonOptions,
         "single_window",
         R.string.single_window,
         R.string.single_window_detail,
         false);
-    addSwitch(recordingOptions, "countdown", R.string.countdown, R.string.countdown_detail, true);
+    addHeading(commonOptions, R.string.section_audio_display);
     addSwitch(
-        audioOptions,
+        commonOptions,
         "app_audio_only",
         R.string.app_audio_only,
         R.string.app_audio_only_detail,
         true);
     addSwitch(
-        audioOptions,
-        "speaker_media",
-        R.string.speaker_media,
-        R.string.speaker_media_detail,
-        true);
-    addSwitch(
-        audioOptions,
+        commonOptions,
         "hide_duplicate_indicator",
         R.string.hide_duplicate_indicator,
         R.string.hide_duplicate_indicator_detail,
         true);
+    addHeading(galaxyOptions, R.string.section_recording_start);
     addSwitch(
-        audioOptions,
+        galaxyOptions, "samsung_app", R.string.samsung_app, R.string.samsung_app_detail, true);
+    addSwitch(galaxyOptions, "countdown", R.string.countdown, R.string.countdown_detail, true);
+    addHeading(galaxyOptions, R.string.section_audio);
+    addSwitch(
+        galaxyOptions,
+        "speaker_media",
+        R.string.speaker_media,
+        R.string.speaker_media_detail,
+        true);
+    addHeading(galaxyOptions, R.string.section_capture_controls);
+    addSwitch(
+        galaxyOptions,
         "exclude_capture_controls",
         R.string.exclude_capture_controls,
         R.string.exclude_capture_controls_detail,
         true);
     addSwitch(
-        audioOptions,
+        galaxyOptions,
         "hide_recording_controls",
         R.string.hide_recording_controls,
         R.string.hide_recording_controls_detail,
@@ -149,6 +154,40 @@ public final class MainActivity extends AppCompatActivity {
     information.addView(notice);
     pages.restore();
     showStatus();
+  }
+
+  private void addScope(LinearLayout parent, int title, int detail) {
+    var card = new MaterialCardView(this);
+    card.setCardBackgroundColor(
+        com.google.android.material.color.MaterialColors.getColor(
+            parent, com.google.android.material.R.attr.colorSurfaceContainer));
+    var body = new LinearLayout(this);
+    body.setOrientation(LinearLayout.VERTICAL);
+    body.setPadding(dp(16), dp(16), dp(16), dp(16));
+    var label = new com.google.android.material.textview.MaterialTextView(this);
+    label.setText(title);
+    label.setTextAppearance(
+        com.google.android.material.R.style.TextAppearance_Material3_TitleMedium);
+    androidx.core.view.ViewCompat.setAccessibilityHeading(label, true);
+    body.addView(label);
+    var description = new com.google.android.material.textview.MaterialTextView(this);
+    description.setText(detail);
+    description.setPadding(0, dp(8), 0, 0);
+    body.addView(description);
+    card.addView(body);
+    var position = new LinearLayout.LayoutParams(-1, -2);
+    position.bottomMargin = dp(20);
+    parent.addView(card, position);
+  }
+
+  private void addHeading(LinearLayout parent, int title) {
+    var label = new com.google.android.material.textview.MaterialTextView(this);
+    label.setText(title);
+    label.setTextAppearance(
+        com.google.android.material.R.style.TextAppearance_Material3_TitleSmall);
+    label.setPadding(dp(4), dp(4), 0, dp(12));
+    androidx.core.view.ViewCompat.setAccessibilityHeading(label, true);
+    parent.addView(label);
   }
 
   private void addSwitch(LinearLayout parent, String key, int label, int detail, boolean def) {

@@ -8,7 +8,7 @@
 <string name="samsung_app">擴充錄製區域選項</string>
 <string name="samsung_app_detail">直接在 Galaxy 錄製開始畫面加入應用程式與視窗選擇。</string>
 <string name="single_window">啟用單一視窗錄製</string>
-<string name="single_window_detail">在錄製區域中加入視窗選項。固定所選視窗，不跟隨同一應用程式的其他畫面。</string>
+<string name="single_window_detail">在 Galaxy 的錄影範圍中新增視窗選項。在 Android 原生（AOSP）中，將應用程式錄影固定至開始時的主視窗，不切換至同一應用程式的其他畫面。</string>
 <string name="status">模組狀態</string>
 <string name="not_loaded">尚未載入</string>
 <string name="refresh">重新整理狀態</string>
@@ -72,4 +72,16 @@
 <string name="hide_recording_controls_detail">隱藏手機上的浮動錄影工具列。可透過通知或快速設定中的螢幕錄影磚停止錄影。從下一次錄影開始生效。</string>
 <string name="countdown">Galaxy 錄影前倒數</string>
 <string name="countdown_detail">關閉後，確認錄影區域和聲音即可開始錄影，略過三秒倒數。從下一次錄影開始生效。</string>
+<string name="tab_common">共用</string>
+<string name="tab_galaxy">Galaxy</string>
+<string name="scope_common_title">Android 原生（AOSP）與 Galaxy 共用</string>
+<string name="scope_common_detail">本頁設定對兩種螢幕錄影功能均生效。Samsung 擷取的專用設定位於 Galaxy 分頁。</string>
+<string name="scope_galaxy_title">僅限 Samsung 擷取</string>
+<string name="scope_galaxy_detail">適用於 Galaxy 螢幕錄影及截圖後的操作介面，不會變更 Android 原生（AOSP）的錄影操作。</string>
+<string name="section_video">畫面與錄影範圍</string>
+<string name="section_audio_display">音訊與狀態列</string>
+<string name="section_recording_start">開始錄影</string>
+<string name="section_audio">音訊</string>
+<string name="section_capture_controls">錄影操作與截圖</string>
+<string name="master_scope_detail">同時開啟或關閉 Android 原生（AOSP）與 Galaxy 的所有擴充功能。</string>
 </resources>

@@ -8,7 +8,7 @@
 <string name="samsung_app">녹화 영역 선택 확장</string>
 <string name="samsung_app_detail">Galaxy 녹화 시작 화면에 앱 및 창 선택을 추가합니다.</string>
 <string name="single_window">개별 창 녹화 사용</string>
-<string name="single_window_detail">녹화 영역에 창 선택을 추가합니다. 선택한 창을 유지하며 같은 앱의 다른 화면으로 이동하지 않습니다.</string>
+<string name="single_window_detail">Galaxy에서는 녹화 영역에 창을 추가합니다. Android 기본(AOSP)에서는 앱 녹화를 시작 시 선택한 기본 창에 고정하고 같은 앱의 다른 화면으로 전환하지 않습니다.</string>
 <string name="status">모듈 상태</string>
 <string name="not_loaded">아직 로드되지 않음</string>
 <string name="refresh">상태 새로고침</string>
@@ -72,4 +72,16 @@
 <string name="hide_recording_controls_detail">휴대전화의 플로팅 녹화 도구 모음을 숨깁니다. 알림 또는 빠른 설정의 화면 녹화 타일에서 녹화를 중지할 수 있습니다. 다음 녹화부터 적용됩니다.</string>
 <string name="countdown">Galaxy 녹화 전 카운트다운</string>
 <string name="countdown_detail">끄면 녹화 영역과 소리를 확인한 후 3초 카운트다운 없이 녹화가 시작됩니다. 다음 녹화부터 적용됩니다.</string>
+<string name="tab_common">공통</string>
+<string name="tab_galaxy">Galaxy</string>
+<string name="scope_common_title">Android 기본(AOSP) 및 Galaxy 공통</string>
+<string name="scope_common_detail">이 페이지의 설정은 두 녹화 기능에 모두 적용됩니다. Samsung 캡처 전용 설정은 Galaxy 탭에 있습니다.</string>
+<string name="scope_galaxy_title">Samsung 캡처 전용</string>
+<string name="scope_galaxy_detail">Galaxy 녹화 및 스크린샷 후 표시되는 조작 UI에 적용됩니다. Android 기본(AOSP) 녹화 조작은 변경하지 않습니다.</string>
+<string name="section_video">영상 및 녹화 영역</string>
+<string name="section_audio_display">오디오 및 상태 표시줄</string>
+<string name="section_recording_start">녹화 시작</string>
+<string name="section_audio">오디오</string>
+<string name="section_capture_controls">녹화 조작 및 스크린샷</string>
+<string name="master_scope_detail">Android 기본(AOSP) 및 Galaxy의 모든 확장 기능을 함께 켜거나 끕니다.</string>
 </resources>

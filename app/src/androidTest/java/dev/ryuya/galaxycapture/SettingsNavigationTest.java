@@ -9,12 +9,42 @@ import androidx.core.widget.NestedScrollView;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputEditText;
 import java.util.Map;
 import org.junit.Test;
 
 /** Navigation must preserve settings and hidden-page positions across Activity recreation. */
 public class SettingsNavigationTest {
+  @Test
+  public void recorderScopesSeparateControlsWhileMasterStaysVisible() {
+    Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+    Map<String, ?> before = context.getSharedPreferences("config", 0).getAll();
+    try (var screen = ActivityScenario.launch(MainActivity.class)) {
+      screen.onActivity(a -> {
+        View root = a.getWindow().getDecorView();
+        TabLayout tabs = a.findViewById(R.id.settings_tabs);
+        assertEquals(a.getString(R.string.tab_common), tabs.getTabAt(0).getText());
+        assertEquals(a.getString(R.string.tab_galaxy), tabs.getTabAt(1).getText());
+        MaterialSwitch master = toggle(root, a.getString(R.string.enabled));
+        assertTrue(master.isShown());
+        for (int text : new int[] {R.string.rotation, R.string.ignore_half_turns,
+            R.string.single_window, R.string.app_audio_only, R.string.hide_duplicate_indicator})
+          assertTrue(toggle(root, a.getString(text)).isShown());
+        assertFalse(toggle(root, a.getString(R.string.speaker_media)).isShown());
+        tabs.getTabAt(1).select();
+        assertTrue(master.isShown());
+        assertFalse(toggle(root, a.getString(R.string.rotation)).isShown());
+        assertFalse(toggle(root, a.getString(R.string.app_audio_only)).isShown());
+        for (int text : new int[] {R.string.samsung_app, R.string.countdown,
+            R.string.speaker_media, R.string.exclude_capture_controls,
+            R.string.hide_recording_controls})
+          assertTrue(toggle(root, a.getString(text)).isShown());
+      });
+    }
+    assertEquals(before, context.getSharedPreferences("config", 0).getAll());
+  }
+
   @Test
   public void tabsRestoreSelectionAndPagePositionWithoutChangingSettings() {
     Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
@@ -113,6 +143,17 @@ public class SettingsNavigationTest {
       for (int i = 0; i < group.getChildCount(); i++) {
         T found = shown(group.getChildAt(i), type);
         if (found != null) return found;
+      }
+    return null;
+  }
+
+  private static MaterialSwitch toggle(View root, String text) {
+    if (root instanceof MaterialSwitch toggle && toggle.getText().toString().equals(text))
+      return toggle;
+    if (root instanceof ViewGroup group)
+      for (int i = 0; i < group.getChildCount(); i++) {
+        MaterialSwitch result = toggle(group.getChildAt(i), text);
+        if (result != null) return result;
       }
     return null;
   }

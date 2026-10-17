@@ -8,7 +8,7 @@
 <string name="samsung_app">扩展录制区域选项</string>
 <string name="samsung_app_detail">直接在 Galaxy 录制开始界面添加应用和窗口选择。</string>
 <string name="single_window">启用单窗口录制</string>
-<string name="single_window_detail">在录制区域中添加窗口选项。固定所选窗口，不跟随同一应用的其他页面。</string>
+<string name="single_window_detail">在 Galaxy 中为录制区域添加窗口选项。在 Android 原生（AOSP）中，将应用录屏固定到开始时的主窗口，不切换到同一应用的其他页面。</string>
 <string name="status">模块状态</string>
 <string name="not_loaded">尚未加载</string>
 <string name="refresh">刷新状态</string>
@@ -72,4 +72,16 @@
 <string name="hide_recording_controls_detail">隐藏手机上的悬浮录屏工具栏。可通过通知或快捷设置中的录屏磁贴停止录屏。从下一次录屏开始生效。</string>
 <string name="countdown">Galaxy 录屏前倒计时</string>
 <string name="countdown_detail">关闭后，确认录屏区域和声音即可开始录屏，跳过三秒倒计时。从下一次录屏开始生效。</string>
+<string name="tab_common">通用</string>
+<string name="tab_galaxy">Galaxy</string>
+<string name="scope_common_title">Android 原生（AOSP）和 Galaxy 通用</string>
+<string name="scope_common_detail">本页设置对两种录屏功能均生效。Samsung 截取的专用设置位于 Galaxy 标签页。</string>
+<string name="scope_galaxy_title">仅限 Samsung 截取</string>
+<string name="scope_galaxy_detail">适用于 Galaxy 录屏及截图后的操作界面，不会更改 Android 原生（AOSP）的录屏操作。</string>
+<string name="section_video">画面和录制区域</string>
+<string name="section_audio_display">音频和状态栏</string>
+<string name="section_recording_start">开始录制</string>
+<string name="section_audio">音频</string>
+<string name="section_capture_controls">录屏操作和截图</string>
+<string name="master_scope_detail">同时开启或关闭 Android 原生（AOSP）和 Galaxy 的所有扩展功能。</string>
 </resources>

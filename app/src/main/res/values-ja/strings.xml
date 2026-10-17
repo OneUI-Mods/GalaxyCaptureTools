@@ -8,7 +8,7 @@
 <string name="samsung_app">録画するエリアの選択肢を増やす</string>
 <string name="samsung_app_detail">Galaxyの録画開始画面に、アプリ・ウィンドウの対象選択を追加します。</string>
 <string name="single_window">ウィンドウ単位の録画を使う</string>
-<string name="single_window_detail">「録画するエリア」にウィンドウを追加。選んだ1つのウィンドウに固定し、同じアプリの別画面へは対象を切り替えません。</string>
+<string name="single_window_detail">Galaxyでは「録画するエリア」にウィンドウを追加します。Android標準（AOSP）ではアプリ録画を開始時のメインウィンドウに固定し、同じアプリの別画面へ切り替えません。</string>
 <string name="status">モジュールの状態</string>
 <string name="not_loaded">まだ読み込まれていません</string>
 <string name="refresh">状態を更新</string>
@@ -72,4 +72,16 @@
 <string name="hide_recording_controls_detail">端末上のフローティング録画操作バーを非表示にします。録画は通知、またはクイック設定の「画面録画」から停止できます。次の録画から反映します。</string>
 <string name="countdown">Galaxy録画前のカウントダウン</string>
 <string name="countdown_detail">OFFでは録画するエリアと音声を確定したあと、3秒のカウントダウンを省略して録画を開始します。次の録画から反映します。</string>
+<string name="tab_common">共通</string>
+<string name="tab_galaxy">Galaxy</string>
+<string name="scope_common_title">Android標準（AOSP）・Galaxy共通</string>
+<string name="scope_common_detail">このページは両方の録画に適用します。Samsungキャプチャ専用の設定は「Galaxy」タブにあります。</string>
+<string name="scope_galaxy_title">Samsungキャプチャ専用</string>
+<string name="scope_galaxy_detail">Galaxy純正の画面録画と、スクリーンショット後の操作UIに適用します。Android標準（AOSP）の録画操作は変更しません。</string>
+<string name="section_video">映像・録画する範囲</string>
+<string name="section_audio_display">音声・ステータスバー</string>
+<string name="section_recording_start">録画の開始</string>
+<string name="section_audio">音声</string>
+<string name="section_capture_controls">録画操作・スクリーンショット</string>
+<string name="master_scope_detail">Android標準（AOSP）とGalaxyの全機能をまとめて切り替えます。</string>
 </resources>
