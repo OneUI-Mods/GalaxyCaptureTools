@@ -203,6 +203,10 @@ final class SamsungSettingsUi {
       if (actionBar != null) Reflect.callMethod(actionBar, "p", title);
       View collapsing = activity.findViewById(resource("id", "collapsing_toolbar"));
       if (collapsing != null) Reflect.callMethod(collapsing, "setTitle", title);
+      View toolbar = activity.findViewById(resource("id", "toolbar"));
+      if (toolbar != null) Reflect.callMethod(toolbar, "setTitle", title);
+      View appBar = activity.findViewById(resource("id", "app_bar"));
+      if (appBar != null) Reflect.callMethod(appBar, "setExpanded", true, false);
     }
     void showPage(String name) {
       if (!active) return;
