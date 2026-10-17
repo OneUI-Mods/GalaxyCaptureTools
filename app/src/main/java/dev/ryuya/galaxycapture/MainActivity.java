@@ -14,6 +14,10 @@ public final class MainActivity extends AppCompatActivity {
   private TextView status;
   private final java.util.List<LinearLayout> individual = new java.util.ArrayList<>();
   private SettingsTabs pages;
+  private boolean syncing;
+  private final java.util.Map<String, MaterialSwitch> toggles = new java.util.HashMap<>();
+  private final java.util.Map<String, com.google.android.material.slider.Slider> levels = new java.util.HashMap<>();
+  private final android.content.SharedPreferences.OnSharedPreferenceChangeListener changed = (p, key) -> syncSettings();
 
   @Override
   public void onCreate(Bundle state) {
@@ -70,6 +74,7 @@ public final class MainActivity extends AppCompatActivity {
         R.string.single_window,
         R.string.single_window_detail,
         false);
+    addSwitch(commonOptions, "secure_recording", R.string.secure_recording, R.string.secure_recording_detail, false);
     addHeading(commonOptions, R.string.section_audio_display);
     addSwitch(
         commonOptions,
@@ -94,6 +99,11 @@ public final class MainActivity extends AppCompatActivity {
         R.string.speaker_media,
         R.string.speaker_media_detail,
         true);
+    addSwitch(galaxyOptions, "recording_volume", R.string.recording_volume, R.string.recording_volume_detail, false);
+    addVolume(galaxyOptions, "media_volume", R.string.media_recording_volume);
+    addVolume(galaxyOptions, "mic_volume", R.string.mic_recording_volume);
+    addHeading(galaxyOptions, R.string.section_screenshot);
+    addSwitch(galaxyOptions, "secure_screenshot", R.string.secure_screenshot, R.string.secure_screenshot_detail, false);
     addHeading(galaxyOptions, R.string.section_capture_controls);
     addSwitch(
         galaxyOptions,
@@ -200,11 +210,13 @@ public final class MainActivity extends AppCompatActivity {
     toggle.setText(label);
     toggle.setTextSize(17);
     toggle.setChecked(getSharedPreferences("config", 0).getBoolean(key, def));
+    toggles.put(key, toggle);
     toggle.setOnCheckedChangeListener(
         (b, on) -> {
+          if (syncing) return;
           getSharedPreferences("config", 0).edit().putBoolean(key, on).apply();
           notifyConfig();
-          if (key.equals("enabled")) updateEnabled();
+          if (key.equals("enabled") || key.equals("recording_volume")) updateEnabled();
         });
     box.addView(toggle);
     var desc = new com.google.android.material.textview.MaterialTextView(this);
@@ -215,12 +227,51 @@ public final class MainActivity extends AppCompatActivity {
     parent.addView(card, lp);
   }
 
+  private void addVolume(LinearLayout parent, String key, int title) {
+    var card = new MaterialCardView(this);
+    var box = new LinearLayout(this);
+    box.setTag("recording-volume");
+    box.setOrientation(LinearLayout.VERTICAL);
+    box.setPadding(dp(16), dp(12), dp(16), dp(12));
+    var label = new com.google.android.material.textview.MaterialTextView(this);
+    int current = AudioLevels.clamp(getSharedPreferences("config", 0).getInt(key, 100));
+    label.setText(getString(title) + ": " + current + "%");
+    box.addView(label);
+    var slider = new com.google.android.material.slider.Slider(this);
+    levels.put(key, slider);
+    slider.setContentDescription(getString(title));
+    slider.setValueFrom(0); slider.setValueTo(100); slider.setStepSize(1); slider.setValue(current);
+    var pending = new Handler(Looper.getMainLooper());
+    Runnable notify = this::notifyConfig;
+    slider.addOnChangeListener((v, value, user) -> {
+      label.setText(getString(title) + ": " + Math.round(value) + "%");
+      if (user && !syncing) {
+        getSharedPreferences("config", 0).edit().putInt(key, Math.round(value)).apply();
+        pending.removeCallbacks(notify);
+        pending.postDelayed(notify, 200);
+      }
+    });
+    box.addView(slider);
+    card.addView(box);
+    var lp = new LinearLayout.LayoutParams(-1, -2); lp.bottomMargin = dp(16);
+    parent.addView(card, lp);
+  }
+
   private void updateEnabled() {
     boolean enabled = getSharedPreferences("config", 0).getBoolean("enabled", false);
     for (LinearLayout group : individual) {
       setChildrenEnabled(group, enabled);
       group.setAlpha(enabled ? 1f : .38f);
+      updateVolumeEnabled(group, enabled && getSharedPreferences("config", 0).getBoolean("recording_volume", false));
     }
+  }
+
+  private void updateVolumeEnabled(android.view.View view, boolean enabled) {
+    if ("recording-volume".equals(view.getTag())) {
+      setChildrenEnabled(view, enabled);
+      view.setAlpha(enabled ? 1f : .38f);
+    } else if (view instanceof android.view.ViewGroup g)
+      for (int i = 0; i < g.getChildCount(); i++) updateVolumeEnabled(g.getChildAt(i), enabled);
   }
 
   private void setChildrenEnabled(android.view.View view, boolean enabled) {
@@ -248,6 +299,30 @@ public final class MainActivity extends AppCompatActivity {
   protected void onSaveInstanceState(Bundle out) {
     if (pages != null) pages.save(out);
     super.onSaveInstanceState(out);
+  }
+
+  private void syncSettings() {
+    syncing = true;
+    try {
+      var prefs = getSharedPreferences("config", 0);
+      for (CaptureSettings.Toggle setting : CaptureSettings.all()) {
+        MaterialSwitch toggle = toggles.get(setting.key());
+        if (toggle != null) toggle.setChecked(prefs.getBoolean(setting.key(), setting.defaultValue()));
+      }
+      for (var entry : levels.entrySet())
+        entry.getValue().setValue(AudioLevels.clamp(prefs.getInt(entry.getKey(), 100)));
+      updateEnabled();
+    } finally { syncing = false; }
+  }
+
+  @Override protected void onStart() {
+    super.onStart();
+    getSharedPreferences("config", 0).registerOnSharedPreferenceChangeListener(changed);
+    syncSettings();
+  }
+  @Override protected void onStop() {
+    getSharedPreferences("config", 0).unregisterOnSharedPreferenceChangeListener(changed);
+    super.onStop();
   }
 
   @Override

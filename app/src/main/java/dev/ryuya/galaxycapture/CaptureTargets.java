@@ -94,7 +94,8 @@ final class CaptureTargets {
     int type = Reflect.getIntField(field(w, "mAttrs"), "type");
     return type >= 1
         && type < 2000
-        && (Reflect.getIntField(field(w, "mAttrs"), "flags") & 8192) == 0;
+        && ((runtime != null && runtime.options.enabled() && runtime.options.secureRecording())
+            || (Reflect.getIntField(field(w, "mAttrs"), "flags") & 8192) == 0);
   }
 
   private static void visit(

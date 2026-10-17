@@ -84,4 +84,13 @@
 <string name="section_audio">音訊</string>
 <string name="section_capture_controls">錄影操作與截圖</string>
 <string name="master_scope_detail">同時開啟或關閉 Android 原生（AOSP）與 Galaxy 的所有擴充功能。</string>
+    <string name="section_screenshot">螢幕截圖</string>
+    <string name="secure_screenshot">解除截圖限制</string>
+    <string name="secure_screenshot_detail">允許Samsung截圖擷取FLAG_SECURE保護的視窗。與錄影設定獨立。受保護的影片仍可能顯示為黑畫面。預設關閉。</string>
+    <string name="secure_recording">解除錄影限制</string>
+    <string name="secure_recording_detail">允許Android原生（AOSP）和Galaxy螢幕錄影擷取FLAG_SECURE視窗。與截圖設定獨立。受保護的影片仍可能顯示為黑畫面。下次錄影生效，預設關閉。</string>
+    <string name="recording_volume">個別調整錄製音量</string>
+    <string name="recording_volume_detail">調整Samsung錄影中的媒體與麥克風音量，不改變裝置音量。也可在Samsung擷取設定中變更。下次錄影生效。關閉時使用Samsung原有的音量處理。</string>
+    <string name="media_recording_volume">媒體錄製音量</string>
+    <string name="mic_recording_volume">麥克風錄製音量</string>
 </resources>

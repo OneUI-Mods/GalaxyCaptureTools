@@ -174,3 +174,14 @@ MainActivityの機能タブを共通／Galaxyへ再構成。共通はrotation・
 全体スイッチをTabLayoutの外、toolbarとtabsの間へ移した。どのタブでも表示される。scope説明は全体OFFでも読めるようindividualコンテナの外へ置き、個別スイッチの無効化と保存値の保持は既存の処理を使う。設定キー・初期値・hook・provider・録画処理は変更しない。全5言語へ反映。
 
 独立したAndroid 16 Play Store ARM64エミュレーターで画面試験5件成功。共通とGalaxyの項目配置、全体スイッチの表示維持、OFF時の全個別項目の無効化、設定値保持、タブ／scroll復元、ライセンス表示、起動設定の保持を確認。日本語・ダークテーマを描画して確認。単体テスト44件とLint成功。
+
+## 0.3.0: キャプチャ制限の個別設定・録画音量・Samsung設定統合
+
+- source windowのFLAG_SECUREを変更せず、SystemUIの同期スクショ要求と、既存の録画承認を経た2種類の録画用VirtualDisplayだけを対象にする。第三者のcast、Recents、shellのscreencapには引き継がない。
+- screenshotはWmScreenshotControllerのrequest scope内だけでsecure-layer captureを許可する。native失敗理由16のみを解除し、敏感なコンテンツやDPMの判定を維持する。録画はDMS BinderServiceの所有UID・package・録画display名・projectionの一致を検査し、当該同期要求内だけSECURE display bitを追加する。
+- Samsungの録画用事前スクショがnullの場合は、録画専用scope内だけ非保存probeへ置換する。電池・ストレージ・通話・承認フローを省略しない。
+- AudioLevelsはnative PCMの有効サンプルに0–100%の減衰のみを適用。キュー、リサンプリング、別AACエンコーダを追加しない。EnhancedMicのdevice-volume tableだけを同一recorder/mix callback内でunityに置換し、native route/call/mute/clippingとUID別AudioPlaybackCaptureConfigurationは維持する。各audio recorderで開始時の設定を保持する。
+- Samsungの:settings processにあるSettingsFragmentへホストのSESL SwitchPreferenceCompat/SeekBarPreferenceを挿入する。設定はmodule providerの同じallowlist・SharedPreferencesで管理し、native側とmodule側の表示も設定変更通知で更新する。初期化時は書き込まない。
+- captureの同期処理はHostGuardの操作カウンタで囲み、既存録画のactive状態を上書きしない。
+
+検証結果は実機確認後に追記する。

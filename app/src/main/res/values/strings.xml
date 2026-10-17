@@ -84,4 +84,13 @@
 <string name="section_audio">Audio</string>
 <string name="section_capture_controls">Recording controls and screenshots</string>
 <string name="master_scope_detail">Turn all extensions for Android (AOSP) and Galaxy on or off together.</string>
+    <string name="section_screenshot">Screenshots</string>
+    <string name="secure_screenshot">Capture restricted screenshots</string>
+    <string name="secure_screenshot_detail">Allow Samsung screenshots of windows protected with FLAG_SECURE. Screen recording has a separate switch. Protected video may remain black. Off by default.</string>
+    <string name="secure_recording">Capture restricted recordings</string>
+    <string name="secure_recording_detail">Allow Android standard (AOSP) and Galaxy screen recorders to record FLAG_SECURE windows. Screenshots have a separate switch. Protected video may remain black. Applies to the next recording. Off by default.</string>
+    <string name="recording_volume">Adjust recording volume separately</string>
+    <string name="recording_volume_detail">Set media and microphone levels for Samsung recordings without changing device volume. Also available in Samsung Capture settings. Applies to the next recording. When off, Samsung volume behavior is used.</string>
+    <string name="media_recording_volume">Media recording volume</string>
+    <string name="mic_recording_volume">Microphone recording volume</string>
 </resources>

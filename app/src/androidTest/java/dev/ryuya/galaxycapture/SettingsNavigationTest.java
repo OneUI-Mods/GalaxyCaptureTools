@@ -29,7 +29,7 @@ public class SettingsNavigationTest {
         MaterialSwitch master = toggle(root, a.getString(R.string.enabled));
         assertTrue(master.isShown());
         for (int text : new int[] {R.string.rotation, R.string.ignore_half_turns,
-            R.string.single_window, R.string.app_audio_only, R.string.hide_duplicate_indicator})
+            R.string.single_window, R.string.secure_recording, R.string.app_audio_only, R.string.hide_duplicate_indicator})
           assertTrue(toggle(root, a.getString(text)).isShown());
         assertFalse(toggle(root, a.getString(R.string.speaker_media)).isShown());
         tabs.getTabAt(1).select();
@@ -37,7 +37,7 @@ public class SettingsNavigationTest {
         assertFalse(toggle(root, a.getString(R.string.rotation)).isShown());
         assertFalse(toggle(root, a.getString(R.string.app_audio_only)).isShown());
         for (int text : new int[] {R.string.samsung_app, R.string.countdown,
-            R.string.speaker_media, R.string.exclude_capture_controls,
+            R.string.speaker_media, R.string.recording_volume, R.string.secure_screenshot, R.string.exclude_capture_controls,
             R.string.hide_recording_controls})
           assertTrue(toggle(root, a.getString(text)).isShown());
       });

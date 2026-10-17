@@ -11,6 +11,8 @@ final class HostGuard {
   private final AtomicFile file;
   private final Properties state = new Properties();
   private boolean blocked;
+  private boolean recordingActive;
+  private int captureOperations;
 
   HostGuard(Context context, String host) {
     File base =
@@ -58,18 +60,34 @@ final class HostGuard {
 
   synchronized void arm() throws IOException {
     if (blocked) throw new IOException("Guard blocked");
+    recordingActive = true;
     state.setProperty("active", "true");
     state.setProperty("time", Long.toString(System.currentTimeMillis()));
     save();
   }
 
   synchronized void finish() {
-    state.setProperty("active", "false");
+    recordingActive = false;
+    state.setProperty("active", Boolean.toString(captureOperations > 0));
     try {
       save();
     } catch (Throwable error) {
       blocked = true;
     }
+  }
+
+  synchronized void beginCapture() throws IOException {
+    if (blocked) throw new IOException("Guard blocked");
+    captureOperations++;
+    state.setProperty("active", "true");
+    state.setProperty("time", Long.toString(System.currentTimeMillis()));
+    save();
+  }
+
+  synchronized void endCapture() {
+    captureOperations = Math.max(0, captureOperations - 1);
+    state.setProperty("active", Boolean.toString(recordingActive || captureOperations > 0));
+    try { save(); } catch (Throwable error) { blocked = true; }
   }
 
   synchronized void fail() {

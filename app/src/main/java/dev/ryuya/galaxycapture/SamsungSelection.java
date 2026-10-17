@@ -43,6 +43,8 @@ final class SamsungSelection {
 
   static void installRecorder(HookRuntime rt, ClassLoader loader) {
     CaptureControls.install(rt, loader);
+    RecordingVolume.install(rt, loader);
+    SecureCapture.installRecorder(rt, loader);
     SamsungRecordingUi.install(rt, loader);
     Class<?> controller =
         Reflect.findClass(

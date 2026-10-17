@@ -131,7 +131,7 @@ final class FrameworkHooks {
                         : (choice != null && choice.window() != null
                             ? choice.window()
                             : call(activity, "findMainWindow", false));
-                if (lock && type == 1 && (window == null || !validWindow(window))) {
+                if (lock && type == 1 && (window == null || !validWindow(window, options.secureRecording()))) {
                   p.setResult(null);
                   return;
                 }
@@ -158,11 +158,11 @@ final class FrameworkHooks {
                   stop(recorder);
                   return;
                 }
-                if (current != null && validWindow(current) && current != old.window) {
+                if (current != null && validWindow(current, old.options.secureRecording()) && current != old.window) {
                   old.window = current;
                   replaceWindowMirror(recorder, old);
                 }
-                if (!validWindow(old.window)) {
+                if (!validWindow(old.window, old.options.secureRecording())) {
                   old.needsWindowLayout = true;
                   Object surface = field(recorder, "mRecordedSurface");
                   if (surface != null) {
@@ -220,7 +220,7 @@ final class FrameworkHooks {
             try {
               Object source = field(recorder, "mRecordedWindowContainer");
               if (source == null || p.args[0] != call(source, "getSurfaceControl")) return;
-              if (!validWindow(s.window))
+              if (!validWindow(s.window, s.options.secureRecording()))
                 throw new IllegalStateException("Selected window unavailable");
               p.args[0] = call(s.window, "getSurfaceControl");
             } catch (Throwable error) {
@@ -245,7 +245,7 @@ final class FrameworkHooks {
                   || output == null
                   || output.x <= 0
                   || output.y <= 0
-                  || (s.activity != null && (!validWindow(s.window) || windowFrame(s).isEmpty()))) {
+                  || (s.activity != null && (!validWindow(s.window, s.options.secureRecording()) || windowFrame(s).isEmpty()))) {
                 s.needsWindowLayout = s.activity != null;
                 hideWindow(p.thisObject, s, p.args[0]);
                 p.setResult(null);
@@ -283,7 +283,7 @@ final class FrameworkHooks {
               if (surface == null) return;
               Rect source = (Rect) p.args[1];
               if (s.activity != null) {
-                if (!validWindow(s.window)) {
+                if (!validWindow(s.window, s.options.secureRecording())) {
                   s.needsWindowLayout = true;
                   hideWindow(p.thisObject, s, p.args[0]);
                   return;
@@ -354,7 +354,7 @@ final class FrameworkHooks {
     if (session.activity == null || !(boolean) call(session.activity, "isAttached")) return;
     Object current =
         session.mainWindow ? call(session.activity, "findMainWindow", false) : session.window;
-    if (!validWindow(current)) return;
+    if (!validWindow(current, session.options.secureRecording())) return;
     Rect frame = (Rect) field(field(current, "mWindowFrames"), "mFrame");
     Point size = (Point) call(recorder, "fetchSurfaceSizeIfPresent");
     if (frame.isEmpty() || size == null || size.x <= 0 || size.y <= 0) return;
@@ -385,10 +385,10 @@ final class FrameworkHooks {
     call(session.activity, "scheduleAnimation");
   }
 
-  private static boolean validWindow(Object window) {
+  private static boolean validWindow(Object window, boolean captureSecure) {
     if (window == null || !(boolean) call(window, "isAttached")) return false;
     Object attrs = field(window, "mAttrs");
-    if ((Reflect.getIntField(attrs, "flags") & 8192) != 0) return false;
+    if (!captureSecure && (Reflect.getIntField(attrs, "flags") & 8192) != 0) return false;
     SurfaceControl surface = (SurfaceControl) call(window, "getSurfaceControl");
     return surface != null && surface.isValid();
   }

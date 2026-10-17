@@ -28,6 +28,7 @@ public final class HookEntry extends XposedModule {
     try {
       if (systemServer) {
         FrameworkHooks.install(classLoader);
+        SecureCapture.installFramework(classLoader);
         Hooks.hookAllMethods(Reflect.findClass("com.android.server.SystemServer", classLoader),
             "startOtherServices", new HookCallback() {
               @Override

@@ -84,4 +84,13 @@
 <string name="section_audio">音声</string>
 <string name="section_capture_controls">録画操作・スクリーンショット</string>
 <string name="master_scope_detail">Android標準（AOSP）とGalaxyの全機能をまとめて切り替えます。</string>
+    <string name="section_screenshot">スクリーンショット</string>
+    <string name="secure_screenshot">スクショの制限を解除</string>
+    <string name="secure_screenshot_detail">FLAG_SECUREで保護された画面をSamsungのスクショで撮影します。録画の設定とは独立しています。保護された動画などは黒くなる場合があります。初期設定はOFFです。</string>
+    <string name="secure_recording">録画の制限を解除</string>
+    <string name="secure_recording_detail">Android標準（AOSP）・Galaxyの画面録画で、FLAG_SECUREの画面を録画します。スクショの設定とは独立しています。保護された動画などは黒くなる場合があります。次の録画から適用。初期設定はOFFです。</string>
+    <string name="recording_volume">録画の音量を個別に調整</string>
+    <string name="recording_volume_detail">Samsungの録画に入れるメディア音・マイク音を調整します。本体の音量は変更しません。Samsungキャプチャの設定からも変更できます。次の録画から適用。OFFでは純正の音量処理を使います。</string>
+    <string name="media_recording_volume">メディアの録画音量</string>
+    <string name="mic_recording_volume">マイクの録画音量</string>
 </resources>

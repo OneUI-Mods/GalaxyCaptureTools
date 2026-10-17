@@ -84,4 +84,13 @@
 <string name="section_audio">오디오</string>
 <string name="section_capture_controls">녹화 조작 및 스크린샷</string>
 <string name="master_scope_detail">Android 기본(AOSP) 및 Galaxy의 모든 확장 기능을 함께 켜거나 끕니다.</string>
+    <string name="section_screenshot">스크린샷</string>
+    <string name="secure_screenshot">스크린샷 제한 해제</string>
+    <string name="secure_screenshot_detail">Samsung 스크린샷으로 FLAG_SECURE 창을 캡처합니다. 녹화 설정과 독립적입니다. 보호된 동영상은 검게 표시될 수 있습니다. 기본값은 꺼짐입니다.</string>
+    <string name="secure_recording">녹화 제한 해제</string>
+    <string name="secure_recording_detail">Android 기본(AOSP) 및 Galaxy 화면 녹화에서 FLAG_SECURE 창을 녹화합니다. 스크린샷 설정과 독립적입니다. 보호된 동영상은 검게 표시될 수 있습니다. 다음 녹화부터 적용됩니다. 기본값은 꺼짐입니다.</string>
+    <string name="recording_volume">녹화 음량 개별 조절</string>
+    <string name="recording_volume_detail">기기 음량을 바꾸지 않고 Samsung 녹화의 미디어 및 마이크 음량을 조절합니다. Samsung 캡처 설정에서도 변경할 수 있습니다. 다음 녹화부터 적용됩니다. 끄면 Samsung 기본 음량 처리를 사용합니다.</string>
+    <string name="media_recording_volume">미디어 녹화 음량</string>
+    <string name="mic_recording_volume">마이크 녹화 음량</string>
 </resources>

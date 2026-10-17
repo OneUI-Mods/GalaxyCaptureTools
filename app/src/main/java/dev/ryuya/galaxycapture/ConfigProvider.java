@@ -22,28 +22,10 @@ public final class ConfigProvider extends ContentProvider {
     if (method.equals("config")) {
       var p = c.getSharedPreferences("config", 0);
       var b = new Bundle();
-      for (String k :
-          new String[] {
-            "enabled",
-            "rotation",
-            "samsung_app",
-            "single_window",
-            "app_audio_only",
-            "ignore_half_turns",
-            "hide_duplicate_indicator",
-            "speaker_media",
-            "exclude_capture_controls",
-            "hide_recording_controls",
-            "countdown"
-          })
-        b.putBoolean(
-            k,
-            p.getBoolean(
-                k,
-                !k.equals("enabled")
-                    && !k.equals("single_window")
-                    && !k.equals("ignore_half_turns")
-                    && !k.equals("hide_recording_controls")));
+      for (CaptureSettings.Toggle setting : CaptureSettings.all())
+        b.putBoolean(setting.key(), p.getBoolean(setting.key(), setting.defaultValue()));
+      for (String k : new String[] {"media_volume", "mic_volume"})
+        b.putInt(k, AudioLevels.clamp(p.getInt(k, 100)));
       b.putString("reset", p.getString("reset", ""));
       var status = c.getSharedPreferences("status", 0);
       int boot =
@@ -64,6 +46,19 @@ public final class ConfigProvider extends ContentProvider {
             || (packages != null
                 && (Arrays.asList(packages).contains("com.android.systemui")
                     || Arrays.asList(packages).contains("com.samsung.android.app.smartcapture")));
+    if (method.equals("native_settings") && packages != null
+        && Arrays.asList(packages).contains("com.samsung.android.app.smartcapture") && data != null) {
+      // Only Samsung Capture can write the explicit user-facing setting allowlist.
+      var edit = c.getSharedPreferences("config", 0).edit();
+      for (String key : new String[] {"media_volume", "mic_volume"})
+        if (data.containsKey(key)) edit.putInt(key, AudioLevels.clamp(data.getInt(key)));
+      for (CaptureSettings.Toggle setting : CaptureSettings.all())
+        if (data.containsKey(setting.key()))
+          edit.putBoolean(setting.key(), data.getBoolean(setting.key()));
+      edit.apply();
+      Startup.notifyHosts(c);
+      return Bundle.EMPTY;
+    }
     if (method.equals("status") && host && arg != null) {
       String hostName =
           uid == 1000

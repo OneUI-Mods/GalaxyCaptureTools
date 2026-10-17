@@ -5,7 +5,7 @@ import org.junit.Test;
 
 public class CaptureUiPolicyTest {
   private Options options(boolean enabled, boolean exclude, boolean hide) {
-    return new Options(enabled, true, true, false, true, false, true, true, exclude, hide, true);
+    return new Options(enabled, true, true, false, true, false, true, true, exclude, hide, true, false, false, false, 100, 100);
   }
 
   @Test public void masterAndCrashGuardPreserveNativeWindowAndInput() {
