@@ -44,4 +44,5 @@
 <string name="no_recent_apps">No recent apps. Search or choose Other apps.</string>
 <string name="no_search_results">No matching apps.</string>
 <string name="change_target">Change target: %1$s</string>
+<string name="playback_audio_scope">Device audio to record</string>
 </resources>

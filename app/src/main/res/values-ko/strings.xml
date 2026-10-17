@@ -44,4 +44,5 @@
 <string name="no_recent_apps">최근 앱이 없습니다. 검색하거나 다른 앱을 선택하세요.</string>
 <string name="no_search_results">일치하는 앱이 없습니다.</string>
 <string name="change_target">녹화 대상 변경: %1$s</string>
+<string name="playback_audio_scope">기기 오디오 녹음 범위</string>
 </resources>

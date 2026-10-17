@@ -12,6 +12,7 @@ final class AudioScope {
 
   private static final ThreadLocal<SamsungAudio> samsung = new ThreadLocal<>();
   private static final ThreadLocal<Integer> aosp = new ThreadLocal<>();
+  private static final ThreadLocal<Boolean> aospScope = new ThreadLocal<>();
 
   static void installSamsung(HookRuntime rt, ClassLoader loader) {
     for (String name : new String[] {"SystemAudioRecorder", "EnhancedMicAudioRecorder"}) {
@@ -76,6 +77,26 @@ final class AudioScope {
   }
 
   static void installAosp(HookRuntime rt, ClassLoader loader) {
+    XposedBridge.hookAllMethods(
+        XposedHelpers.findClass("com.android.systemui.screenrecord.ScreenMediaRecorder", loader),
+        "start",
+        new XC_MethodHook() {
+          @Override
+          protected void beforeHookedMethod(MethodHookParam p) {
+            if (!rt.options.enabled()) return;
+            try {
+              aospScope.set(AospRecordingUi.takeScope(p.thisObject, rt.options.appAudioOnly()));
+            } catch (Throwable error) {
+              p.setThrowable(new java.io.IOException("Audio scope unavailable", error));
+              rt.fail(error);
+            }
+          }
+
+          @Override
+          protected void afterHookedMethod(MethodHookParam p) {
+            aospScope.remove();
+          }
+        });
     Class<?> recorder =
         XposedHelpers.findClass(
             "com.android.systemui.screenrecord.ScreenInternalAudioRecorder", loader);
@@ -84,7 +105,9 @@ final class AudioScope {
         new XC_MethodHook() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
-            if (!rt.options.enabled() || !rt.options.appAudioOnly()) return;
+            Boolean scope = aospScope.get();
+            if (!rt.options.enabled() || !(scope == null ? rt.options.appAudioOnly() : scope))
+              return;
             try {
               int uid = resolve(rt);
               if (uid >= 0) aosp.set(uid);

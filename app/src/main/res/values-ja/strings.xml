@@ -44,4 +44,5 @@
 <string name="no_recent_apps">履歴にアプリがありません。検索または「その他のアプリ」から選べます。</string>
 <string name="no_search_results">一致するアプリがありません。</string>
 <string name="change_target">録画対象を変更：%1$s</string>
+<string name="playback_audio_scope">端末内の音声の範囲</string>
 </resources>

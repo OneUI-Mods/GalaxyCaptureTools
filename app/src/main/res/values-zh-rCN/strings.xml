@@ -44,4 +44,5 @@
 <string name="no_recent_apps">没有最近使用的应用。请搜索或选择其他应用。</string>
 <string name="no_search_results">没有匹配的应用。</string>
 <string name="change_target">更改录制目标：%1$s</string>
+<string name="playback_audio_scope">设备音频录制范围</string>
 </resources>
