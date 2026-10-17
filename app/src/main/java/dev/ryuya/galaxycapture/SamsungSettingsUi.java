@@ -40,6 +40,16 @@ final class SamsungSettingsUi {
         } catch (Throwable e) { Hooks.log("GalaxyCapture settings unavailable: " + e); }
       }
     });
+    Hooks.hookAllMethods(fragment, "onConfigurationChanged", new HookCallback() {
+      @Override protected void afterHookedMethod(MethodHookParam p) {
+        State state = (State) Reflect.getAdditionalInstanceField(p.thisObject, STATE);
+        if (state != null && state.active) {
+          state.switchBar = null; state.switchRow = null;
+          Object adapter = Reflect.callMethod(state.list, "getAdapter");
+          if (adapter != null) Reflect.callMethod(adapter, "notifyDataSetChanged");
+        }
+      }
+    });
     Hooks.hookAllMethods(fragment, "onResume", new HookCallback() {
       @Override protected void afterHookedMethod(MethodHookParam p) {
         State state = (State) Reflect.getAdditionalInstanceField(p.thisObject, STATE);
@@ -70,6 +80,7 @@ final class SamsungSettingsUi {
     Object manager, originalScreen;
     View list, switchBar, switchRow;
     CharSequence originalTitle;
+    Parcelable originalListState;
     final android.window.OnBackInvokedCallback backCallback = this::back;
     String currentPage = "home";
     final BroadcastReceiver updates = new BroadcastReceiver() {
@@ -176,6 +187,7 @@ final class SamsungSettingsUi {
         originalScreen = Reflect.callMethod(fragment, "getPreferenceScreen");
         originalTitle = activity.getTitle();
         list = (View) Reflect.callMethod(fragment, "getListView");
+        originalListState = (Parcelable) Reflect.callMethod(Reflect.callMethod(list, "getLayoutManager"), "onSaveInstanceState");
         active = true;
         Reflect.setAdditionalInstanceField(activity, ACTIVITY_STATE, this);
         activity.getOnBackInvokedDispatcher().registerOnBackInvokedCallback(1, backCallback);
@@ -245,6 +257,10 @@ final class SamsungSettingsUi {
         Reflect.setAdditionalInstanceField(host, ACTIVITY_STATE, null);
         Reflect.callMethod(fragment, "setPreferenceScreen", originalScreen);
         title(originalTitle);
+        Reflect.callMethod(((Activity) host).findViewById(resource("id", "app_bar")), "setExpanded", false);
+        View nativeList = list;
+        Parcelable savedPosition = originalListState;
+        nativeList.post(() -> Reflect.callMethod(Reflect.callMethod(nativeList, "getLayoutManager"), "onRestoreInstanceState", savedPosition));
       }
       switchBar = null; switchRow = null; list = null;
     }

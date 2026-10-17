@@ -191,3 +191,5 @@ MainActivityの機能タブを共通／Galaxyへ再構成。共通はrotation・
 - Native音声ページで23%/77%を保存し、module storeで同じ値を確認。Native masterのOFF/ONと、module UIのcountdown変更をNative UIへ戻って確認。カテゴリの戻る→元画面への戻るが機能する。
 - 初期クリック時にobfuscated OnPreferenceClickListener.bをObject callback扱いする不具合を検出し修正。HostCallbacksの型・Objectメソッド分離・例外隔離の回帰テスト3件を追加。
 - カスタム画面はSettingsFragmentのPreferenceScreenを切り替えて表示する。純正のRecyclerView・丸角装飾・左右余白・FloatingToolbarLayout・インセットを再利用し、独自のDialogやtoolbarを作らない。全体スイッチ行は純正settings_sub_layoutからinflateし、横向きの重みや余白もホストのリソースを使う。4カテゴリに分割し、純正ツールバーとシステムBackでカテゴリ→カスタム一覧→元の設定へ戻す。破棄時は再bindを予約しない。
+
+- 最終Samsung UIは実機で4カテゴリ、ツールバーBack、システムBack、master OFFで個別項目disabled・ONで復帰を再確認。master行も純正RecyclerViewの中に置き、FloatingToolbarのスクロール判定と丸角を保つ。戻ると元の一覧位置へ復帰する。
