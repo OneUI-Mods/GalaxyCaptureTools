@@ -15,6 +15,12 @@ final class SamsungSettingsUi {
   private static final String ACTIVITY_STATE = STATE + ".activity";
   static void install(HookRuntime rt, ClassLoader loader) {
     Class<?> fragment = Reflect.findClass("com.samsung.android.app.settings.SettingsFragment", loader);
+    Hooks.hookAllMethods(Reflect.findClass("androidx.preference.Preference", loader), "onBindViewHolder", new HookCallback() {
+      @Override protected void afterHookedMethod(MethodHookParam p) {
+        State state = (State) Reflect.getAdditionalInstanceField(p.thisObject, STATE);
+        if (state != null && state.active) state.bindMaster(p.args[0]);
+      }
+    });
     Class<?> activity = Reflect.findClass("com.samsung.android.app.settings.SettingsActivity", loader);
     Hooks.hookAllMethods(activity, "onOptionsItemSelected", new HookCallback() {
       @Override protected void beforeHookedMethod(MethodHookParam p) {
@@ -63,9 +69,6 @@ final class SamsungSettingsUi {
     boolean registered, master, active;
     Object manager, originalScreen;
     View list, switchBar, switchRow;
-    ViewGroup listParent;
-    ViewGroup.LayoutParams originalListParams;
-    LinearLayout customContainer;
     CharSequence originalTitle;
     final android.window.OnBackInvokedCallback backCallback = this::back;
     String currentPage = "home";
@@ -101,7 +104,15 @@ final class SamsungSettingsUi {
       Object screen = make("PreferenceScreen", "screen." + name, R.string.custom_settings_entry);
       Reflect.callMethod(screen, "onAttachedToHierarchy", manager);
       screens.put(name, screen);
-      return screen;
+      Object master = make("Preference", "master." + name, R.string.enabled);
+      Reflect.callMethod(master, "setLayoutResource", resource("layout", "settings_navigation_height_empty_preference"));
+      Reflect.callMethod(master, "setSelectable", false);
+      Reflect.setAdditionalInstanceField(master, STATE, this);
+      Reflect.callMethod(screen, "f", master);
+      Object group = make("PreferenceCategory", "group." + name, R.string.custom_settings_entry);
+      Reflect.callMethod(group, "setTitle", "");
+      Reflect.callMethod(screen, "f", group);
+      return group;
     }
     void click(Object pref, Runnable action) {
       Class<?> callback = Reflect.findClass("androidx.preference.Preference$OnPreferenceClickListener", loader);
@@ -165,29 +176,6 @@ final class SamsungSettingsUi {
         originalScreen = Reflect.callMethod(fragment, "getPreferenceScreen");
         originalTitle = activity.getTitle();
         list = (View) Reflect.callMethod(fragment, "getListView");
-        listParent = (ViewGroup) list.getParent();
-        originalListParams = list.getLayoutParams();
-        // Inflate the same switch-bar row used by Samsung's own sub-settings. Its theme,
-        // landscape weights, background and spacing remain owned by the host resources.
-        View nativeSubPage = activity.getLayoutInflater().inflate(resource("layout", "settings_sub_layout"), null);
-        switchBar = nativeSubPage.findViewById(resource("id", "switch_bar"));
-        if (switchBar == null) throw new IllegalStateException("Samsung switch bar unavailable");
-        switchRow = (View) switchBar.getParent();
-        ((ViewGroup) switchRow.getParent()).removeView(switchRow);
-        Reflect.callMethod(switchBar, "setSessionDescription", strings.getString(R.string.enabled));
-        Class<?> listener = Reflect.findClass("androidx.appcompat.widget.SeslSwitchBar$OnSwitchChangeListener", loader);
-        Reflect.callMethod(switchBar, "c", HostCallbacks.create(loader, listener, (proxy, method, args) -> {
-          Bundle update = new Bundle(); update.putBoolean("enabled", (boolean) args[1]);
-          if (!save(update)) refresh();
-          return null;
-        }));
-        customContainer = new LinearLayout(host);
-        customContainer.setOrientation(LinearLayout.VERTICAL);
-        int position = listParent.indexOfChild(list);
-        listParent.removeView(list);
-        customContainer.addView(switchRow, new LinearLayout.LayoutParams(-1, -2));
-        customContainer.addView(list, new LinearLayout.LayoutParams(-1, 0, 1));
-        listParent.addView(customContainer, position, originalListParams);
         active = true;
         Reflect.setAdditionalInstanceField(activity, ACTIVITY_STATE, this);
         activity.getOnBackInvokedDispatcher().registerOnBackInvokedCallback(1, backCallback);
@@ -195,6 +183,30 @@ final class SamsungSettingsUi {
       } catch (Throwable e) {
         Hooks.log("GalaxyCapture custom settings: " + e); close();
       }
+    }
+    void bindMaster(Object holder) {
+      try {
+        if (switchRow == null) {
+          View nativeSubPage = ((Activity) host).getLayoutInflater().inflate(resource("layout", "settings_sub_layout"), null);
+          switchBar = nativeSubPage.findViewById(resource("id", "switch_bar"));
+          if (switchBar == null) throw new IllegalStateException("Samsung switch bar unavailable");
+          switchRow = (View) switchBar.getParent();
+          ((ViewGroup) switchRow.getParent()).removeView(switchRow);
+          Reflect.callMethod(switchBar, "setSessionDescription", strings.getString(R.string.enabled));
+          Class<?> listener = Reflect.findClass("androidx.appcompat.widget.SeslSwitchBar$OnSwitchChangeListener", loader);
+          Reflect.callMethod(switchBar, "c", HostCallbacks.create(loader, listener, (proxy, method, args) -> {
+            Bundle update = new Bundle(); update.putBoolean("enabled", (boolean) args[1]);
+            if (!save(update)) refresh();
+            return null;
+          }));
+        }
+        ViewGroup item = (ViewGroup) Reflect.getObjectField(holder, "itemView");
+        if (switchRow.getParent() != item) {
+          if (switchRow.getParent() != null) ((ViewGroup) switchRow.getParent()).removeView(switchRow);
+          item.removeAllViews(); item.addView(switchRow, new LinearLayout.LayoutParams(-1, -2));
+        }
+        Reflect.callMethod(switchBar, "setCheckedInternal", master);
+      } catch (Throwable e) { Hooks.log("GalaxyCapture switch bar: " + e); }
     }
     void title(CharSequence title) {
       Activity activity = (Activity) host;
@@ -234,20 +246,14 @@ final class SamsungSettingsUi {
         Reflect.callMethod(fragment, "setPreferenceScreen", originalScreen);
         title(originalTitle);
       }
-      if (customContainer != null && customContainer.getParent() == listParent) {
-        int position = listParent.indexOfChild(customContainer);
-        customContainer.removeView(list);
-        listParent.removeView(customContainer);
-        listParent.addView(list, position, originalListParams);
-      }
-      switchBar = null; switchRow = null; customContainer = null; list = null;
+      switchBar = null; switchRow = null; list = null;
     }
     void destroy() {
       if (active) ((Activity) host).getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback);
       active = false;
       Reflect.setAdditionalInstanceField(host, ACTIVITY_STATE, null);
       // The fragment view is already destroyed here: never schedule a new preference bind.
-      switchBar = null; switchRow = null; customContainer = null; list = null;
+      switchBar = null; switchRow = null; list = null;
     }
     boolean save(Bundle update) {
       try { host.getContentResolver().call(ConfigProvider.URI, "native_settings", null, update); return true; }
