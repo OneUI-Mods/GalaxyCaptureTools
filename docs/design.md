@@ -119,4 +119,15 @@ OFFの場合はSamsungの原処理をそのまま使う。開始ダイアログ�
 
 2本ともRECEIVE_BOOT_COMPLETEDの非公開・directBootAware receiverを追加。ロック中はCE設定へアクセスせず、BOOT_COMPLETEDとMY_PACKAGE_REPLACEDで設定を通知する。Activity起動・サービス・suを使わない。SystemUI／Samsung／frameworkの初期設定取得は、解錠イベントと上限付きの遅延再試行で復帰する。クラッシュ保護の解除やONへの強制変更は行わない。
 
-独立したAndroid 16 Play Storeイメージ（ro.debuggable=0）を再起動し、両アプリのBootReceiverがプロセスを自動起動したことをActivityManagerログで確認。起動設定維持を含む画面テストはBar8件、Capture4件成功。Galaxy音声録画・イヤホン抜き差し・AOSP混音と、ソフトリブートは実機確認中。
+独立したAndroid 16 Play Storeイメージ（ro.debuggable=0）を再起動し、両アプリのBootReceiverがプロセスを自動起動したことをActivityManagerログで確認。起動設定維持を含む画面テストはBar8件、Capture4件成功。レコーダー・スレッド・入れ子・例外終了の混音context隔離テスト4件を含め、単体テスト24件成功。設定スイッチ更新後の画面テスト2件も成功。Galaxy音声録画・イヤホン抜き差し・AOSP混音と、ソフトリブート後の復帰は実機確認中。
+
+
+## libxposed API 102への移行
+
+API 82のcompileOnly JAR、legacy manifest metadataとassets/xposed_initを除去。io.github.libxposed:api:102.0.0をcompileOnlyで使用し、XposedModuleのonModuleLoaded／onPackageReadyとframeworkのonSystemServerStartingで初期化する。META-INF/xposed/module.prop、java_init.list、scope.listを登録。min/target APIは102、autoHotReload=false。system_serverのscope名はmodern仕様のsystem。
+
+既存のbefore/after処理は自前のHookCallbackでAPI 102のChainへ適応する。実登録はhook(Executable).setId(...).intercept(...)、解除は所有するHookHandleのみ。明示的な録画拒否・例外を握り潰さないようPASSTHROUGHを設定し、before/after自体の例外は原処理の結果を維持する。共有のReflectは通常のJava reflectionをキャッシュし、legacy APIへ一切依存しない。Batteryのdeoptimizeも公開APIへ変更した。
+
+引数変更、戻り値、原処理の省略、意図した拒否、例外とcleanup、反射のオーバーロード・継承・静的呼び出し、登録失敗時の部分解除を回帰テストする。配布チェックはmodern metadataと旧APIの混入を検査。ライセンス一覧のcompile-only参照も102へ更新した。
+
+API 102向けの単体テストはbefore/after adapter・反射・登録解除の15件を含む。rootなしのAndroid 16エミュレーターで起動・設定・ライセンス画面が起動し、UIテストBar8件／Capture4件成功。最初のBar実行はADBサーバー側の接続断で途中終了し、残り7件を再実行して成功。

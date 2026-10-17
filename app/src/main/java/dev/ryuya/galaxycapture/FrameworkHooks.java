@@ -3,7 +3,7 @@ package dev.ryuya.galaxycapture;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.view.SurfaceControl;
-import de.robv.android.xposed.*;
+import dev.ryuya.galaxycapture.hook.*;
 import java.util.*;
 
 /** Only alters mirrors owned by the two supported screen recorders. */
@@ -36,11 +36,11 @@ final class FrameworkHooks {
   }
 
   static Object field(Object object, String name) {
-    return XposedHelpers.getObjectField(object, name);
+    return Reflect.getObjectField(object, name);
   }
 
   static Object call(Object object, String name, Object... args) {
-    return XposedHelpers.callMethod(object, name, args);
+    return Reflect.callMethod(object, name, args);
   }
 
   private static boolean supported(Object recorder) {
@@ -52,7 +52,7 @@ final class FrameworkHooks {
 
   private static int rotation(Object recorder) {
     Object source = field(recorder, "mRecordedWindowContainer");
-    return XposedHelpers.getIntField(
+    return Reflect.getIntField(
         field(field(source, "mDisplayContent"), "mDisplayInfo"), "rotation");
   }
 
@@ -69,13 +69,13 @@ final class FrameworkHooks {
   }
 
   static void install(ClassLoader loader) {
-    containerClass = XposedHelpers.findClass("com.android.server.wm.WindowContainer", loader);
-    Class<?> dc = XposedHelpers.findClass("com.android.server.wm.DisplayContent", loader),
-        cr = XposedHelpers.findClass("com.android.server.wm.ContentRecorder", loader);
-    XposedBridge.hookAllMethods(
+    containerClass = Reflect.findClass("com.android.server.wm.WindowContainer", loader);
+    Class<?> dc = Reflect.findClass("com.android.server.wm.DisplayContent", loader),
+        cr = Reflect.findClass("com.android.server.wm.ContentRecorder", loader);
+    Hooks.hookAllMethods(
         dc,
         "updateRecording",
-        new XC_MethodHook() {
+        new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
             p.setObjectExtra("previous", display.get());
@@ -106,16 +106,16 @@ final class FrameworkHooks {
               if (old == null) {
                 Object task =
                     type == 1
-                        ? XposedHelpers.callStaticMethod(
+                        ? Reflect.callStaticMethod(
                             containerClass, "fromBinder", call(nativeSession, "getTokenToRecord"))
                         : null;
                 int owner =
-                    XposedHelpers.getIntField(
+                    Reflect.getIntField(
                         field(field(recorder, "mDisplayContent"), "mDisplayInfo"), "ownerUid");
                 CaptureTargets.Selection choice =
                     task == null
                         ? null
-                        : CaptureTargets.take(owner, XposedHelpers.getIntField(task, "mTaskId"));
+                        : CaptureTargets.take(owner, Reflect.getIntField(task, "mTaskId"));
                 boolean lock = choice == null ? options.singleWindow() : choice.strict();
                 if (!options.rotation() && !options.ignoreHalfTurns() && (task == null || !lock))
                   return;
@@ -145,7 +145,7 @@ final class FrameworkHooks {
                         : task;
                 Object sourceDisplay = task == null ? source : field(source, "mDisplayContent");
                 int initial =
-                    XposedHelpers.getIntField(field(sourceDisplay, "mDisplayInfo"), "rotation");
+                    Reflect.getIntField(field(sourceDisplay, "mDisplayInfo"), "rotation");
                 rt.guard.arm();
                 old = new Session(nativeSession, activity, window, options, initial);
                 sessions.put(recorder, old);
@@ -206,10 +206,10 @@ final class FrameworkHooks {
             }
           }
         });
-    XposedBridge.hookAllMethods(
+    Hooks.hookAllMethods(
         SurfaceControl.class,
         "mirrorSurface",
-        new XC_MethodHook() {
+        new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
             Object dc = display.get();
@@ -229,10 +229,10 @@ final class FrameworkHooks {
             }
           }
         });
-    XposedBridge.hookAllMethods(
+    Hooks.hookAllMethods(
         cr,
         "updateMirroredSurface",
-        new XC_MethodHook() {
+        new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
             Session s = sessions.get(p.thisObject);
@@ -322,10 +322,10 @@ final class FrameworkHooks {
             }
           }
         });
-    XposedBridge.hookAllMethods(
+    Hooks.hookAllMethods(
         cr,
         "clearContentRecordingSession",
-        new XC_MethodHook() {
+        new HookCallback() {
           @Override
           protected void afterHookedMethod(MethodHookParam p) {
             sessions.remove(p.thisObject);
@@ -373,13 +373,13 @@ final class FrameworkHooks {
     if (previous == null) return;
     SurfaceControl next =
         (SurfaceControl)
-            XposedHelpers.callStaticMethod(
+            Reflect.callStaticMethod(
                 SurfaceControl.class, "mirrorSurface", call(session.window, "getSurfaceControl"));
     Object dc = field(recorder, "mDisplayContent");
     Object tx = call(session.activity, "getSyncTransaction");
     call(tx, "reparent", next, call(dc, "getSurfaceControl"));
     call(tx, "remove", previous);
-    XposedHelpers.setObjectField(recorder, "mRecordedSurface", next);
+    Reflect.setObjectField(recorder, "mRecordedSurface", next);
     Object size = call(recorder, "fetchSurfaceSizeIfPresent");
     call(recorder, "updateMirroredSurface", tx, call(session.activity, "getBounds"), size);
     call(session.activity, "scheduleAnimation");
@@ -388,7 +388,7 @@ final class FrameworkHooks {
   private static boolean validWindow(Object window) {
     if (window == null || !(boolean) call(window, "isAttached")) return false;
     Object attrs = field(window, "mAttrs");
-    if ((XposedHelpers.getIntField(attrs, "flags") & 8192) != 0) return false;
+    if ((Reflect.getIntField(attrs, "flags") & 8192) != 0) return false;
     SurfaceControl surface = (SurfaceControl) call(window, "getSurfaceControl");
     return surface != null && surface.isValid();
   }

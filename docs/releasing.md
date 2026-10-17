@@ -9,3 +9,5 @@ zipalign 16KiBとv3署名を検証し、ソースZIPとSHA-256を生成する。
 実装詳細・テスト結果・個人の設定は開発資料へ分ける。
 
 ライセンス一覧は`app/src/main/assets/legal/libraries.json`で管理します。依存関係を更新した場合は、解決済みのruntime componentsと照合して一覧とバージョン・本文・通知を更新してください。配布スクリプトは一覧との一致と参照ファイルの存在も検査します。
+
+現在の配布対象はlibxposed API 102。配布スクリプトはmodern metadata、entryとscope、旧API参照とlegacy entryの混入も検査します。APIはcompileOnlyでAPKへ同梱しません。

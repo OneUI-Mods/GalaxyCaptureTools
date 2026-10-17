@@ -15,7 +15,7 @@
 <string name="reset_guard">충돌 보호 해제</string>
 <string name="reset_detail">후킹을 다시 시도하도록 허용합니다. 해제 후 소프트 재부팅하세요.</string>
 <string name="licenses">라이선스</string>
-<string name="license_detail">프로젝트: MIT. Material Components 및 AndroidX: Apache License 2.0. Xposed API는 컴파일 시에만 사용됩니다.</string>
+<string name="license_detail">프로젝트: MIT. Material Components 및 AndroidX: Apache License 2.0. libxposed API 102는 컴파일 시에만 사용됩니다.</string>
 <string name="individual_settings">개별 설정 · 전체 스위치가 켜져 있을 때 활성화</string>
 <string name="app_audio_only">기본값으로 대상 앱 오디오만 녹음</string>
 <string name="app_audio_only_detail">앱 녹화의 기본 오디오 범위입니다. Android 또는 Galaxy 녹화 시작 화면에서 변경할 수 있습니다. 마이크 설정은 별도입니다.</string>
@@ -65,4 +65,5 @@
 <string name="speaker_media">스피커에서도 내부 오디오 포함</string>
 <string name="speaker_media_detail">Galaxy 전용. 미디어와 마이크에서 스피커 사용 시 마이크만 사용하는 분기를 건너뛰고 Galaxy 기본 오디오 혼합을 사용합니다. 끄면 기본 동작으로 돌아갑니다. 출력 장치는 바꾸지 않으며 다음 녹화부터 적용됩니다.</string>
 <string name="microphone_only">마이크만</string>
+<string name="module_description">One UI 화면 녹화의 회전, 대상 및 오디오 설정.</string>
 </resources>

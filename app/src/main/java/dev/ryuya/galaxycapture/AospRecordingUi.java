@@ -5,7 +5,7 @@ import android.os.IBinder;
 import android.os.SystemClock;
 import android.view.*;
 import android.widget.*;
-import de.robv.android.xposed.*;
+import dev.ryuya.galaxycapture.hook.*;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,12 +23,12 @@ final class AospRecordingUi {
 
   static void install(HookRuntime rt, ClassLoader loader) {
     Class<?> manager =
-        XposedHelpers.findClass(
+        Reflect.findClass(
             "com.android.systemui.screenrecord.ScreenRecordPermissionContentManager", loader);
-    XposedBridge.hookAllMethods(
+    Hooks.hookAllMethods(
         manager,
         "bind",
-        new XC_MethodHook() {
+        new HookCallback() {
           @Override
           protected void afterHookedMethod(MethodHookParam p) {
             if (!rt.options.enabled() || p.hasThrowable()) return;
@@ -39,10 +39,10 @@ final class AospRecordingUi {
             }
           }
         });
-    XposedBridge.hookAllMethods(
+    Hooks.hookAllMethods(
         manager,
         "onItemSelected",
-        new XC_MethodHook() {
+        new HookCallback() {
           @Override
           protected void afterHookedMethod(MethodHookParam p) {
             if (!rt.options.enabled() || !rt.guard.allowed() || state(p.thisObject) == null) return;
@@ -53,10 +53,10 @@ final class AospRecordingUi {
             }
           }
         });
-    XposedBridge.hookAllMethods(
+    Hooks.hookAllMethods(
         manager,
         "requestScreenCapture",
-        new XC_MethodHook() {
+        new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
             State state = state(p.thisObject);
@@ -89,8 +89,8 @@ final class AospRecordingUi {
 
   private static void attach(HookRuntime rt, Object manager) throws Exception {
     if (state(manager) != null) return;
-    Switch audio = (Switch) XposedHelpers.getObjectField(manager, "audioSwitch");
-    Spinner options = (Spinner) XposedHelpers.getObjectField(manager, "options");
+    Switch audio = (Switch) Reflect.getObjectField(manager, "audioSwitch");
+    Spinner options = (Spinner) Reflect.getObjectField(manager, "options");
     View audioRow = (View) audio.getParent();
     ViewGroup parent = (ViewGroup) audioRow.getParent();
     if (!(parent instanceof LinearLayout))
@@ -99,7 +99,7 @@ final class AospRecordingUi {
     Context strings = c.createPackageContext(BuildConfig.APPLICATION_ID, 0);
     LinearLayout row = new LinearLayout(c);
     row.setOrientation(LinearLayout.VERTICAL);
-    TextView model = firstText((View) XposedHelpers.getObjectField(manager, "tapsView"));
+    TextView model = firstText((View) Reflect.getObjectField(manager, "tapsView"));
     TextView label = new TextView(c);
     label.setText(strings.getString(R.string.playback_audio_scope));
     label.setTextSize(14);
@@ -146,7 +146,7 @@ final class AospRecordingUi {
     // The manager owns its container; these listeners retain the view state only while it is alive.
     CompoundButton.OnCheckedChangeListener previous =
         (CompoundButton.OnCheckedChangeListener)
-            XposedHelpers.getObjectField(audio, "mOnCheckedChangeListener");
+            Reflect.getObjectField(audio, "mOnCheckedChangeListener");
     audio.setOnCheckedChangeListener(
         (button, checked) -> {
           if (previous != null) previous.onCheckedChanged(button, checked);
@@ -184,10 +184,10 @@ final class AospRecordingUi {
 
   private static void refresh(Object manager, State state) {
     if (state == null) return;
-    Object option = XposedHelpers.getObjectField(manager, "selectedScreenShareOption");
-    boolean app = XposedHelpers.getIntField(option, "mode") == 0;
-    Switch audio = (Switch) XposedHelpers.getObjectField(manager, "audioSwitch");
-    Spinner source = (Spinner) XposedHelpers.getObjectField(manager, "options");
+    Object option = Reflect.getObjectField(manager, "selectedScreenShareOption");
+    boolean app = Reflect.getIntField(option, "mode") == 0;
+    Switch audio = (Switch) Reflect.getObjectField(manager, "audioSwitch");
+    Spinner source = (Spinner) Reflect.getObjectField(manager, "options");
     Object selectedSource = source.getSelectedItem();
     String selected = selectedSource instanceof Enum<?> audioMode ? audioMode.name() : "";
     boolean playback =
@@ -198,15 +198,15 @@ final class AospRecordingUi {
   }
 
   private static Key key(Object captureTarget) {
-    Object cookie = XposedHelpers.getObjectField(captureTarget, "launchCookie");
+    Object cookie = Reflect.getObjectField(captureTarget, "launchCookie");
     if (cookie == null) return null;
     return new Key(
-        (IBinder) XposedHelpers.getObjectField(cookie, "binder"),
-        XposedHelpers.getIntField(captureTarget, "taskId"));
+        (IBinder) Reflect.getObjectField(cookie, "binder"),
+        Reflect.getIntField(captureTarget, "taskId"));
   }
 
   static boolean takeScope(Object recorder, boolean fallback) {
-    Object target = XposedHelpers.getObjectField(recorder, "mCaptureRegion");
+    Object target = Reflect.getObjectField(recorder, "mCaptureRegion");
     if (target == null) return fallback;
     Key key = key(target);
     Choice choice = key == null ? null : choices.remove(key);

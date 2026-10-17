@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.content.*;
 import android.media.projection.*;
 import android.os.*;
-import de.robv.android.xposed.*;
+import dev.ryuya.galaxycapture.hook.*;
 
 final class SamsungSelection {
   record Target(Object cookie, int taskId, int uid, boolean audioOnly) {}
@@ -21,11 +21,11 @@ final class SamsungSelection {
 
   static void installSystemUi(HookRuntime rt, ClassLoader loader) {
     Class<?> recorder =
-        XposedHelpers.findClass("com.android.systemui.screenrecord.ScreenMediaRecorder", loader);
-    XposedBridge.hookAllMethods(
+        Reflect.findClass("com.android.systemui.screenrecord.ScreenMediaRecorder", loader);
+    Hooks.hookAllMethods(
         recorder,
         "start",
-        new XC_MethodHook() {
+        new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
             if (!rt.options.enabled() || !rt.options.singleWindow()) return;
@@ -44,12 +44,12 @@ final class SamsungSelection {
   static void installRecorder(HookRuntime rt, ClassLoader loader) {
     SamsungRecordingUi.install(rt, loader);
     Class<?> controller =
-        XposedHelpers.findClass(
+        Reflect.findClass(
             "com.samsung.android.app.smartcapture.screenrecorder.ScreenRecorderController", loader);
-    XposedBridge.hookAllMethods(
+    Hooks.hookAllMethods(
         controller,
         "startCountDownTimer",
-        new XC_MethodHook() {
+        new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
             if (approved) {
@@ -97,14 +97,14 @@ final class SamsungSelection {
                       if (binder == null || uid < 0)
                         throw new IllegalStateException("Invalid capture target");
                       Object cookie =
-                          XposedHelpers.newInstance(
-                              XposedHelpers.findClass(
+                          Reflect.newInstance(
+                              Reflect.findClass(
                                   "android.app.ActivityOptions$LaunchCookie", null),
                               binder);
                       target = new Target(cookie, task, uid, state.audioOnly);
                       rt.guard.arm();
                       approved = true;
-                      XposedHelpers.callMethod(owner, "startCountDownTimer");
+                      Reflect.callMethod(owner, "startCountDownTimer");
                       rt.report("Selected target; countdown started; app audio=" + state.audioOnly);
                     } catch (Throwable error) {
                       approved = false;
@@ -125,13 +125,13 @@ final class SamsungSelection {
           }
         });
     projectionWrapper =
-        XposedHelpers.findClass(
+        Reflect.findClass(
             "com.samsung.android.app.smartcapture.baseutil.sep.SepWrapper$MediaProjectionManager",
             loader);
-    XposedBridge.hookAllMethods(
+    Hooks.hookAllMethods(
         projectionWrapper,
         "semGetMediaProjection",
-        new XC_MethodHook() {
+        new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
             if (earlyProjection != null) p.setResult(earlyProjection);
@@ -142,12 +142,12 @@ final class SamsungSelection {
             Target t = target;
             if (t == null || p.hasThrowable() || p.getResult() == null) return;
             try {
-              Object impl = XposedHelpers.callMethod(p.getResult(), "getProjection");
-              XposedHelpers.callMethod(impl, "setLaunchCookie", t.cookie());
-              XposedHelpers.callMethod(impl, "setTaskId", t.taskId());
+              Object impl = Reflect.callMethod(p.getResult(), "getProjection");
+              Reflect.callMethod(impl, "setLaunchCookie", t.cookie());
+              Reflect.callMethod(impl, "setTaskId", t.taskId());
             } catch (Throwable error) {
               try {
-                XposedHelpers.callMethod(p.getResult(), "stop");
+                Reflect.callMethod(p.getResult(), "stop");
               } catch (Throwable ignored) {
               }
               p.setThrowable(new IllegalStateException("Capture target rejected", error));
@@ -156,13 +156,13 @@ final class SamsungSelection {
           }
         });
     Class<?> recorder =
-        XposedHelpers.findClass(
+        Reflect.findClass(
             "com.samsung.android.app.smartcapture.screenrecorder.recorder.core.MP4Recorder",
             loader);
-    XposedBridge.hookAllMethods(
+    Hooks.hookAllMethods(
         recorder,
         "stopVirtualDisplay",
-        new XC_MethodHook() {
+        new HookCallback() {
           @Override
           protected void afterHookedMethod(MethodHookParam p) {
             target = null;
@@ -179,18 +179,18 @@ final class SamsungSelection {
   static synchronized MediaProjection audioProjection(Object owner) {
     if (owner == earlyOwner && earlyProjection != null) return earlyProjection;
     MediaProjection projection =
-        (MediaProjection) XposedHelpers.getObjectField(owner, "mMediaProjection");
+        (MediaProjection) Reflect.getObjectField(owner, "mMediaProjection");
     if (projection == null) {
-      Context c = (Context) XposedHelpers.getObjectField(owner, "mContext");
+      Context c = (Context) Reflect.getObjectField(owner, "mContext");
       projection =
           (MediaProjection)
-              XposedHelpers.callStaticMethod(
+              Reflect.callStaticMethod(
                   projectionWrapper,
                   "semGetMediaProjection",
                   c.getSystemService(MediaProjectionManager.class),
                   0);
       if (projection == null) throw new IllegalStateException("Audio projection unavailable");
-      XposedHelpers.setObjectField(owner, "mMediaProjection", projection);
+      Reflect.setObjectField(owner, "mMediaProjection", projection);
     }
     earlyOwner = owner;
     earlyProjection = projection;
@@ -201,7 +201,7 @@ final class SamsungSelection {
     target = null;
     approved = false;
     try {
-      ((android.app.Service) XposedHelpers.getObjectField(owner, "mScreenRecorderService"))
+      ((android.app.Service) Reflect.getObjectField(owner, "mScreenRecorderService"))
           .stopSelf();
     } catch (Throwable ignored) {
     }

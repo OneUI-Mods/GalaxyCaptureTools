@@ -6,7 +6,7 @@ import android.os.*;
 import android.text.*;
 import android.view.*;
 import android.widget.*;
-import de.robv.android.xposed.*;
+import dev.ryuya.galaxycapture.hook.*;
 import java.util.*;
 
 /** Samsung-native recording choices and a separate, reversible target-selection dialog. */
@@ -56,12 +56,12 @@ final class SamsungRecordingUi {
 
   static void install(HookRuntime rt, ClassLoader loader) {
     Class<?> controller =
-        XposedHelpers.findClass(
+        Reflect.findClass(
             "com.samsung.android.app.smartcapture.screenrecorder.ScreenRecorderController", loader);
-    XposedBridge.hookAllMethods(
+    Hooks.hookAllMethods(
         controller,
         "initializeRadioButtonsForNewLayout",
-        new XC_MethodHook() {
+        new HookCallback() {
           @Override
           protected void afterHookedMethod(MethodHookParam p) {
             if (!rt.options.enabled() || !rt.options.samsungApp()) return;
@@ -72,10 +72,10 @@ final class SamsungRecordingUi {
             }
           }
         });
-    XposedBridge.hookAllMethods(
+    Hooks.hookAllMethods(
         controller,
         "showSoundSettingSuggestionPopup",
-        new XC_MethodHook() {
+        new HookCallback() {
           @Override
           protected void afterHookedMethod(MethodHookParam p) {
             State s = state(p.thisObject);
@@ -155,20 +155,20 @@ final class SamsungRecordingUi {
     targetBox.addView(audio, new LinearLayout.LayoutParams(-1, -2));
     List<View> audioChoices = new ArrayList<>();
     for (int label : new int[] {R.string.audio_target_only, R.string.audio_every_app}) {
-      View choice = (View) XposedHelpers.newInstance(soundModel.getClass(), host);
-      ImageView modelImage = (ImageView) XposedHelpers.getObjectField(soundModel, "imageView");
-      ImageView image = (ImageView) XposedHelpers.getObjectField(choice, "imageView");
+      View choice = (View) Reflect.newInstance(soundModel.getClass(), host);
+      ImageView modelImage = (ImageView) Reflect.getObjectField(soundModel, "imageView");
+      ImageView image = (ImageView) Reflect.getObjectField(choice, "imageView");
       ViewGroup.LayoutParams size = image.getLayoutParams();
       size.width = modelImage.getLayoutParams().width;
       size.height = modelImage.getLayoutParams().height;
       image.setLayoutParams(size);
       image.setImageDrawable(
           modelImage.getDrawable().getConstantState().newDrawable(host.getResources()).mutate());
-      TextView text = (TextView) XposedHelpers.getObjectField(choice, "textView");
+      TextView text = (TextView) Reflect.getObjectField(choice, "textView");
       text.setText(strings.getString(label));
       text.setTextSize(
           android.util.TypedValue.COMPLEX_UNIT_PX,
-          ((TextView) XposedHelpers.getObjectField(soundModel, "textView")).getTextSize());
+          ((TextView) Reflect.getObjectField(soundModel, "textView")).getTextSize());
       audio.addView(choice, new LinearLayout.LayoutParams(0, -2, 1));
       audioChoices.add(choice);
     }
@@ -178,12 +178,12 @@ final class SamsungRecordingUi {
     for (int i = 0; i < audioChoices.size(); i++) {
       final boolean only = i == 0;
       View choice = audioChoices.get(i);
-      XposedHelpers.callMethod(choice, "setSoundButtonSelectedState", s.audioOnly == only);
+      Reflect.callMethod(choice, "setSoundButtonSelectedState", s.audioOnly == only);
       choice.setOnClickListener(
           v -> {
             s.audioOnly = only;
             for (int n = 0; n < audioChoices.size(); n++)
-              XposedHelpers.callMethod(
+              Reflect.callMethod(
                   audioChoices.get(n), "setSoundButtonSelectedState", (n == 0) == only);
           });
     }
@@ -194,7 +194,7 @@ final class SamsungRecordingUi {
     summary.setOnClickListener(v -> openPicker(rt, s, s.mode, selectFull));
     for (int i = 0; i < modes.size(); i++) {
       final int mode = i;
-      XposedHelpers.callMethod(modes.get(i), "setScreenButtonSelectedState", i == initial);
+      Reflect.callMethod(modes.get(i), "setScreenButtonSelectedState", i == initial);
       modes
           .get(i)
           .setOnClickListener(
@@ -215,7 +215,7 @@ final class SamsungRecordingUi {
 
   private static void refreshSelection(State s) {
     for (int i = 0; i < s.modes.size(); i++)
-      XposedHelpers.callMethod(s.modes.get(i), "setScreenButtonSelectedState", i == s.mode);
+      Reflect.callMethod(s.modes.get(i), "setScreenButtonSelectedState", i == s.mode);
     s.targetBox.setVisibility(s.mode >= 2 ? View.VISIBLE : View.GONE);
     s.summary.setText(s.strings.getString(R.string.selected_target, s.selectedLabel) + "  ›");
     s.summary.setContentDescription(s.strings.getString(R.string.change_target, s.selectedLabel));
@@ -234,7 +234,7 @@ final class SamsungRecordingUi {
     if (s.picker != null || !rt.options.enabled() || !rt.guard.allowed()) return;
     try {
       Dialog parent =
-          (Dialog) XposedHelpers.getObjectField(s.controller, "mSoundSettingSuggestionPopup");
+          (Dialog) Reflect.getObjectField(s.controller, "mSoundSettingSuggestionPopup");
       if (parent == null || !parent.isShowing()) return;
       // Use the very same Samsung AlertDialog builder and theme as the recording start dialog.
       int theme =
@@ -243,17 +243,17 @@ final class SamsungRecordingUi {
               .getIdentifier(
                   "RecorderDialogAlertTheme", "style", "com.samsung.android.app.smartcapture");
       Object builder =
-          XposedHelpers.newInstance(
-              XposedHelpers.findClass("M4.c", s.controller.getClass().getClassLoader()),
+          Reflect.newInstance(
+              Reflect.findClass("M4.c", s.controller.getClass().getClassLoader()),
               s.context,
               theme);
-      Object params = XposedHelpers.getObjectField(builder, "b");
-      Context themed = (Context) XposedHelpers.getObjectField(params, "a");
-      XposedHelpers.setObjectField(
+      Object params = Reflect.getObjectField(builder, "b");
+      Context themed = (Context) Reflect.getObjectField(params, "a");
+      Reflect.setObjectField(
           params,
           "d",
           s.strings.getString(mode == 3 ? R.string.choose_window : R.string.choose_app));
-      XposedHelpers.setObjectField(params, "i", s.strings.getString(R.string.back_to_recording));
+      Reflect.setObjectField(params, "i", s.strings.getString(R.string.back_to_recording));
       LinearLayout content = new LinearLayout(themed);
       content.setOrientation(LinearLayout.VERTICAL);
       content.setPadding(dp(themed, 24), 0, dp(themed, 24), 0);
@@ -278,7 +278,7 @@ final class SamsungRecordingUi {
       s.other.setTextSize(14);
       s.other.setGravity(Gravity.CENTER);
       s.other.setPadding(dp(themed, 12), 0, 0, 0);
-      s.other.setTextColor(XposedHelpers.getIntField(s.modes.get(0), "selectedColor"));
+      s.other.setTextColor(Reflect.getIntField(s.modes.get(0), "selectedColor"));
       selectable(s.other);
       heading.addView(s.other, new LinearLayout.LayoutParams(-2, dp(themed, 48)));
       content.addView(heading);
@@ -302,8 +302,8 @@ final class SamsungRecordingUi {
               Math.min(dp(themed, 520), (int) (available * .82f) - dp(themed, 140)));
       FrameLayout frame = new FrameLayout(themed);
       frame.addView(content, new FrameLayout.LayoutParams(-1, height));
-      XposedHelpers.setObjectField(params, "o", frame);
-      Dialog picker = (Dialog) XposedHelpers.callMethod(builder, "f");
+      Reflect.setObjectField(params, "o", frame);
+      Dialog picker = (Dialog) Reflect.callMethod(builder, "f");
       s.picker = picker;
       Window window = picker.getWindow();
       window.setType(parent.getWindow().getAttributes().type);
@@ -357,22 +357,22 @@ final class SamsungRecordingUi {
   }
 
   private static View.OnClickListener listener(View v) {
-    Object info = XposedHelpers.callMethod(v, "getListenerInfo");
+    Object info = Reflect.callMethod(v, "getListenerInfo");
     View.OnClickListener result =
-        (View.OnClickListener) XposedHelpers.getObjectField(info, "mOnClickListener");
+        (View.OnClickListener) Reflect.getObjectField(info, "mOnClickListener");
     if (result == null) throw new IllegalStateException("Native recording-area listener missing");
     return result;
   }
 
   private static View graphicalChoice(Context host, String label, View model, boolean window) {
-    View choice = (View) XposedHelpers.newInstance(model.getClass(), host);
-    ImageView modelImage = (ImageView) XposedHelpers.getObjectField(model, "imageView");
-    ImageView image = (ImageView) XposedHelpers.getObjectField(choice, "imageView");
-    TextView text = (TextView) XposedHelpers.getObjectField(choice, "textView");
+    View choice = (View) Reflect.newInstance(model.getClass(), host);
+    ImageView modelImage = (ImageView) Reflect.getObjectField(model, "imageView");
+    ImageView image = (ImageView) Reflect.getObjectField(choice, "imageView");
+    TextView text = (TextView) Reflect.getObjectField(choice, "textView");
     text.setText(label);
     text.setTextSize(
         android.util.TypedValue.COMPLEX_UNIT_PX,
-        ((TextView) XposedHelpers.getObjectField(model, "textView")).getTextSize());
+        ((TextView) Reflect.getObjectField(model, "textView")).getTextSize());
     ViewGroup.LayoutParams size = image.getLayoutParams();
     size.width = modelImage.getLayoutParams().width;
     size.height = modelImage.getLayoutParams().height;
@@ -503,7 +503,7 @@ final class SamsungRecordingUi {
             row.addView(text, new LinearLayout.LayoutParams(0, -2, 1));
             RadioButton radio = new RadioButton(c);
             RadioButton model =
-                (RadioButton) XposedHelpers.getObjectField(s.modes.get(0), "radioButton");
+                (RadioButton) Reflect.getObjectField(s.modes.get(0), "radioButton");
             radio.setButtonTintList(model.getButtonTintList());
             radio.setChecked(
                 s.mode == s.pickerMode && Objects.equals(s.selectedKey, entry.getString("key")));
@@ -528,9 +528,9 @@ final class SamsungRecordingUi {
 
   private static TextView nativeText(Context c, View model) {
     TextView text = new TextView(c);
-    TextView original = (TextView) XposedHelpers.getObjectField(model, "textView");
+    TextView original = (TextView) Reflect.getObjectField(model, "textView");
     text.setTypeface(original.getTypeface());
-    text.setTextColor((int) XposedHelpers.getIntField(model, "unselectedColor"));
+    text.setTextColor((int) Reflect.getIntField(model, "unselectedColor"));
     text.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, original.getTextSize());
     return text;
   }
@@ -538,7 +538,7 @@ final class SamsungRecordingUi {
   static void updateStart(State s) {
     try {
       Dialog dialog =
-          (Dialog) XposedHelpers.getObjectField(s.controller, "mSoundSettingSuggestionPopup");
+          (Dialog) Reflect.getObjectField(s.controller, "mSoundSettingSuggestionPopup");
       if (dialog == null) return;
       View start = dialog.findViewById(android.R.id.button1);
       if (start != null) start.setEnabled(s.mode < 2 || s.selected != null);

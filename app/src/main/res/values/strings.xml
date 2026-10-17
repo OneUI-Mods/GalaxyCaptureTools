@@ -15,7 +15,7 @@
 <string name="reset_guard">Reset crash protection</string>
 <string name="reset_detail">Allow hooks to be tried again. Soft-reboot the phone after resetting.</string>
 <string name="licenses">Licenses</string>
-<string name="license_detail">MIT project. Material Components and AndroidX: Apache License 2.0. Xposed API is used only at compile time.</string>
+<string name="license_detail">MIT project. Material Components and AndroidX: Apache License 2.0. libxposed API 102 is used only at compile time.</string>
 <string name="individual_settings">Individual features · active only when the master switch is on</string>
 <string name="app_audio_only">Default to target app audio</string>
 <string name="app_audio_only_detail">Default playback audio scope for app recording. Override it in the Android or Galaxy recording start dialog. Microphone settings are separate.</string>
@@ -65,4 +65,5 @@
 <string name="speaker_media">Include internal audio on speaker</string>
 <string name="speaker_media_detail">Galaxy only: bypass the speaker-only microphone branch of Media and mic, using Galaxy’s standard internal-audio and microphone mixer. When off, the speaker path uses microphone only. Does not change audio routing. Applies to the next recording.</string>
 <string name="microphone_only">Microphone only</string>
+<string name="module_description">Screen recording rotation, app targets, and audio options for One UI.</string>
 </resources>

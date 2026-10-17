@@ -7,7 +7,7 @@ import android.app.ActivityManager;
 import android.content.*;
 import android.content.pm.*;
 import android.os.*;
-import de.robv.android.xposed.XposedHelpers;
+import dev.ryuya.galaxycapture.hook.Reflect;
 import java.util.*;
 
 /**
@@ -46,7 +46,7 @@ final class CaptureTargets {
             if (packages == null
                 || (!Arrays.asList(packages).contains("com.samsung.android.app.smartcapture")
                     && !Arrays.asList(packages).contains("com.android.systemui"))) {
-              de.robv.android.xposed.XposedBridge.log(
+              dev.ryuya.galaxycapture.hook.Hooks.log(
                   "GalaxyCapture target sender rejected; uid=" + uid);
               receiver.send(Activity.RESULT_CANCELED, Bundle.EMPTY);
               return;
@@ -67,9 +67,9 @@ final class CaptureTargets {
                   };
               receiver.send(Activity.RESULT_OK, result);
             } catch (Throwable error) {
-              de.robv.android.xposed.XposedBridge.log(
+              dev.ryuya.galaxycapture.hook.Hooks.log(
                   "GalaxyCapture target request failed: " + error);
-              de.robv.android.xposed.XposedBridge.log(error);
+              dev.ryuya.galaxycapture.hook.Hooks.log(error);
               Bundle result = new Bundle();
               result.putString("error", "Target unavailable");
               receiver.send(Activity.RESULT_CANCELED, result);
@@ -83,18 +83,18 @@ final class CaptureTargets {
   }
 
   private static Object wm() {
-    Class<?> sm = XposedHelpers.findClass("android.os.ServiceManager", null);
-    return XposedHelpers.callStaticMethod(sm, "getService", "window");
+    Class<?> sm = Reflect.findClass("android.os.ServiceManager", null);
+    return Reflect.callStaticMethod(sm, "getService", "window");
   }
 
   private static boolean allowedWindow(Object w) {
     if (w == null || !(boolean) call(w, "isAttached")) return false;
     Object animator = field(w, "mWinAnimator");
-    if (!XposedHelpers.getBooleanField(animator, "mSurfaceShown")) return false;
-    int type = XposedHelpers.getIntField(field(w, "mAttrs"), "type");
+    if (!Reflect.getBooleanField(animator, "mSurfaceShown")) return false;
+    int type = Reflect.getIntField(field(w, "mAttrs"), "type");
     return type >= 1
         && type < 2000
-        && (XposedHelpers.getIntField(field(w, "mAttrs"), "flags") & 8192) == 0;
+        && (Reflect.getIntField(field(w, "mAttrs"), "flags") & 8192) == 0;
   }
 
   private static void visit(
@@ -139,11 +139,11 @@ final class CaptureTargets {
               new Candidate(
                   UUID.randomUUID().toString(),
                   info.applicationInfo.uid,
-                  XposedHelpers.getIntField(task, "mTaskId"),
+                  Reflect.getIntField(task, "mTaskId"),
                   info.packageName,
                   info.name,
                   title,
-                  recentOrder.getOrDefault(XposedHelpers.getIntField(task, "mTaskId"), -1),
+                  recentOrder.getOrDefault(Reflect.getIntField(task, "mTaskId"), -1),
                   w,
                   activity,
                   expires));
@@ -154,7 +154,7 @@ final class CaptureTargets {
     if (!windows) {
       for (int i = 0; i < recents.size(); i++) {
         ActivityManager.RecentTaskInfo task = recents.get(i);
-        if (XposedHelpers.getIntField(task, "userId") != owner / 100000) continue;
+        if (Reflect.getIntField(task, "userId") != owner / 100000) continue;
         ComponentName component = task.topActivity != null ? task.topActivity : task.baseActivity;
         if (component == null && task.baseIntent != null)
           component = task.baseIntent.getComponent();
@@ -252,13 +252,13 @@ final class CaptureTargets {
     if (strict && (c.window == null || !rt.options.singleWindow()))
       throw new IllegalStateException("Window selection disabled");
     Class<?> cookieClass =
-        XposedHelpers.findClass("android.app.ActivityOptions$LaunchCookie", null);
-    Object cookie = XposedHelpers.newInstance(cookieClass, "galaxy_capture_target");
+        Reflect.findClass("android.app.ActivityOptions$LaunchCookie", null);
+    Object cookie = Reflect.newInstance(cookieClass, "galaxy_capture_target");
     IBinder binder = (IBinder) field(cookie, "binder");
     if (c.task >= 0) {
       Object manager =
-          XposedHelpers.callStaticMethod(
-              XposedHelpers.findClass("android.app.ActivityTaskManager", null), "getService");
+          Reflect.callStaticMethod(
+              Reflect.findClass("android.app.ActivityTaskManager", null), "getService");
       call(manager, "startActivityFromRecents", c.task, null);
     } else {
       Intent launch = rt.context.getPackageManager().getLaunchIntentForPackage(c.pkg);
@@ -310,7 +310,7 @@ final class CaptureTargets {
                 "getDisplayContent",
                 (int) call(session, "getVirtualDisplayId"));
         if (dc != null
-            && XposedHelpers.getIntField(field(dc, "mDisplayInfo"), "ownerUid") == owner) {
+            && Reflect.getIntField(field(dc, "mDisplayInfo"), "ownerUid") == owner) {
           app = true;
           uid = (int) call(session, "getTargetUid");
         }

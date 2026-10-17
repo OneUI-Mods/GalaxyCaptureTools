@@ -15,7 +15,7 @@
 <string name="reset_guard">クラッシュ保護を解除</string>
 <string name="reset_detail">フックの再試行を許可します。解除後はソフトリブートしてください。</string>
 <string name="licenses">ライセンス</string>
-<string name="license_detail">本アプリ：MIT。Material Components・AndroidX：Apache License 2.0。Xposed APIはコンパイル時のみ利用します。</string>
+<string name="license_detail">本アプリ：MIT。Material Components・AndroidX：Apache License 2.0。libxposed API 102はコンパイル時のみ利用します。</string>
 <string name="individual_settings">個別の設定 · 全体スイッチがONのときに有効</string>
 <string name="app_audio_only">アプリ録画の既定音声を対象アプリのみに</string>
 <string name="app_audio_only_detail">アプリ録画の音声範囲の既定値です。Android標準・Galaxyの開始画面で録画ごとに変更できます。マイク設定は別です。</string>
@@ -65,4 +65,5 @@
 <string name="speaker_media">スピーカーでも内部音声を含める</string>
 <string name="speaker_media_detail">Galaxy専用。「メディアとマイク」で、スピーカー時にマイクのみを使う分岐を無効にします。混音はGalaxy標準の処理です。OFFでは標準動作に戻ります。出力先は変更せず、次の録画から反映します。</string>
 <string name="microphone_only">マイクのみ</string>
+<string name="module_description">One UIの画面録画の回転・対象・音声を設定します。</string>
 </resources>

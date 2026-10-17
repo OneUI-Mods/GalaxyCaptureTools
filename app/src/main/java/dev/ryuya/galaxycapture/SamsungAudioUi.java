@@ -5,17 +5,17 @@ import android.media.*;
 import android.os.*;
 import android.view.View;
 import android.widget.TextView;
-import de.robv.android.xposed.*;
+import dev.ryuya.galaxycapture.hook.*;
 
 /** Relabel Samsung's acoustic speaker path without changing the selected sound option. */
 final class SamsungAudioUi {
   static void install(HookRuntime rt, ClassLoader loader) {
-    Class<?> controller = XposedHelpers.findClass(
+    Class<?> controller = Reflect.findClass(
         "com.samsung.android.app.smartcapture.screenrecorder.ScreenRecorderController", loader);
-    Class<?> audioUtil = XposedHelpers.findClass(
+    Class<?> audioUtil = Reflect.findClass(
         "com.samsung.android.app.smartcapture.screenrecorder.util.AudioUtil", loader);
-    XposedBridge.hookAllMethods(
-        controller, "initializeRadioButtonsForNewLayout", new XC_MethodHook() {
+    Hooks.hookAllMethods(
+        controller, "initializeRadioButtonsForNewLayout", new HookCallback() {
           @Override
           protected void afterHookedMethod(MethodHookParam p) {
             try {
@@ -26,24 +26,24 @@ final class SamsungAudioUi {
               View choice = root.findViewById(id);
               if (choice == null)
                 return;
-              TextView label = (TextView) XposedHelpers.getObjectField(choice, "textView");
+              TextView label = (TextView) Reflect.getObjectField(choice, "textView");
               CharSequence original = label.getText();
               Context strings = host.createPackageContext(BuildConfig.APPLICATION_ID, 0);
               AudioManager audio = host.getSystemService(AudioManager.class);
               Handler main = new Handler(Looper.getMainLooper());
               Runnable refresh = () -> {
                 try {
-                  int output = ((Number) XposedHelpers.callStaticMethod(
+                  int output = ((Number) Reflect.callStaticMethod(
                                     audioUtil, "getCurrentAudioOutputType", host))
                                    .intValue();
-                  boolean plugged = (boolean) XposedHelpers.callStaticMethod(
+                  boolean plugged = (boolean) Reflect.callStaticMethod(
                       audioUtil, "checkCurrentAudioDevicePlugged", output);
                   boolean micOnly = rt.options.enabled() && !rt.options.speakerMedia()
                       && !plugged && !audio.isMicrophoneMute();
                   label.setText(micOnly ? strings.getText(R.string.microphone_only) : original);
                 } catch (Throwable error) {
                   label.setText(original);
-                  XposedBridge.log("GalaxyCapture: sound label unavailable: " + error);
+                  Hooks.log("GalaxyCapture: sound label unavailable: " + error);
                 }
               };
               AudioDeviceCallback devices = new AudioDeviceCallback() {
@@ -80,7 +80,7 @@ final class SamsungAudioUi {
                     receiverRegistered = true;
                     refresh.run();
                   } catch (Throwable error) {
-                    XposedBridge.log("GalaxyCapture: sound route listener unavailable: " + error);
+                    Hooks.log("GalaxyCapture: sound route listener unavailable: " + error);
                   }
                 }
                 @Override
@@ -98,7 +98,7 @@ final class SamsungAudioUi {
               });
               refresh.run();
             } catch (Throwable error) {
-              XposedBridge.log("GalaxyCapture: sound label unavailable: " + error);
+              Hooks.log("GalaxyCapture: sound label unavailable: " + error);
             }
           }
         });

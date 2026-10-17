@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.media.*;
 import android.media.projection.MediaProjection;
 import android.os.*;
-import de.robv.android.xposed.*;
+import dev.ryuya.galaxycapture.hook.*;
 import java.nio.ByteBuffer;
 import java.util.concurrent.*;
 
@@ -19,18 +19,18 @@ final class AudioScope {
   static void installSamsung(HookRuntime rt, ClassLoader loader) {
     SamsungAudioUi.install(rt, loader);
     for (String name : new String[] {"SystemAudioRecorder", "EnhancedMicAudioRecorder"}) {
-      Class<?> cls = XposedHelpers.findClass(
+      Class<?> cls = Reflect.findClass(
           "com.samsung.android.app.smartcapture.screenrecorder.recorder.core." + name, loader);
-      XposedBridge.hookAllMethods(cls, "createAudioRecord", new XC_MethodHook() {
+      Hooks.hookAllMethods(cls, "createAudioRecord", new HookCallback() {
         @Override
         protected void beforeHookedMethod(MethodHookParam p) {
-          XposedHelpers.setAdditionalInstanceField(
+          Reflect.setAdditionalInstanceField(
               p.thisObject, SPEAKER_MEDIA, rt.options.enabled() && rt.options.speakerMedia());
           SamsungSelection.Target t = SamsungSelection.target();
           if (!rt.options.enabled() || t == null || !t.audioOnly())
             return;
           try {
-            Object owner = XposedHelpers.getObjectField(p.thisObject, "pRecorder");
+            Object owner = Reflect.getObjectField(p.thisObject, "pRecorder");
             samsung.set(
                 new SamsungAudio(t.uid(), SamsungSelection.audioProjection(owner)));
           } catch (Throwable error) {
@@ -45,13 +45,13 @@ final class AudioScope {
         }
       });
     }
-    int playback = XposedHelpers.getStaticIntField(
-        XposedHelpers.findClass("com.samsung.android.app.smartcapture.screenrecorder.recorder."
+    int playback = Reflect.getStaticIntField(
+        Reflect.findClass("com.samsung.android.app.smartcapture.screenrecorder.recorder."
                                 + "common.ScreenRecorderDefine$AudioSource",
             loader),
         "SEM_PLAYBACK_RECORD");
-    XposedHelpers.findAndHookMethod(
-        AudioRecord.Builder.class, "setAudioSource", int.class, new XC_MethodHook() {
+    Reflect.findAndHookMethod(
+        AudioRecord.Builder.class, "setAudioSource", int.class, new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
             SamsungAudio scope = samsung.get();
@@ -76,25 +76,25 @@ final class AudioScope {
         });
     // Enter Samsung's existing digital-mix branch only inside its audio-buffer callback.
     // Never change routing, preferred input, or the actual headphone connection state.
-    Class<?> ownerClass = XposedHelpers.findClass(
+    Class<?> ownerClass = Reflect.findClass(
         "com.samsung.android.app.smartcapture.screenrecorder.recorder.core.MP4Recorder", loader);
-    XposedHelpers.findAndHookMethod(ownerClass, "isPlugging", new XC_MethodHook() {
+    Reflect.findAndHookMethod(ownerClass, "isPlugging", new HookCallback() {
       @Override protected void afterHookedMethod(MethodHookParam p) {
         if (SpeakerMixContext.includePlayback(p.thisObject)) p.setResult(true);
       }
     });
-    XposedHelpers.findAndHookMethod(
-        XposedHelpers.findClass(
+    Reflect.findAndHookMethod(
+        Reflect.findClass(
             "com.samsung.android.app.smartcapture.screenrecorder.recorder.core.EnhancedMicAudioRecorder", loader),
         "mixShortArrToByteBuffer",
-        XposedHelpers.findClass(
+        Reflect.findClass(
             "com.samsung.android.app.smartcapture.screenrecorder.recorder.core.AudioBuffer", loader),
-        ByteBuffer.class, new XC_MethodHook() {
+        ByteBuffer.class, new HookCallback() {
           @Override protected void beforeHookedMethod(MethodHookParam p) {
-            if (!Boolean.TRUE.equals(XposedHelpers.getAdditionalInstanceField(p.thisObject, SPEAKER_MEDIA)))
+            if (!Boolean.TRUE.equals(Reflect.getAdditionalInstanceField(p.thisObject, SPEAKER_MEDIA)))
               return;
             try {
-              Object owner = XposedHelpers.getObjectField(p.thisObject, "pRecorder");
+              Object owner = Reflect.getObjectField(p.thisObject, "pRecorder");
               p.setObjectExtra("previousMixer", SpeakerMixContext.enter(owner));
               p.setObjectExtra("speakerMedia", true);
             } catch (Throwable error) {
@@ -109,9 +109,9 @@ final class AudioScope {
   }
 
   static void installAosp(HookRuntime rt, ClassLoader loader) {
-    XposedBridge.hookAllMethods(
-        XposedHelpers.findClass("com.android.systemui.screenrecord.ScreenMediaRecorder", loader),
-        "start", new XC_MethodHook() {
+    Hooks.hookAllMethods(
+        Reflect.findClass("com.android.systemui.screenrecord.ScreenMediaRecorder", loader),
+        "start", new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
             if (!rt.options.enabled())
@@ -129,9 +129,9 @@ final class AudioScope {
             aospScope.remove();
           }
         });
-    Class<?> recorder = XposedHelpers.findClass(
+    Class<?> recorder = Reflect.findClass(
         "com.android.systemui.screenrecord.ScreenInternalAudioRecorder", loader);
-    XposedBridge.hookAllConstructors(recorder, new XC_MethodHook() {
+    Hooks.hookAllConstructors(recorder, new HookCallback() {
       @Override
       protected void beforeHookedMethod(MethodHookParam p) {
         Boolean scope = aospScope.get();
@@ -152,8 +152,8 @@ final class AudioScope {
         aosp.remove();
       }
     });
-    XposedBridge.hookAllMethods(
-        AudioPlaybackCaptureConfiguration.Builder.class, "build", new XC_MethodHook() {
+    Hooks.hookAllMethods(
+        AudioPlaybackCaptureConfiguration.Builder.class, "build", new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
             Integer uid = aosp.get();

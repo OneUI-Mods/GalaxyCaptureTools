@@ -2,7 +2,7 @@ package dev.ryuya.galaxycapture;
 
 import android.content.*;
 import android.os.*;
-import de.robv.android.xposed.XposedBridge;
+import dev.ryuya.galaxycapture.hook.Hooks;
 
 final class HookRuntime {
   static final String CONFIG_CHANGED = "dev.ryuya.galaxycapture.CONFIG_CHANGED";
@@ -79,7 +79,7 @@ final class HookRuntime {
   void fail(Throwable error) {
     options = Options.OFF;
     guard.fail();
-    XposedBridge.log("GalaxyCapture: stopped: " + error);
+    Hooks.log("GalaxyCapture: stopped: " + error);
     report("Stopped after hook error: " + error.getClass().getSimpleName());
   }
 }
