@@ -69,7 +69,7 @@
 <string name="exclude_capture_controls">캡처 조작 UI가 저장되지 않도록 하기</string>
 <string name="exclude_capture_controls_detail">Galaxy 녹화 도구 모음과 스크린샷 후 조작 UI를 회전 중에도 저장되는 이미지 및 동영상에서 제외합니다. 휴대전화에서는 계속 사용할 수 있습니다. 다음 녹화 또는 스크린샷부터 적용됩니다.</string>
 <string name="hide_recording_controls">Galaxy 녹화 도구 모음 숨기기</string>
-<string name="hide_recording_controls_detail">휴대전화의 플로팅 녹화 도구 모음을 숨깁니다. 알림에서 녹화를 중지할 수 있습니다. 다음 녹화부터 적용됩니다.</string>
+<string name="hide_recording_controls_detail">휴대전화의 플로팅 녹화 도구 모음을 숨깁니다. 알림 또는 빠른 설정의 화면 녹화 타일에서 녹화를 중지할 수 있습니다. 다음 녹화부터 적용됩니다.</string>
 <string name="countdown">Galaxy 녹화 전 카운트다운</string>
 <string name="countdown_detail">끄면 녹화 영역과 소리를 확인한 후 3초 카운트다운 없이 녹화가 시작됩니다. 다음 녹화부터 적용됩니다.</string>
 </resources>

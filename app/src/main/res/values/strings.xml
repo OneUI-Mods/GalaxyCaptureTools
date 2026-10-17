@@ -69,7 +69,7 @@
 <string name="exclude_capture_controls">Keep capture controls out of saved images and videos</string>
 <string name="exclude_capture_controls_detail">Exclude the Galaxy recording toolbar and post-screenshot controls from captured images and videos, including during rotation. Controls remain usable on the phone. Applies to the next recording or screenshot.</string>
 <string name="hide_recording_controls">Hide the Galaxy recording toolbar</string>
-<string name="hide_recording_controls_detail">Hide the floating recording controls on the phone. Stop recording from the notification. Applies to the next recording.</string>
+<string name="hide_recording_controls_detail">Hide the floating recording controls on the phone. Stop recording from the notification or the Screen recorder tile in Quick Settings. Applies to the next recording.</string>
 <string name="countdown">Countdown before Galaxy recording</string>
 <string name="countdown_detail">When off, Galaxy recording starts without the three-second countdown after you confirm the recording area and sound. Applies to the next recording.</string>
 </resources>

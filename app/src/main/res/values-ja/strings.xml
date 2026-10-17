@@ -69,7 +69,7 @@
 <string name="exclude_capture_controls">操作UIの映り込みを防ぐ</string>
 <string name="exclude_capture_controls_detail">Galaxyの録画操作バーとスクリーンショット後の操作UIを、回転中も含めて保存する画像・動画から除外します。端末上では操作できます。次の録画・スクリーンショットから反映します。</string>
 <string name="hide_recording_controls">Galaxyの録画操作バーを隠す</string>
-<string name="hide_recording_controls_detail">端末上のフローティング録画操作バーを非表示にします。録画は通知から停止できます。次の録画から反映します。</string>
+<string name="hide_recording_controls_detail">端末上のフローティング録画操作バーを非表示にします。録画は通知、またはクイック設定の「画面録画」から停止できます。次の録画から反映します。</string>
 <string name="countdown">Galaxy録画前のカウントダウン</string>
 <string name="countdown_detail">OFFでは録画するエリアと音声を確定したあと、3秒のカウントダウンを省略して録画を開始します。次の録画から反映します。</string>
 </resources>

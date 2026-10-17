@@ -69,7 +69,7 @@
 <string name="exclude_capture_controls">防止操作界面出现在截图和录像中</string>
 <string name="exclude_capture_controls_detail">将 Galaxy 录屏工具栏和截图后的操作界面从保存的图片和视频中排除，包括屏幕旋转时。手机上仍可操作。从下一次录屏或截图开始生效。</string>
 <string name="hide_recording_controls">隐藏 Galaxy 录屏工具栏</string>
-<string name="hide_recording_controls_detail">隐藏手机上的悬浮录屏工具栏。可通过通知停止录屏。从下一次录屏开始生效。</string>
+<string name="hide_recording_controls_detail">隐藏手机上的悬浮录屏工具栏。可通过通知或快捷设置中的录屏磁贴停止录屏。从下一次录屏开始生效。</string>
 <string name="countdown">Galaxy 录屏前倒计时</string>
 <string name="countdown_detail">关闭后，确认录屏区域和声音即可开始录屏，跳过三秒倒计时。从下一次录屏开始生效。</string>
 </resources>
