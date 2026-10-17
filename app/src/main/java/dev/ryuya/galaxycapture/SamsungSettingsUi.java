@@ -206,7 +206,7 @@ final class SamsungSettingsUi {
       View toolbar = activity.findViewById(resource("id", "toolbar"));
       if (toolbar != null) Reflect.callMethod(toolbar, "setTitle", title);
       View appBar = activity.findViewById(resource("id", "app_bar"));
-      if (appBar != null) Reflect.callMethod(appBar, "setExpanded", true, false);
+      if (appBar != null) Reflect.callMethod(appBar, "setExpanded", true);
     }
     void showPage(String name) {
       if (!active) return;
