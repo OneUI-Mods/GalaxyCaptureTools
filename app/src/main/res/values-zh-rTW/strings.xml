@@ -105,4 +105,6 @@
     <string name="custom_controls_detail">區域選項、倒數計時、圖示與工具列</string>
     <string name="custom_screenshot_detail">截圖限制與操作介面排除</string>
     <string name="custom_back">返回</string>
+<string name="recording_icon_right">在右側顯示錄影圖示</string>
+<string name="recording_icon_right_detail">將Galaxy錄影中的圖示移至右側，保留通知內容和停止操作。無法確認右側圖示顯示時保留左側圖示。啟用時優先抑制重複圖示。</string>
 </resources>

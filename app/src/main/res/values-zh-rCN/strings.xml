@@ -105,4 +105,6 @@
     <string name="custom_controls_detail">区域选项、倒计时、图标与工具栏</string>
     <string name="custom_screenshot_detail">截图限制与操作界面排除</string>
     <string name="custom_back">返回</string>
+<string name="recording_icon_right">在右侧显示录屏图标</string>
+<string name="recording_icon_right_detail">将Galaxy录屏中的图标移至右侧，保留通知内容和停止操作。无法确认右侧图标显示时保留左侧图标。启用时优先抑制重复图标。</string>
 </resources>

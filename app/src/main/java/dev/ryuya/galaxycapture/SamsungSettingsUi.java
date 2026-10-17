@@ -138,7 +138,7 @@ final class SamsungSettingsUi {
       String[][] groups = {
         {"video", "rotation", "ignore_half_turns", "single_window", "secure_recording"},
         {"audio", "app_audio_only", "speaker_media", "recording_volume", "media_volume", "mic_volume"},
-        {"controls", "samsung_app", "countdown", "hide_duplicate_indicator", "hide_recording_controls"},
+        {"controls", "samsung_app", "countdown", "hide_duplicate_indicator", "recording_icon_right", "hide_recording_controls"},
         {"screenshots", "secure_screenshot", "exclude_capture_controls"}
       };
       int[] titles = {R.string.custom_video, R.string.section_audio, R.string.custom_controls, R.string.section_screenshot};

@@ -6,9 +6,9 @@ record Options(boolean enabled, boolean rotation, boolean samsungApp, boolean si
     boolean appAudioOnly, boolean ignoreHalfTurns, boolean hideDuplicateIndicator,
     boolean speakerMedia, boolean excludeCaptureControls, boolean hideRecordingControls,
     boolean countdown, boolean secureScreenshot, boolean secureRecording,
-    boolean recordingVolume, int mediaVolume, int micVolume) {
+    boolean recordingVolume, int mediaVolume, int micVolume, boolean recordingIconRight) {
   static final Options OFF =
-      new Options(false, false, false, false, true, false, false, false, false, false, true, false, false, false, 100, 100);
+      new Options(false, false, false, false, true, false, false, false, false, false, true, false, false, false, 100, 100, false);
 
   static Options from(Bundle b) {
     return b == null
@@ -22,6 +22,6 @@ record Options(boolean enabled, boolean rotation, boolean samsungApp, boolean si
               b.getBoolean("hide_recording_controls", false), b.getBoolean("countdown", true),
               b.getBoolean("secure_screenshot", false), b.getBoolean("secure_recording", false),
               b.getBoolean("recording_volume", false), AudioLevels.clamp(b.getInt("media_volume", 100)),
-              AudioLevels.clamp(b.getInt("mic_volume", 100)));
+              AudioLevels.clamp(b.getInt("mic_volume", 100)), b.getBoolean("recording_icon_right", false));
   }
 }

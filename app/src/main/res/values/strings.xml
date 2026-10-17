@@ -105,4 +105,6 @@
     <string name="custom_controls_detail">Area choices, countdown, recording indicators and toolbar</string>
     <string name="custom_screenshot_detail">Screenshot restrictions and capture UI exclusion</string>
     <string name="custom_back">Back</string>
+<string name="recording_icon_right">Recording icon on the right</string>
+<string name="recording_icon_right_detail">Moves the Galaxy recording icon to the right side. Keeps the recording notification and stop action. If the right icon cannot be shown, keeps the left icon. Takes priority over duplicate-icon suppression while enabled.</string>
 </resources>

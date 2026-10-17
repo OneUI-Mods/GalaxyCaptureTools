@@ -11,6 +11,13 @@ final class HookRuntime {
   final HostGuard guard;
   volatile Options options = Options.OFF;
   volatile boolean frameworkReady;
+  private final java.util.List<Runnable> optionListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+  void onOptionsChanged(Runnable listener) { optionListeners.add(listener); }
+  private void notifyOptions() {
+    for (Runnable listener : optionListeners) {
+      try { listener.run(); } catch (Throwable error) { Hooks.log("GalaxyCapture option listener: " + error); }
+    }
+  }
   private int configRetries;
   private final Runnable configRetry = this::reload;
 
@@ -47,6 +54,7 @@ final class HookRuntime {
     worker.removeCallbacks(configRetry);
     if (!context.getSystemService(UserManager.class).isUserUnlocked()) {
       options = Options.OFF;
+      notifyOptions();
       return; // USER_UNLOCKED resumes without polling encrypted storage.
     }
     try {
@@ -64,7 +72,7 @@ final class HookRuntime {
       // The provider can start after an already-unlocked soft reboot. No root is needed.
       if (configRetries < 7)
         worker.postDelayed(configRetry, Math.min(30000L, 1000L << configRetries++));
-    }
+    } finally { notifyOptions(); }
   }
 
   void report(String value) {
@@ -79,6 +87,7 @@ final class HookRuntime {
   void fail(Throwable error) {
     options = Options.OFF;
     guard.fail();
+    notifyOptions();
     Hooks.log("GalaxyCapture: stopped: " + error);
     report("Stopped after hook error: " + error.getClass().getSimpleName());
   }

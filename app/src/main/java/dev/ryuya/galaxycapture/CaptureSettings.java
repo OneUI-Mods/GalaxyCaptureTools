@@ -13,6 +13,7 @@ final class CaptureSettings {
     new Toggle("hide_duplicate_indicator", R.string.hide_duplicate_indicator, R.string.hide_duplicate_indicator_detail, true)
   };
   static final Toggle[] GALAXY = {
+    new Toggle("recording_icon_right", R.string.recording_icon_right, R.string.recording_icon_right_detail, false),
     new Toggle("samsung_app", R.string.samsung_app, R.string.samsung_app_detail, true),
     new Toggle("countdown", R.string.countdown, R.string.countdown_detail, true),
     new Toggle("speaker_media", R.string.speaker_media, R.string.speaker_media_detail, true),

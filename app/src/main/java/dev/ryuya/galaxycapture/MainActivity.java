@@ -88,6 +88,8 @@ public final class MainActivity extends AppCompatActivity {
         R.string.hide_duplicate_indicator,
         R.string.hide_duplicate_indicator_detail,
         true);
+    addSwitch(galaxyOptions, "recording_icon_right", R.string.recording_icon_right,
+        R.string.recording_icon_right_detail, false);
     addHeading(galaxyOptions, R.string.section_recording_start);
     addSwitch(
         galaxyOptions, "samsung_app", R.string.samsung_app, R.string.samsung_app_detail, true);

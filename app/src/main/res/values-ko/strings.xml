@@ -105,4 +105,6 @@
     <string name="custom_controls_detail">영역 선택, 카운트다운, 표시 및 도구 모음</string>
     <string name="custom_screenshot_detail">스크린샷 제한 및 조작 UI 제외</string>
     <string name="custom_back">뒤로</string>
+<string name="recording_icon_right">녹화 아이콘을 오른쪽에 표시</string>
+<string name="recording_icon_right_detail">Galaxy 녹화 아이콘을 오른쪽으로 옮깁니다. 알림과 중지 동작은 유지합니다. 오른쪽 표시를 확인할 수 없으면 왼쪽 아이콘을 유지합니다. 사용 중에는 중복 아이콘 억제를 우선합니다.</string>
 </resources>
