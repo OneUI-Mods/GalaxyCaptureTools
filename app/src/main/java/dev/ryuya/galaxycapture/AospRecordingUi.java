@@ -45,7 +45,7 @@ final class AospRecordingUi {
         new XC_MethodHook() {
           @Override
           protected void afterHookedMethod(MethodHookParam p) {
-            if (state(p.thisObject) == null) return;
+            if (!rt.options.enabled() || !rt.guard.allowed() || state(p.thisObject) == null) return;
             try {
               refresh(p.thisObject);
             } catch (Throwable error) {
@@ -188,7 +188,8 @@ final class AospRecordingUi {
     boolean app = XposedHelpers.getIntField(option, "mode") == 0;
     Switch audio = (Switch) XposedHelpers.getObjectField(manager, "audioSwitch");
     Spinner source = (Spinner) XposedHelpers.getObjectField(manager, "options");
-    String selected = String.valueOf(source.getSelectedItem());
+    Object selectedSource = source.getSelectedItem();
+    String selected = selectedSource instanceof Enum<?> audioMode ? audioMode.name() : "";
     boolean playback =
         audio.isChecked() && (selected.equals("INTERNAL") || selected.equals("MIC_AND_INTERNAL"));
     state.row.setVisibility(app ? View.VISIBLE : View.GONE);
