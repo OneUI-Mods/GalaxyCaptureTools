@@ -148,7 +148,7 @@ public class SettingsNavigationTest {
   }
 
   private static MaterialSwitch toggle(View root, String text) {
-    if (root instanceof MaterialSwitch toggle && toggle.getText().toString().equals(text))
+    if (root instanceof MaterialSwitch toggle && (toggle.getText().toString().equals(text) || text.equals(String.valueOf(toggle.getContentDescription()))))
       return toggle;
     if (root instanceof ViewGroup group)
       for (int i = 0; i < group.getChildCount(); i++) {

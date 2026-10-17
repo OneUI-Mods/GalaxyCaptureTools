@@ -93,4 +93,7 @@
     <string name="recording_volume_detail">Samsungの録画に入れるメディア音・マイク音を調整します。本体の音量は変更しません。Samsungキャプチャの設定からも変更できます。次の録画から適用。OFFでは純正の音量処理を使います。</string>
     <string name="media_recording_volume">メディアの録画音量</string>
     <string name="mic_recording_volume">マイクの録画音量</string>
+    <string name="custom_settings_title">Galaxy Capture Tools · カスタム設定</string>
+    <string name="master_on">ON</string>
+    <string name="master_off">OFF</string>
 </resources>

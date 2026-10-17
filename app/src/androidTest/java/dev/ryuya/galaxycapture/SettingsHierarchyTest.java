@@ -70,7 +70,7 @@ public class SettingsHierarchyTest {
   }
 
   private static MaterialSwitch find(View root, String text) {
-    if (root instanceof MaterialSwitch s && s.getText().toString().equals(text)) return s;
+    if (root instanceof MaterialSwitch s && (s.getText().toString().equals(text) || text.equals(String.valueOf(s.getContentDescription())))) return s;
     if (root instanceof ViewGroup g)
       for (int i = 0; i < g.getChildCount(); i++) {
         MaterialSwitch r = find(g.getChildAt(i), text);

@@ -2,6 +2,7 @@ package dev.ryuya.galaxycapture;
 
 import android.content.*;
 import android.os.*;
+import android.view.*;
 import dev.ryuya.galaxycapture.hook.*;
 import java.lang.reflect.Proxy;
 import java.util.*;
@@ -28,6 +29,14 @@ final class SamsungSettingsUi {
         if (state != null) state.resume();
       }
     });
+    Hooks.hookAllMethods(Reflect.findClass("androidx.preference.Preference", loader), "onBindViewHolder", new HookCallback() {
+      @Override protected void afterHookedMethod(MethodHookParam p) {
+        State state = (State) Reflect.getAdditionalInstanceField(p.thisObject, STATE);
+        if (state == null) return;
+        try { state.bindMaster((ViewGroup) Reflect.getObjectField(p.args[0], "itemView")); }
+        catch (Throwable e) { Hooks.log("GalaxyCapture master switch: " + e); }
+      }
+    });
     for (String method : new String[] {"onPause", "onDestroy"})
       Hooks.hookAllMethods(fragment, method, new HookCallback() {
         @Override protected void beforeHookedMethod(MethodHookParam p) {
@@ -42,7 +51,8 @@ final class SamsungSettingsUi {
     final Object fragment;
     final Context host, strings;
     final Map<String, Object> preferences = new LinkedHashMap<>();
-    boolean registered;
+    boolean registered, master;
+    final Set<View> bars = Collections.newSetFromMap(new WeakHashMap<>());
     final BroadcastReceiver updates = new BroadcastReceiver() {
       @Override public void onReceive(Context c, Intent i) { refresh(); }
     };
@@ -52,8 +62,13 @@ final class SamsungSettingsUi {
       strings = host.createPackageContext(BuildConfig.APPLICATION_ID, 0);
     }
     void add() {
-      Object group = Reflect.getObjectField(fragment, "mScreenRecorder");
-      if (group == null || Reflect.callMethod(fragment, "findPreference", KEY + "enabled") != null) return;
+      Object nativeGroup = Reflect.getObjectField(fragment, "mScreenRecorder");
+      if (nativeGroup == null || Reflect.callMethod(fragment, "findPreference", KEY + "enabled") != null) return;
+      Object group = preference("PreferenceCategory", "category", R.string.custom_settings_title);
+      Object last = Reflect.getObjectField(fragment, "mScreenRecorderFolderPickerPreference");
+      if (last == null) last = nativeGroup;
+      Reflect.callMethod(group, "setOrder", ((Number) Reflect.callMethod(last, "getOrder")).intValue() + 1);
+      Reflect.callMethod(Reflect.callMethod(fragment, "getPreferenceScreen"), "f", group);
       Class<?> listener = Reflect.findClass("androidx.preference.Preference$OnPreferenceChangeListener", loader);
       Object callback = Proxy.newProxyInstance(loader, new Class<?>[] {listener}, (proxy, method, args) -> {
         if (!method.getName().equals("onPreferenceChange")) {
@@ -71,8 +86,11 @@ final class SamsungSettingsUi {
         } catch (Throwable e) { Hooks.log("GalaxyCapture settings save: " + e); return false; }
       });
       for (CaptureSettings.Toggle toggle : CaptureSettings.all()) {
-        Object pref = preference("SwitchPreferenceCompat", toggle.key(), toggle.title());
-        Reflect.callMethod(pref, "setSummary", strings.getText(toggle.detail()));
+        Object pref = preference(toggle.key().equals("enabled") ? "Preference" : "SwitchPreferenceCompat", toggle.key(), toggle.title());
+        if (toggle.key().equals("enabled")) {
+          Reflect.setAdditionalInstanceField(pref, STATE, this);
+          Reflect.callMethod(pref, "setSelectable", false);
+        } else Reflect.callMethod(pref, "setSummary", strings.getText(toggle.detail()));
         Reflect.callMethod(pref, "setOnPreferenceChangeListener", callback);
         Reflect.callMethod(group, "f", pref);
         if (toggle.key().equals("recording_volume")) {
@@ -98,11 +116,13 @@ final class SamsungSettingsUi {
       try {
         Bundle b = host.getContentResolver().call(ConfigProvider.URI, "config", null, null);
         if (b == null) return;
-        boolean master = b.getBoolean("enabled", false);
+        master = b.getBoolean("enabled", false);
+        for (View bar : bars) Reflect.callMethod(bar, "setCheckedInternal", master);
         for (CaptureSettings.Toggle toggle : CaptureSettings.all()) {
           Object pref = preferences.get(toggle.key());
           if (pref == null) continue;
-          Reflect.callMethod(pref, "setChecked", b.getBoolean(toggle.key(), toggle.defaultValue()));
+          if (!toggle.key().equals("enabled"))
+            Reflect.callMethod(pref, "setChecked", b.getBoolean(toggle.key(), toggle.defaultValue()));
           Reflect.callMethod(pref, "setEnabled", toggle.key().equals("enabled") || master);
         }
         for (String key : new String[] {"media_volume", "mic_volume"}) {
@@ -115,6 +135,32 @@ final class SamsungSettingsUi {
         }
       } catch (Throwable e) { Hooks.log("GalaxyCapture settings refresh: " + e); }
     }
+    void bindMaster(ViewGroup row) {
+      View bar = (View) Reflect.getAdditionalInstanceField(row, STATE);
+      if (bar == null) {
+        bar = (View) Reflect.newInstance(Reflect.findClass("androidx.appcompat.widget.SeslSwitchBar", loader), host, null);
+        Reflect.callMethod(bar, "setSessionDescription", strings.getString(R.string.enabled));
+        Class<?> listener = Reflect.findClass("androidx.appcompat.widget.SeslSwitchBar$OnSwitchChangeListener", loader);
+        Object callback = Proxy.newProxyInstance(loader, new Class<?>[] {listener}, (proxy, method, args) -> {
+          if (!method.getName().equals("a")) {
+            if (method.getName().equals("hashCode")) return System.identityHashCode(proxy);
+            if (method.getName().equals("equals")) return proxy == args[0];
+            return "GalaxyCapture master listener";
+          }
+          Bundle update = new Bundle(); update.putBoolean("enabled", (boolean) args[1]);
+          try { host.getContentResolver().call(ConfigProvider.URI, "native_settings", null, update); }
+          catch (Throwable e) { Hooks.log("GalaxyCapture master save: " + e); refresh(); }
+          return null;
+        });
+        Reflect.callMethod(bar, "c", callback);
+        row.removeAllViews(); row.setPadding(0, 0, 0, 0); row.setMinimumHeight(0);
+        row.addView(bar, new ViewGroup.LayoutParams(-1, -2));
+        Reflect.setAdditionalInstanceField(row, STATE, bar);
+        bars.add(bar);
+      }
+      Reflect.callMethod(bar, "setCheckedInternal", master);
+    }
+
     void resume() {
       if (!registered) {
         host.registerReceiver(updates, new IntentFilter(HookRuntime.CONFIG_CHANGED),

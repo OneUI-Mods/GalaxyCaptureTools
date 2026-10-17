@@ -44,7 +44,7 @@ public final class MainActivity extends AppCompatActivity {
     master.setOrientation(LinearLayout.VERTICAL);
     master.setPadding(dp(20), 0, dp(20), 0);
     safe.addView(master);
-    addSwitch(master, "enabled", R.string.enabled, R.string.master_scope_detail, false);
+    addMasterSwitch(master);
     pages = new SettingsTabs(this, safe, state);
     LinearLayout common = pages.page(R.string.tab_common);
     LinearLayout galaxy = pages.page(R.string.tab_galaxy);
@@ -164,6 +164,41 @@ public final class MainActivity extends AppCompatActivity {
     information.addView(notice);
     pages.restore();
     showStatus();
+  }
+
+  private void addMasterSwitch(LinearLayout parent) {
+    var heading = new com.google.android.material.textview.MaterialTextView(this);
+    heading.setText(R.string.enabled);
+    heading.setPadding(dp(8), 0, 0, dp(8));
+    parent.addView(heading);
+    var card = new MaterialCardView(this);
+    card.setRadius(dp(64)); card.setStrokeWidth(0);
+    card.setCardBackgroundColor(com.google.android.material.color.MaterialColors.getColor(
+        parent, com.google.android.material.R.attr.colorSurfaceContainerHigh));
+    var toggle = new MaterialSwitch(this);
+    toggle.setContentDescription(getString(R.string.enabled));
+    toggle.setTextSize(20); toggle.setMinHeight(dp(64));
+    toggle.setPadding(dp(24), dp(8), dp(24), dp(8));
+    toggles.put("enabled", toggle);
+    toggle.setOnCheckedChangeListener((button, on) -> {
+      updateMasterLabel(toggle, on);
+      if (syncing) return;
+      getSharedPreferences("config", 0).edit().putBoolean("enabled", on).apply();
+      notifyConfig(); updateEnabled();
+    });
+    toggle.setChecked(getSharedPreferences("config", 0).getBoolean("enabled", false));
+    updateMasterLabel(toggle, toggle.isChecked());
+    card.addView(toggle, new android.view.ViewGroup.LayoutParams(-1, -2));
+    parent.addView(card);
+    var detail = new com.google.android.material.textview.MaterialTextView(this);
+    detail.setText(R.string.master_scope_detail); detail.setTextSize(12);
+    detail.setPadding(dp(8), dp(8), dp(8), dp(8)); parent.addView(detail);
+  }
+
+  private void updateMasterLabel(MaterialSwitch toggle, boolean on) {
+    toggle.setText(on ? R.string.master_on : R.string.master_off);
+    toggle.setTextColor(com.google.android.material.color.MaterialColors.getColor(toggle,
+        on ? com.google.android.material.R.attr.colorPrimary : com.google.android.material.R.attr.colorOnSurface));
   }
 
   private void addScope(LinearLayout parent, int title, int detail) {

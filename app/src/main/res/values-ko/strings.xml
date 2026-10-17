@@ -93,4 +93,7 @@
     <string name="recording_volume_detail">기기 음량을 바꾸지 않고 Samsung 녹화의 미디어 및 마이크 음량을 조절합니다. Samsung 캡처 설정에서도 변경할 수 있습니다. 다음 녹화부터 적용됩니다. 끄면 Samsung 기본 음량 처리를 사용합니다.</string>
     <string name="media_recording_volume">미디어 녹화 음량</string>
     <string name="mic_recording_volume">마이크 녹화 음량</string>
+    <string name="custom_settings_title">Galaxy Capture Tools · 사용자 설정</string>
+    <string name="master_on">켜짐</string>
+    <string name="master_off">꺼짐</string>
 </resources>

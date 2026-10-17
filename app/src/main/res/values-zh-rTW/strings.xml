@@ -93,4 +93,7 @@
     <string name="recording_volume_detail">調整Samsung錄影中的媒體與麥克風音量，不改變裝置音量。也可在Samsung擷取設定中變更。下次錄影生效。關閉時使用Samsung原有的音量處理。</string>
     <string name="media_recording_volume">媒體錄製音量</string>
     <string name="mic_recording_volume">麥克風錄製音量</string>
+    <string name="custom_settings_title">Galaxy Capture Tools · 自訂設定</string>
+    <string name="master_on">開啟</string>
+    <string name="master_off">關閉</string>
 </resources>

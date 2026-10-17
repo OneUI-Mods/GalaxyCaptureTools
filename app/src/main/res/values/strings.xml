@@ -93,4 +93,7 @@
     <string name="recording_volume_detail">Set media and microphone levels for Samsung recordings without changing device volume. Also available in Samsung Capture settings. Applies to the next recording. When off, Samsung volume behavior is used.</string>
     <string name="media_recording_volume">Media recording volume</string>
     <string name="mic_recording_volume">Microphone recording volume</string>
+    <string name="custom_settings_title">Galaxy Capture Tools · Custom settings</string>
+    <string name="master_on">On</string>
+    <string name="master_off">Off</string>
 </resources>
