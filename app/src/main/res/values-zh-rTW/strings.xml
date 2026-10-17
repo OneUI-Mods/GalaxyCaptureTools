@@ -62,4 +62,7 @@
 <string name="tab_recording">錄製</string>
 <string name="tab_audio_display">音訊與顯示</string>
 <string name="app_version">版本 %1$s</string>
+<string name="mix_app_audio_with_mic">直接混合目標應用程式音訊與麥克風</string>
+<string name="mix_app_audio_with_mic_detail">僅限 Galaxy。選擇「僅目標應用程式」及「媒體與麥克風」時，即使使用揚聲器也會混合應用程式內部音訊與麥克風。關閉後使用 Galaxy 預設混音。下次錄製時生效。</string>
+<string name="microphone_only">僅麥克風</string>
 </resources>

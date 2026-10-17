@@ -79,6 +79,12 @@ public final class MainActivity extends AppCompatActivity {
         true);
     addSwitch(
         audioOptions,
+        "mix_app_audio_with_mic",
+        R.string.mix_app_audio_with_mic,
+        R.string.mix_app_audio_with_mic_detail,
+        true);
+    addSwitch(
+        audioOptions,
         "hide_duplicate_indicator",
         R.string.hide_duplicate_indicator,
         R.string.hide_duplicate_indicator_detail,
@@ -172,9 +178,7 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void notifyConfig() {
-    for (String pkg :
-        new String[] {"android", "com.android.systemui", "com.samsung.android.app.smartcapture"})
-      sendBroadcast(new Intent(HookRuntime.CONFIG_CHANGED).setPackage(pkg));
+    Startup.notifyHosts(this);
   }
 
   private void showStatus() {

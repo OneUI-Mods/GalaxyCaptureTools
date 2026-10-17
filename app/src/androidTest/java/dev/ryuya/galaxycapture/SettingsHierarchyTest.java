@@ -29,6 +29,7 @@ public class SettingsHierarchyTest {
                   R.string.samsung_app,
                   R.string.single_window,
                   R.string.app_audio_only,
+                  R.string.mix_app_audio_with_mic,
                   R.string.hide_duplicate_indicator
                 }) {
               MaterialSwitch control = find(a.getWindow().getDecorView(), a.getString(label));

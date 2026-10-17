@@ -62,4 +62,7 @@
 <string name="tab_recording">Recording</string>
 <string name="tab_audio_display">Audio &amp; display</string>
 <string name="app_version">Version %1$s</string>
+<string name="mix_app_audio_with_mic">Mix target app audio with microphone</string>
+<string name="mix_app_audio_with_mic_detail">Galaxy only: when Target app only and Media and mic are selected, digitally mix the app audio with the microphone, including on the speaker. Turn off to use Galaxy’s standard mixing. Applies to the next recording.</string>
+<string name="microphone_only">Microphone only</string>
 </resources>

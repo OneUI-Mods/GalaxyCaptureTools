@@ -62,4 +62,7 @@
 <string name="tab_recording">녹화</string>
 <string name="tab_audio_display">오디오 및 표시</string>
 <string name="app_version">버전 %1$s</string>
+<string name="mix_app_audio_with_mic">대상 앱 오디오와 마이크 직접 혼합</string>
+<string name="mix_app_audio_with_mic_detail">Galaxy 전용. 대상 앱만 및 미디어와 마이크를 선택하면 스피커 사용 중에도 앱 내부 오디오와 마이크를 함께 녹음합니다. 끄면 Galaxy 기본 혼합을 사용합니다. 다음 녹화부터 적용됩니다.</string>
+<string name="microphone_only">마이크만</string>
 </resources>
