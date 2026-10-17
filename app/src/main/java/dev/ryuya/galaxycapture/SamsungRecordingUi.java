@@ -21,6 +21,7 @@ final class SamsungRecordingUi {
     final Context strings;
     final List<Bundle> entries = new ArrayList<>();
     String selected;
+    String query = "";
     int mode, generation;
     boolean audioOnly;
 
@@ -292,12 +293,13 @@ final class SamsungRecordingUi {
                     entries == null || entries.isEmpty()
                         ? R.string.no_targets
                         : R.string.choose_target));
-            render(s, "");
+            render(s, s.query);
           }
         });
   }
 
   private static void render(State s, String query) {
+    s.query = query;
     List<Bundle> filtered = new ArrayList<>();
     String filter = query.toLowerCase(Locale.ROOT);
     for (Bundle e : s.entries)
