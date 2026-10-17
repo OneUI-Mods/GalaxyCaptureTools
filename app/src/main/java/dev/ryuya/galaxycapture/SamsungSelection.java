@@ -42,6 +42,7 @@ final class SamsungSelection {
   }
 
   static void installRecorder(HookRuntime rt, ClassLoader loader) {
+    CaptureControls.install(rt, loader);
     SamsungRecordingUi.install(rt, loader);
     Class<?> controller =
         Reflect.findClass(
@@ -120,6 +121,26 @@ final class SamsungSelection {
             } catch (Throwable error) {
               picking = false;
               cancel(owner);
+              rt.fail(error);
+            }
+          }
+
+          @Override
+          protected void afterHookedMethod(MethodHookParam p) {
+            if (p.hasThrowable() || !rt.options.enabled() || rt.options.countdown()
+                || !rt.guard.allowed()) return;
+            try {
+              // Selection/consent must have reached the native countdown. A canceled or pending
+              // asynchronous selection has no timer and cannot start recording here.
+              CountDownTimer timer =
+                  (CountDownTimer) Reflect.getObjectField(p.thisObject, "mCountDownTimer");
+              if (timer == null) return;
+              timer.cancel();
+              // Its own completion removes both progress timers and the countdown window,
+              // creates the native controls, and starts the recorder. No delayed tick survives.
+              timer.onFinish();
+            } catch (Throwable error) {
+              cancel(p.thisObject);
               rt.fail(error);
             }
           }

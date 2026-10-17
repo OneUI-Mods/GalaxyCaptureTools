@@ -66,4 +66,10 @@
 <string name="speaker_media_detail">Galaxy 전용. 미디어와 마이크에서 스피커 사용 시 마이크만 사용하는 분기를 건너뛰고 Galaxy 기본 오디오 혼합을 사용합니다. 끄면 기본 동작으로 돌아갑니다. 출력 장치는 바꾸지 않으며 다음 녹화부터 적용됩니다.</string>
 <string name="microphone_only">마이크만</string>
 <string name="module_description">One UI 화면 녹화의 회전, 대상 및 오디오 설정.</string>
+<string name="exclude_capture_controls">캡처 조작 UI가 저장되지 않도록 하기</string>
+<string name="exclude_capture_controls_detail">Galaxy 녹화 도구 모음과 스크린샷 후 조작 UI를 회전 중에도 저장되는 이미지 및 동영상에서 제외합니다. 휴대전화에서는 계속 사용할 수 있습니다. 다음 녹화 또는 스크린샷부터 적용됩니다.</string>
+<string name="hide_recording_controls">Galaxy 녹화 도구 모음 숨기기</string>
+<string name="hide_recording_controls_detail">휴대전화의 플로팅 녹화 도구 모음을 숨깁니다. 알림에서 녹화를 중지할 수 있습니다. 다음 녹화부터 적용됩니다.</string>
+<string name="countdown">Galaxy 녹화 전 카운트다운</string>
+<string name="countdown_detail">끄면 녹화 영역과 소리를 확인한 후 3초 카운트다운 없이 녹화가 시작됩니다. 다음 녹화부터 적용됩니다.</string>
 </resources>

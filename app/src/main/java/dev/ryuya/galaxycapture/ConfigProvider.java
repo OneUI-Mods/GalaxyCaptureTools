@@ -31,7 +31,10 @@ public final class ConfigProvider extends ContentProvider {
             "app_audio_only",
             "ignore_half_turns",
             "hide_duplicate_indicator",
-            "speaker_media"
+            "speaker_media",
+            "exclude_capture_controls",
+            "hide_recording_controls",
+            "countdown"
           })
         b.putBoolean(
             k,
@@ -39,7 +42,8 @@ public final class ConfigProvider extends ContentProvider {
                 k,
                 !k.equals("enabled")
                     && !k.equals("single_window")
-                    && !k.equals("ignore_half_turns")));
+                    && !k.equals("ignore_half_turns")
+                    && !k.equals("hide_recording_controls")));
       b.putString("reset", p.getString("reset", ""));
       var status = c.getSharedPreferences("status", 0);
       int boot =

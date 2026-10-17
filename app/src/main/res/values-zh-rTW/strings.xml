@@ -66,4 +66,10 @@
 <string name="speaker_media_detail">僅限 Galaxy。略過「媒體與麥克風」在揚聲器模式下僅使用麥克風的分支，使用 Galaxy 原有混音。關閉後恢復預設行為。不變更音訊輸出裝置，下次錄製時生效。</string>
 <string name="microphone_only">僅麥克風</string>
 <string name="module_description">One UI 螢幕錄製的旋轉、目標與音訊設定。</string>
+<string name="exclude_capture_controls">防止操作介面出現在截圖和錄影中</string>
+<string name="exclude_capture_controls_detail">將 Galaxy 錄影工具列和截圖後的操作介面從儲存的圖片及影片中排除，包括螢幕旋轉時。手機上仍可操作。從下一次錄影或截圖開始生效。</string>
+<string name="hide_recording_controls">隱藏 Galaxy 錄影工具列</string>
+<string name="hide_recording_controls_detail">隱藏手機上的浮動錄影工具列。可透過通知停止錄影。從下一次錄影開始生效。</string>
+<string name="countdown">Galaxy 錄影前倒數</string>
+<string name="countdown_detail">關閉後，確認錄影區域和聲音即可開始錄影，略過三秒倒數。從下一次錄影開始生效。</string>
 </resources>

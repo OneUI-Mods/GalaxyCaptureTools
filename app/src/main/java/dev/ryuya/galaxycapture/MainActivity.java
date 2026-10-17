@@ -71,6 +71,7 @@ public final class MainActivity extends AppCompatActivity {
         R.string.single_window,
         R.string.single_window_detail,
         false);
+    addSwitch(recordingOptions, "countdown", R.string.countdown, R.string.countdown_detail, true);
     addSwitch(
         audioOptions,
         "app_audio_only",
@@ -89,6 +90,18 @@ public final class MainActivity extends AppCompatActivity {
         R.string.hide_duplicate_indicator,
         R.string.hide_duplicate_indicator_detail,
         true);
+    addSwitch(
+        audioOptions,
+        "exclude_capture_controls",
+        R.string.exclude_capture_controls,
+        R.string.exclude_capture_controls_detail,
+        true);
+    addSwitch(
+        audioOptions,
+        "hide_recording_controls",
+        R.string.hide_recording_controls,
+        R.string.hide_recording_controls_detail,
+        false);
     updateEnabled();
     status = new com.google.android.material.textview.MaterialTextView(this);
     status.setTextSize(14);
