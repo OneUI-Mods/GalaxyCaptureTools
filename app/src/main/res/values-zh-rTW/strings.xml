@@ -47,4 +47,19 @@
 <string name="playback_audio_scope">裝置音訊錄製範圍</string>
 <string name="hide_duplicate_indicator">隱藏重複的錄製圖示</string>
 <string name="hide_duplicate_indicator_detail">保留左側錄製通知，隱藏本機錄影時右側重複的投放圖示。保留外部投放的指示圖示。</string>
+<string name="tab_status">狀態</string>
+<string name="tab_about">關於</string>
+<string name="legal_title">授權</string>
+<string name="legal_catalog_hint">選擇元件檢視詳細資料</string>
+<string name="legal_search">搜尋程式庫</string>
+<string name="legal_back">返回</string>
+<string name="legal_license_text">授權條款</string>
+<string name="legal_notices">著作權聲明</string>
+<string name="legal_no_results">沒有符合的程式庫</string>
+<string name="legal_load_error">無法載入授權檔案。</string>
+<string name="legal_reference_only">僅參照 API · 未包含於 APK</string>
+<string name="legal_distribution_notices">發行著作權聲明</string>
+<string name="tab_recording">錄製</string>
+<string name="tab_audio_display">音訊與顯示</string>
+<string name="app_version">版本 %1$s</string>
 </resources>

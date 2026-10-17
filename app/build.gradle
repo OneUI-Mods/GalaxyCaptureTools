@@ -2,7 +2,7 @@ plugins { id 'com.android.application' }
 android {
  namespace 'dev.ryuya.galaxycapture'
  compileSdk 36
- defaultConfig { applicationId 'dev.ryuya.galaxycapture'; minSdk 35; targetSdk 36; versionCode 8; versionName '0.1.1-experimental'; testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner' }
+ defaultConfig { applicationId 'dev.ryuya.galaxycapture'; minSdk 35; targetSdk 36; versionCode 9; versionName '0.1.2-experimental'; testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner' }
  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
  buildFeatures { buildConfig true }
 }
@@ -13,4 +13,14 @@ dependencies {
  androidTestImplementation 'androidx.test:runner:1.6.2'
  androidTestImplementation 'androidx.test:core:1.6.1'
  androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+}
+
+tasks.register('writeRuntimeDependencyList') {
+ doLast {
+  def entries = configurations.releaseRuntimeClasspath.resolvedConfiguration.resolvedArtifacts.collect {
+   def id = it.moduleVersion.id
+   "${id.group}:${id.name}:${id.version}"
+  }.unique().sort()
+  file('build/runtime-dependencies.txt').text = entries.join('\n') + '\n'
+ }
 }

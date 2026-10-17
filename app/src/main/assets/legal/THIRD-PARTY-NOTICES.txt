@@ -1,4 +1,4 @@
-Galaxy Adaptive Bar — Open-source notices
+Galaxy Capture Tools — Open-source notices
 
 Runtime components are used under the Apache License, Version 2.0.
 Copyright belongs to their respective authors, including Google / The Android Open Source Project, JetBrains, and the Guava authors. Exact resolved components follow.

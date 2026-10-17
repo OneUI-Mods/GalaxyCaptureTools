@@ -12,20 +12,18 @@ import com.google.android.material.materialswitch.MaterialSwitch;
 
 public final class MainActivity extends AppCompatActivity {
   private TextView status;
-  private LinearLayout individual;
+  private final java.util.List<LinearLayout> individual = new java.util.ArrayList<>();
+  private SettingsTabs pages;
 
   @Override
   public void onCreate(Bundle state) {
     super.onCreate(state);
-    var column = new LinearLayout(this);
-    column.setOrientation(LinearLayout.VERTICAL);
-    column.setPadding(dp(20), 0, dp(20), dp(28));
-    var scroll = new ScrollView(this);
-    scroll.setFillViewport(true);
-    scroll.addView(column);
-    setContentView(scroll);
+    androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+    var safe = new LinearLayout(this);
+    safe.setOrientation(LinearLayout.VERTICAL);
+    setContentView(safe);
     androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(
-        scroll,
+        safe,
         (v, i) -> {
           var b =
               i.getInsets(
@@ -34,42 +32,53 @@ public final class MainActivity extends AppCompatActivity {
           v.setPadding(b.left, b.top, b.right, b.bottom);
           return i;
         });
+    androidx.core.view.ViewCompat.requestApplyInsets(safe);
     var bar = new MaterialToolbar(this);
     bar.setTitle(R.string.app_name);
-    column.addView(bar);
-    var intro = new com.google.android.material.textview.MaterialTextView(this);
-    intro.setText(R.string.intro);
-    intro.setTextSize(16);
-    intro.setPadding(0, dp(12), 0, dp(24));
-    column.addView(intro);
-    addSwitch(column, "enabled", R.string.enabled, R.string.enabled_detail, false);
-    individual = new LinearLayout(this);
-    individual.setOrientation(LinearLayout.VERTICAL);
-    column.addView(individual);
+    safe.addView(bar, new LinearLayout.LayoutParams(-1, dp(64)));
+    pages = new SettingsTabs(this, safe, state);
+    LinearLayout recording = pages.page(R.string.tab_recording);
+    LinearLayout audioDisplay = pages.page(R.string.tab_audio_display);
+    LinearLayout operation = pages.page(R.string.tab_status);
+    LinearLayout information = pages.page(R.string.tab_about);
+    addSwitch(recording, "enabled", R.string.enabled, R.string.enabled_detail, false);
+    LinearLayout recordingOptions = new LinearLayout(this);
+    recordingOptions.setOrientation(LinearLayout.VERTICAL);
+    recording.addView(recordingOptions);
+    LinearLayout audioOptions = new LinearLayout(this);
+    audioOptions.setOrientation(LinearLayout.VERTICAL);
+    audioDisplay.addView(audioOptions);
+    individual.add(recordingOptions);
+    individual.add(audioOptions);
     var heading = new com.google.android.material.textview.MaterialTextView(this);
     heading.setText(R.string.individual_settings);
     heading.setTextAppearance(
         com.google.android.material.R.style.TextAppearance_Material3_TitleMedium);
     heading.setPadding(dp(4), 0, 0, dp(12));
-    individual.addView(heading);
-    addSwitch(individual, "rotation", R.string.rotation, R.string.rotation_detail, true);
+    recordingOptions.addView(heading);
+    addSwitch(recordingOptions, "rotation", R.string.rotation, R.string.rotation_detail, true);
     addSwitch(
-        individual,
+        recordingOptions,
         "ignore_half_turns",
         R.string.ignore_half_turns,
         R.string.ignore_half_turns_detail,
         false);
-    addSwitch(individual, "samsung_app", R.string.samsung_app, R.string.samsung_app_detail, true);
     addSwitch(
-        individual, "single_window", R.string.single_window, R.string.single_window_detail, false);
+        recordingOptions, "samsung_app", R.string.samsung_app, R.string.samsung_app_detail, true);
     addSwitch(
-        individual,
+        recordingOptions,
+        "single_window",
+        R.string.single_window,
+        R.string.single_window_detail,
+        false);
+    addSwitch(
+        audioOptions,
         "app_audio_only",
         R.string.app_audio_only,
         R.string.app_audio_only_detail,
         true);
     addSwitch(
-        individual,
+        audioOptions,
         "hide_duplicate_indicator",
         R.string.hide_duplicate_indicator,
         R.string.hide_duplicate_indicator_detail,
@@ -80,11 +89,11 @@ public final class MainActivity extends AppCompatActivity {
     status.setPadding(dp(16), dp(16), dp(16), dp(16));
     var card = new MaterialCardView(this);
     card.addView(status);
-    column.addView(card);
+    operation.addView(card);
     var refresh = new MaterialButton(this);
     refresh.setText(R.string.refresh);
     refresh.setOnClickListener(v -> showStatus());
-    column.addView(refresh);
+    operation.addView(refresh);
     var reset = new MaterialButton(this);
     reset.setText(R.string.reset_guard);
     reset.setOnClickListener(
@@ -104,42 +113,23 @@ public final class MainActivity extends AppCompatActivity {
                       showStatus();
                     })
                 .show());
-    column.addView(reset);
+    operation.addView(reset);
+    var version = new com.google.android.material.textview.MaterialTextView(this);
+    version.setText(getString(R.string.app_version, BuildConfig.VERSION_NAME));
+    version.setTextAppearance(
+        com.google.android.material.R.style.TextAppearance_Material3_TitleMedium);
+    information.addView(version);
+    var intro = new com.google.android.material.textview.MaterialTextView(this);
+    intro.setText(R.string.intro);
+    intro.setTextSize(16);
+    intro.setPadding(0, dp(16), 0, dp(24));
+    information.addView(intro);
     var notice = new MaterialButton(this);
     notice.setText(R.string.licenses);
-    notice.setOnClickListener(v -> showLicenses());
-    column.addView(notice);
+    notice.setOnClickListener(v -> startActivity(new Intent(this, LicensesActivity.class)));
+    information.addView(notice);
+    pages.restore();
     showStatus();
-  }
-
-  private void showLicenses() {
-    try {
-      StringBuilder text = new StringBuilder();
-      for (String name :
-          new String[] {
-            "PROJECT-MIT.txt", "THIRD-PARTY-NOTICES.txt", "XPOSED-NOTICE.txt", "APACHE-2.0.txt"
-          })
-        try (var in = getAssets().open("legal/" + name)) {
-          text.append(new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8))
-              .append("\n\n");
-        }
-      var body = new com.google.android.material.textview.MaterialTextView(this);
-      body.setText(text);
-      body.setTextIsSelectable(true);
-      body.setPadding(dp(20), dp(12), dp(20), dp(12));
-      var scroll = new androidx.core.widget.NestedScrollView(this);
-      scroll.addView(body);
-      new MaterialAlertDialogBuilder(this)
-          .setTitle(R.string.licenses)
-          .setView(scroll)
-          .setPositiveButton(android.R.string.ok, null)
-          .show();
-    } catch (java.io.IOException error) {
-      new MaterialAlertDialogBuilder(this)
-          .setMessage(R.string.license_detail)
-          .setPositiveButton(android.R.string.ok, null)
-          .show();
-    }
   }
 
   private void addSwitch(LinearLayout parent, String key, int label, int detail, boolean def) {
@@ -168,10 +158,11 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void updateEnabled() {
-    if (individual == null) return;
     boolean enabled = getSharedPreferences("config", 0).getBoolean("enabled", false);
-    setChildrenEnabled(individual, enabled);
-    individual.setAlpha(enabled ? 1f : .38f);
+    for (LinearLayout group : individual) {
+      setChildrenEnabled(group, enabled);
+      group.setAlpha(enabled ? 1f : .38f);
+    }
   }
 
   private void setChildrenEnabled(android.view.View view, boolean enabled) {
@@ -195,6 +186,12 @@ public final class MainActivity extends AppCompatActivity {
           .append(": ")
           .append(p.getString(host, getString(R.string.not_loaded)));
     status.setText(s);
+  }
+
+  @Override
+  protected void onSaveInstanceState(Bundle out) {
+    if (pages != null) pages.save(out);
+    super.onSaveInstanceState(out);
   }
 
   @Override

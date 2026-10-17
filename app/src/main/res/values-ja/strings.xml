@@ -47,4 +47,19 @@
 <string name="playback_audio_scope">端末内の音声の範囲</string>
 <string name="hide_duplicate_indicator">録画中の重複アイコンを隠す</string>
 <string name="hide_duplicate_indicator_detail">左側の録画通知を残し、右側に重複して出るミラーリングアイコンを隠します。外部画面へのキャスト表示は維持します。</string>
+<string name="tab_status">状態</string>
+<string name="tab_about">情報</string>
+<string name="legal_title">ライセンス</string>
+<string name="legal_catalog_hint">項目を選んで詳細を表示</string>
+<string name="legal_search">ライブラリを検索</string>
+<string name="legal_back">戻る</string>
+<string name="legal_license_text">ライセンス本文</string>
+<string name="legal_notices">著作権表示</string>
+<string name="legal_no_results">一致するライブラリがありません</string>
+<string name="legal_load_error">ライセンスファイルを読み込めませんでした。</string>
+<string name="legal_reference_only">API参照のみ · APKへの同梱なし</string>
+<string name="legal_distribution_notices">配布物の著作権表示</string>
+<string name="tab_recording">録画</string>
+<string name="tab_audio_display">音声・表示</string>
+<string name="app_version">バージョン %1$s</string>
 </resources>

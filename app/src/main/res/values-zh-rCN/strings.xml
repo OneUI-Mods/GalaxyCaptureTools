@@ -47,4 +47,19 @@
 <string name="playback_audio_scope">设备音频录制范围</string>
 <string name="hide_duplicate_indicator">隐藏重复的录制图标</string>
 <string name="hide_duplicate_indicator_detail">保留左侧录制通知，隐藏本地录屏时右侧重复的投屏图标。保留外部投屏的指示图标。</string>
+<string name="tab_status">状态</string>
+<string name="tab_about">关于</string>
+<string name="legal_title">许可证</string>
+<string name="legal_catalog_hint">选择组件查看详情</string>
+<string name="legal_search">搜索库</string>
+<string name="legal_back">返回</string>
+<string name="legal_license_text">许可证正文</string>
+<string name="legal_notices">版权声明</string>
+<string name="legal_no_results">没有匹配的库</string>
+<string name="legal_load_error">无法加载许可证文件。</string>
+<string name="legal_reference_only">仅引用 API · 未包含在 APK 中</string>
+<string name="legal_distribution_notices">发行版权声明</string>
+<string name="tab_recording">录制</string>
+<string name="tab_audio_display">音频和显示</string>
+<string name="app_version">版本 %1$s</string>
 </resources>
