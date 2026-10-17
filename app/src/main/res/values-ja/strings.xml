@@ -62,7 +62,7 @@
 <string name="tab_recording">録画</string>
 <string name="tab_audio_display">音声・表示</string>
 <string name="app_version">バージョン %1$s</string>
-<string name="mix_app_audio_with_mic">対象アプリの音声とマイクを直接ミックス</string>
-<string name="mix_app_audio_with_mic_detail">Galaxy専用。「対象アプリのみ」＋「メディアとマイク」で、スピーカー使用中もアプリの内部音声とマイクを一緒に録音します。OFFではGalaxy標準の混音処理を使います。次の録画から反映します。</string>
+<string name="speaker_media">スピーカーでも内部音声を含める</string>
+<string name="speaker_media_detail">Galaxy専用。「メディアとマイク」で、スピーカー時にマイクのみを使う分岐を無効にします。混音はGalaxy標準の処理です。OFFでは標準動作に戻ります。出力先は変更せず、次の録画から反映します。</string>
 <string name="microphone_only">マイクのみ</string>
 </resources>

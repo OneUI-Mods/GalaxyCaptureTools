@@ -79,9 +79,9 @@ public final class MainActivity extends AppCompatActivity {
         true);
     addSwitch(
         audioOptions,
-        "mix_app_audio_with_mic",
-        R.string.mix_app_audio_with_mic,
-        R.string.mix_app_audio_with_mic_detail,
+        "speaker_media",
+        R.string.speaker_media,
+        R.string.speaker_media_detail,
         true);
     addSwitch(
         audioOptions,

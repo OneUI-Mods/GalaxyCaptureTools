@@ -4,7 +4,7 @@ import android.os.Bundle;
 
 record Options(boolean enabled, boolean rotation, boolean samsungApp, boolean singleWindow,
     boolean appAudioOnly, boolean ignoreHalfTurns, boolean hideDuplicateIndicator,
-    boolean mixAppAudioWithMic) {
+    boolean speakerMedia) {
   static final Options OFF = new Options(false, false, false, false, true, false, false, false);
 
   static Options from(Bundle b) {
@@ -14,6 +14,6 @@ record Options(boolean enabled, boolean rotation, boolean samsungApp, boolean si
               b.getBoolean("samsung_app", true), b.getBoolean("single_window", false),
               b.getBoolean("app_audio_only", true), b.getBoolean("ignore_half_turns", false),
               b.getBoolean("hide_duplicate_indicator", true),
-              b.getBoolean("mix_app_audio_with_mic", true));
+              b.getBoolean("speaker_media", true));
   }
 }

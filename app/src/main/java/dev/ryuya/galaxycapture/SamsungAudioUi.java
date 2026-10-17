@@ -38,7 +38,7 @@ final class SamsungAudioUi {
                                    .intValue();
                   boolean plugged = (boolean) XposedHelpers.callStaticMethod(
                       audioUtil, "checkCurrentAudioDevicePlugged", output);
-                  boolean micOnly = rt.options.enabled() && !rt.options.mixAppAudioWithMic()
+                  boolean micOnly = rt.options.enabled() && !rt.options.speakerMedia()
                       && !plugged && !audio.isMicrophoneMute();
                   label.setText(micOnly ? strings.getText(R.string.microphone_only) : original);
                 } catch (Throwable error) {

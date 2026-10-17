@@ -31,7 +31,7 @@ public final class ConfigProvider extends ContentProvider {
             "app_audio_only",
             "ignore_half_turns",
             "hide_duplicate_indicator",
-            "mix_app_audio_with_mic"
+            "speaker_media"
           })
         b.putBoolean(
             k,

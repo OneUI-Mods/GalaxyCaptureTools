@@ -9,8 +9,8 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.*;
 
 final class AudioScope {
-  private static final String FILTERED = "galaxycapture.filteredPlayback";
-  private record SamsungAudio(int uid, MediaProjection projection, Object recorder) {}
+  private static final String SPEAKER_MEDIA = "galaxycapture.speakerMedia";
+  private record SamsungAudio(int uid, MediaProjection projection) {}
 
   private static final ThreadLocal<SamsungAudio> samsung = new ThreadLocal<>();
   private static final ThreadLocal<Integer> aosp = new ThreadLocal<>();
@@ -24,14 +24,15 @@ final class AudioScope {
       XposedBridge.hookAllMethods(cls, "createAudioRecord", new XC_MethodHook() {
         @Override
         protected void beforeHookedMethod(MethodHookParam p) {
-          XposedHelpers.setAdditionalInstanceField(p.thisObject, FILTERED, false);
+          XposedHelpers.setAdditionalInstanceField(
+              p.thisObject, SPEAKER_MEDIA, rt.options.enabled() && rt.options.speakerMedia());
           SamsungSelection.Target t = SamsungSelection.target();
           if (!rt.options.enabled() || t == null || !t.audioOnly())
             return;
           try {
             Object owner = XposedHelpers.getObjectField(p.thisObject, "pRecorder");
             samsung.set(
-                new SamsungAudio(t.uid(), SamsungSelection.audioProjection(owner), p.thisObject));
+                new SamsungAudio(t.uid(), SamsungSelection.audioProjection(owner)));
           } catch (Throwable error) {
             p.setThrowable(new IllegalStateException("App audio unavailable", error));
             rt.fail(error);
@@ -65,8 +66,6 @@ final class AudioScope {
                       .addMatchingUid(scope.uid())
                       .build();
               ((AudioRecord.Builder) p.thisObject).setAudioPlaybackCaptureConfig(capture);
-              XposedHelpers.setAdditionalInstanceField(
-                  scope.recorder(), FILTERED, rt.options.mixAppAudioWithMic());
               p.setResult(p.thisObject);
               rt.report("Recording target app audio only");
             } catch (Throwable error) {
@@ -75,43 +74,36 @@ final class AudioScope {
             }
           }
         });
-    // Samsung's speaker path normally relies on the microphone hearing device playback.
-    // A UID-filtered playback stream must be mixed digitally even without headphones.
+    // Enter Samsung's existing digital-mix branch only inside its audio-buffer callback.
+    // Never change routing, preferred input, or the actual headphone connection state.
+    Class<?> ownerClass = XposedHelpers.findClass(
+        "com.samsung.android.app.smartcapture.screenrecorder.recorder.core.MP4Recorder", loader);
+    XposedHelpers.findAndHookMethod(ownerClass, "isPlugging", new XC_MethodHook() {
+      @Override protected void afterHookedMethod(MethodHookParam p) {
+        if (SpeakerMixContext.includePlayback(p.thisObject)) p.setResult(true);
+      }
+    });
     XposedHelpers.findAndHookMethod(
-        XposedHelpers.findClass("com.samsung.android.app.smartcapture.screenrecorder.recorder.core."
-                                + "EnhancedMicAudioRecorder",
-            loader),
+        XposedHelpers.findClass(
+            "com.samsung.android.app.smartcapture.screenrecorder.recorder.core.EnhancedMicAudioRecorder", loader),
         "mixShortArrToByteBuffer",
         XposedHelpers.findClass(
-            "com.samsung.android.app.smartcapture.screenrecorder.recorder.core.AudioBuffer",
-            loader),
+            "com.samsung.android.app.smartcapture.screenrecorder.recorder.core.AudioBuffer", loader),
         ByteBuffer.class, new XC_MethodHook() {
-          @Override
-          protected void beforeHookedMethod(MethodHookParam p) {
-            if (!Boolean.TRUE.equals(
-                    XposedHelpers.getAdditionalInstanceField(p.thisObject, FILTERED)))
+          @Override protected void beforeHookedMethod(MethodHookParam p) {
+            if (!Boolean.TRUE.equals(XposedHelpers.getAdditionalInstanceField(p.thisObject, SPEAKER_MEDIA)))
               return;
-            ByteBuffer output = (ByteBuffer) p.args[1];
-            int originalPosition = output.position();
             try {
               Object owner = XposedHelpers.getObjectField(p.thisObject, "pRecorder");
-              boolean csCall = (boolean) XposedHelpers.callMethod(owner, "isCsCallState");
-              boolean psCall = (boolean) XposedHelpers.callMethod(owner, "isPsCallState");
-              boolean mute = XposedHelpers.getBooleanField(p.thisObject, "mIsMicrophoneMute")
-                  || (csCall && !psCall);
-              int[] read = (int[]) XposedHelpers.getObjectField(p.args[0], "readSize");
-              short[][] data = (short[][]) XposedHelpers.getObjectField(p.args[0], "shortDataArr");
-              PcmAudioMixer.mix(data[0], read[0], mute, data[1], read[1],
-                  ((Number) XposedHelpers.callMethod(owner, "getAudioScale")).floatValue(),
-                  XposedHelpers.getIntField(p.thisObject, "pHalfBufferSize"),
-                  output);
-              p.setResult(null);
+              p.setObjectExtra("previousMixer", SpeakerMixContext.enter(owner));
+              p.setObjectExtra("speakerMedia", true);
             } catch (Throwable error) {
-              // Keep the host's original audio path if this firmware's buffer layout differs.
-              output.position(originalPosition);
-              XposedHelpers.setAdditionalInstanceField(p.thisObject, FILTERED, false);
               rt.fail(error);
             }
+          }
+          @Override protected void afterHookedMethod(MethodHookParam p) {
+            if (Boolean.TRUE.equals(p.getObjectExtra("speakerMedia")))
+              SpeakerMixContext.restore(p.getObjectExtra("previousMixer"));
           }
         });
   }
