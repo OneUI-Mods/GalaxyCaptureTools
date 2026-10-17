@@ -170,6 +170,7 @@ final class SamsungSelection {
             earlyProjection = null;
             earlyOwner = null;
             rt.guard.finish();
+            if (rt.guard.allowed()) rt.report("Ready; recording ended");
           }
         });
     AudioScope.installSamsung(rt, loader);
