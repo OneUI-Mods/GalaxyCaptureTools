@@ -8,7 +8,6 @@ import android.util.TypedValue;
 import android.view.*;
 import android.widget.LinearLayout;
 import dev.ryuya.galaxycapture.hook.*;
-import java.lang.reflect.Proxy;
 import java.util.*;
 
 /** A native Samsung settings entry opens a separate, categorized custom settings window. */
@@ -94,9 +93,8 @@ final class SamsungSettingsUi {
     }
     void click(Object pref, Runnable action) {
       Class<?> callback = Reflect.findClass("androidx.preference.Preference$OnPreferenceClickListener", loader);
-      Object listener = Proxy.newProxyInstance(loader, new Class<?>[] {callback}, (proxy, method, args) -> {
-        if (method.getName().equals("onPreferenceClick")) { action.run(); return true; }
-        return objectMethod(proxy, method.getName(), args);
+      Object listener = HostCallbacks.create(loader, callback, (proxy, method, args) -> {
+        action.run(); return true;
       });
       Reflect.callMethod(pref, "setOnPreferenceClickListener", listener);
     }
@@ -114,8 +112,7 @@ final class SamsungSettingsUi {
       Map<String, CaptureSettings.Toggle> toggles = new HashMap<>();
       for (var toggle : CaptureSettings.all()) toggles.put(toggle.key(), toggle);
       Class<?> listener = Reflect.findClass("androidx.preference.Preference$OnPreferenceChangeListener", loader);
-      Object callback = Proxy.newProxyInstance(loader, new Class<?>[] {listener}, (proxy, method, args) -> {
-        if (!method.getName().equals("onPreferenceChange")) return objectMethod(proxy, method.getName(), args);
+      Object callback = HostCallbacks.create(loader, listener, (proxy, method, args) -> {
         String key = ((String) Reflect.callMethod(args[0], "getKey")).substring(KEY.length());
         Bundle update = new Bundle();
         if (args[1] instanceof Boolean value) update.putBoolean(key, value);
@@ -161,8 +158,7 @@ final class SamsungSettingsUi {
         switchBar = (View) Reflect.newInstance(Reflect.findClass("androidx.appcompat.widget.SeslSwitchBar", loader), host, null);
         Reflect.callMethod(switchBar, "setSessionDescription", strings.getString(R.string.enabled));
         Class<?> listener = Reflect.findClass("androidx.appcompat.widget.SeslSwitchBar$OnSwitchChangeListener", loader);
-        Reflect.callMethod(switchBar, "c", Proxy.newProxyInstance(loader, new Class<?>[] {listener}, (proxy, method, args) -> {
-          if (!method.getName().equals("a")) return objectMethod(proxy, method.getName(), args);
+        Reflect.callMethod(switchBar, "c", HostCallbacks.create(loader, listener, (proxy, method, args) -> {
           Bundle update = new Bundle(); update.putBoolean("enabled", (boolean) args[1]);
           if (!save(update)) refresh();
           return null;
@@ -250,10 +246,5 @@ final class SamsungSettingsUi {
     }
     void pause() { if (registered) host.unregisterReceiver(updates); registered = false; }
     int dp(int value) { return Math.round(value * host.getResources().getDisplayMetrics().density); }
-  }
-  private static Object objectMethod(Object proxy, String name, Object[] args) {
-    if (name.equals("hashCode")) return System.identityHashCode(proxy);
-    if (name.equals("equals")) return proxy == args[0];
-    return "GalaxyCapture settings listener";
   }
 }
