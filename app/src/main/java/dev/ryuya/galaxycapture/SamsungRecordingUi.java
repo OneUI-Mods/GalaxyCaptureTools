@@ -231,7 +231,7 @@ final class SamsungRecordingUi {
   }
 
   private static void openPicker(HookRuntime rt, State s, int mode, Runnable selectFull) {
-    if (s.picker != null) return;
+    if (s.picker != null || !rt.options.enabled() || !rt.guard.allowed()) return;
     try {
       Dialog parent =
           (Dialog) XposedHelpers.getObjectField(s.controller, "mSoundSettingSuggestionPopup");
@@ -247,11 +247,11 @@ final class SamsungRecordingUi {
               XposedHelpers.findClass("M4.c", s.controller.getClass().getClassLoader()),
               s.context,
               theme);
-      Object params = XposedHelpers.getObjectField(builder, "f6412b");
-      Context themed = (Context) XposedHelpers.getObjectField(params, "f22202a");
+      Object params = XposedHelpers.getObjectField(builder, "b");
+      Context themed = (Context) XposedHelpers.getObjectField(params, "a");
       XposedHelpers.setObjectField(
           params,
-          "f22205d",
+          "d",
           s.strings.getString(mode == 3 ? R.string.choose_window : R.string.choose_app));
       XposedHelpers.setObjectField(params, "i", s.strings.getString(R.string.back_to_recording));
       LinearLayout content = new LinearLayout(themed);
@@ -302,7 +302,7 @@ final class SamsungRecordingUi {
               Math.min(dp(themed, 520), (int) (available * .82f) - dp(themed, 140)));
       FrameLayout frame = new FrameLayout(themed);
       frame.addView(content, new FrameLayout.LayoutParams(-1, height));
-      XposedHelpers.setObjectField(params, "f22214o", frame);
+      XposedHelpers.setObjectField(params, "o", frame);
       Dialog picker = (Dialog) XposedHelpers.callMethod(builder, "f");
       s.picker = picker;
       Window window = picker.getWindow();
