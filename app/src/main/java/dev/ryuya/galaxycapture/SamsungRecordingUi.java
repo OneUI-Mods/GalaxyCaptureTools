@@ -312,11 +312,13 @@ final class SamsungRecordingUi {
               | WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
       picker.setCanceledOnTouchOutside(false);
       View decor = parent.getWindow().getDecorView();
+      boolean[] parentAttached = {true};
       View.OnAttachStateChangeListener lifecycle =
           new View.OnAttachStateChangeListener() {
             public void onViewAttachedToWindow(View v) {}
 
             public void onViewDetachedFromWindow(View v) {
+              parentAttached[0] = false;
               picker.dismiss();
             }
           };
@@ -327,7 +329,7 @@ final class SamsungRecordingUi {
             if (s.picker != picker) return;
             s.picker = null;
             s.generation++;
-            if (decor.isAttachedToWindow()) parent.show();
+            if (parentAttached[0] && decor.isAttachedToWindow()) parent.show();
           });
       s.other.setOnClickListener(
           v -> {
