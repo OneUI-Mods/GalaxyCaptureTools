@@ -106,5 +106,5 @@
     <string name="custom_screenshot_detail">스크린샷 제한 및 조작 UI 제외</string>
     <string name="custom_back">뒤로</string>
 <string name="recording_icon_right">녹화 아이콘을 오른쪽에 표시</string>
-<string name="recording_icon_right_detail">Galaxy 녹화 아이콘을 오른쪽으로 옮깁니다. 알림과 중지 동작은 유지합니다. 오른쪽 표시를 확인할 수 없으면 왼쪽 아이콘을 유지합니다. 사용 중에는 중복 아이콘 억제를 우선합니다.</string>
+<string name="recording_icon_right_detail">Galaxy의 조작 가능한 녹화 표시를 그대로 오른쪽으로 옮기고 탭 및 중지 기능을 유지합니다. 중복 미러링 아이콘은 숨깁니다. 지원하지 않는 배치나 공간 부족 시 왼쪽으로 복원합니다. 세로 화면 전용입니다.</string>
 </resources>

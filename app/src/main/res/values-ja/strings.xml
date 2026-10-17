@@ -106,5 +106,5 @@
     <string name="custom_screenshot_detail">スクショの制限解除・操作UIの映り込み</string>
     <string name="custom_back">戻る</string>
 <string name="recording_icon_right">録画中アイコンを右側に表示</string>
-<string name="recording_icon_right_detail">Galaxyの録画中アイコンを右側へ移します。通知本文と停止操作は残します。右側の表示を確認できない場合は左側を維持します。有効中は重複アイコンの抑制を優先します。</string>
+<string name="recording_icon_right_detail">Galaxyの操作付き録画表示をそのまま右側へ移し、タップからの停止操作も保ちます。重複するミラーリングアイコンは隠します。配置が非対応・空き領域不足の場合は左側へ戻します。縦画面のみ対応。</string>
 </resources>

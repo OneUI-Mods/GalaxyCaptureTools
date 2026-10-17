@@ -97,9 +97,6 @@ public final class Reflect {
   public static void setBooleanField(Object o, String n, boolean v) {
     setObjectField(o, n, v);
   }
-  public static void setFloatField(Object o, String n, float v) {
-    setObjectField(o, n, v);
-  }
   public static void setIntField(Object o, String n, int v) {
     setObjectField(o, n, v);
   }

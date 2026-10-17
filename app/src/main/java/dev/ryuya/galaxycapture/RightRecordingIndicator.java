@@ -1,282 +1,299 @@
 package dev.ryuya.galaxycapture;
 
+import android.content.res.Configuration;
+import android.graphics.Rect;
 import android.os.*;
-import android.service.notification.StatusBarNotification;
 import android.view.*;
+import android.widget.LinearLayout;
 import dev.ryuya.galaxycapture.hook.*;
 import java.lang.ref.WeakReference;
 import java.util.*;
 
 /**
- * Uses Samsung's existing screen-record slot; notification content and stop actions are retained.
+ * Moves the actual Samsung recording chip, including its native gesture detector and stop dialog.
  */
 final class RightRecordingIndicator {
   private final HookRuntime rt;
   private final Handler main = new Handler(Looper.getMainLooper());
-  private final Map<ViewGroup, Mask> containers = new WeakHashMap<>();
-  private WeakReference<Object> cast = new WeakReference<>(null);
-  private Object icons;
-  private Class<?> iconView;
-  private String slot;
-  private boolean failed, samsungRecording, owned, nativeVisible;
-  private final Runnable refresh = this::refresh;
+  private final Map<Object, State> states = new WeakHashMap<>();
+  private Class<?> nativeChip;
+  private boolean failed;
 
   private RightRecordingIndicator(HookRuntime runtime) {
     rt = runtime;
   }
 
-  static RightRecordingIndicator install(HookRuntime runtime, ClassLoader loader) {
-    RightRecordingIndicator bridge = new RightRecordingIndicator(runtime);
+  static void install(HookRuntime rt, ClassLoader loader) {
+    RightRecordingIndicator bridge = new RightRecordingIndicator(rt);
     try {
       bridge.install(loader);
     } catch (Throwable error) {
       bridge.fail(error);
     }
-    return bridge;
   }
 
   private void install(ClassLoader loader) throws Exception {
-    Class<?> policy =
-        Reflect.findClass("com.android.systemui.statusbar.phone.PhoneStatusBarPolicy", loader);
+    Class<?> fragment =
+        Reflect.findClass(
+            "com.android.systemui.statusbar.phone.fragment.CollapsedStatusBarFragment", loader);
     Class<?> controller =
         Reflect.findClass(
-            "com.android.systemui.statusbar.phone.ui.StatusBarIconControllerImpl", loader);
-    Class<?> container =
-        Reflect.findClass("com.android.systemui.statusbar.phone.NotificationIconContainer", loader);
-    iconView = Reflect.findClass("com.android.systemui.statusbar.StatusBarIconView", loader);
-    if (!ViewGroup.class.isAssignableFrom(container) || !View.class.isAssignableFrom(iconView))
-      throw new IllegalStateException("Status-bar view types changed");
-    controller.getDeclaredMethod("setIconVisibility", String.class, boolean.class);
-    container.getDeclaredMethod("resetViewStates");
-    container.getDeclaredMethod("shouldForceOverflow", int.class, float.class, int.class);
-    // These native callers inline resetViewStates/shouldForceOverflow on this firmware.
-    Hooks.deoptimize(container.getDeclaredMethod("updateState"));
-    Hooks.deoptimize(container.getDeclaredMethod("calculateIconXTranslations"));
-    Hooks.deoptimize(
-        container.getDeclaredMethod(
-            "onLayout", boolean.class, int.class, int.class, int.class, int.class));
-    Hooks.hookAllConstructors(
-        policy,
-        new HookCallback() {
-          @Override
-          protected void afterHookedMethod(MethodHookParam p) {
-            if (failed || p.hasThrowable()) return;
-            try {
-              icons = Reflect.getObjectField(p.thisObject, "mIconController");
-              slot = (String) Reflect.getObjectField(p.thisObject, "mSlotScreenRecord");
-              if (!controller.isInstance(icons) || slot == null || slot.isBlank())
-                throw new IllegalStateException("Recording slot unavailable");
-              queue();
-            } catch (Throwable error) {
-              fail(error);
-            }
-          }
-        });
-    Class<?> castController =
-        Reflect.findClass("com.android.systemui.statusbar.phone.SamsungCastIconController", loader);
-    Hooks.hookAllConstructors(
-        castController,
-        new HookCallback() {
-          @Override
-          protected void afterHookedMethod(MethodHookParam p) {
-            if (!p.hasThrowable()) observe(p.thisObject);
-          }
-        });
+            "com.android.systemui.statusbar.phone.ongoingcast.SamsungOngoingCastController",
+            loader);
+    nativeChip =
+        Reflect.findClass("com.android.systemui.statusbar.phone.TouchInterceptFrameLayout", loader);
+    if (!ViewGroup.class.isAssignableFrom(nativeChip)
+        || nativeChip.getDeclaredField("customClickListener").getType()
+            != View.OnClickListener.class
+        || nativeChip.getDeclaredField("touchForwardView").getType() != View.class)
+      throw new IllegalStateException("Native interactive chip contract changed");
+    fragment.getDeclaredMethod("onViewCreated", View.class, Bundle.class);
+    fragment.getDeclaredMethod("onDestroyView");
+    controller.getDeclaredMethod("updateAll", String.class);
     Hooks.hookAllMethods(
-        container,
-        "resetViewStates",
+        fragment,
+        "onViewCreated",
         new HookCallback() {
-          @Override
-          protected void beforeHookedMethod(MethodHookParam p) {
-            try {
-              restoreMask((ViewGroup) p.thisObject);
-            } catch (Throwable error) {
-              fail(error);
-            }
-          }
-
           @Override
           protected void afterHookedMethod(MethodHookParam p) {
             if (failed || p.hasThrowable()) return;
             try {
-              mask((ViewGroup) p.thisObject);
+              Object owner = Reflect.getObjectField(p.thisObject, "mOngoingCastController");
+              View root = (View) Reflect.getObjectField(p.thisObject, "mStatusBar");
+              View chip = (View) Reflect.getObjectField(p.thisObject, "mOngoingCastChip");
+              if (!controller.isInstance(owner)
+                  || !nativeChip.isInstance(chip)
+                  || !"samsung_ongoing_cast_chip".equals(name(chip)))
+                throw new IllegalStateException("Recording chip binding changed");
+              int id =
+                  root.getResources()
+                      .getIdentifier("status_bar_end_side_content", "id", "com.android.systemui");
+              View end = id == 0 ? null : root.findViewById(id);
+              if (!(end instanceof LinearLayout target)
+                  || target.getOrientation() != LinearLayout.HORIZONTAL
+                  || !(chip.getParent() instanceof LinearLayout original))
+                throw new IllegalStateException("Status-bar chip containers changed");
+              State prior = states.remove(p.thisObject);
+              if (prior != null) prior.destroy();
+              State state = new State(root, chip, original, target, owner);
+              states.put(p.thisObject, state);
+              root.addOnLayoutChangeListener(state.layout);
+              state.queue();
             } catch (Throwable error) {
               fail(error);
             }
           }
         });
     Hooks.hookAllMethods(
-        container,
-        "shouldForceOverflow",
+        fragment,
+        "onDestroyView",
         new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
-            if (failed) return;
-            Mask mask = containers.get(p.thisObject);
-            if (mask != null)
-              p.args[0] = RecordingIndicatorPolicy.visibleIndex((int) p.args[0], mask.indices);
+            State state = states.remove(p.thisObject);
+            if (state != null) state.destroy();
           }
         });
-    rt.onOptionsChanged(this::queue);
-    Hooks.log("GalaxyCapture: right recording slot hooks ready");
+    Hooks.hookAllMethods(
+        controller,
+        "updateAll",
+        new HookCallback() {
+          @Override
+          protected void afterHookedMethod(MethodHookParam p) {
+            if (failed || p.hasThrowable()) return;
+            for (State state : new ArrayList<>(states.values()))
+              if (state.owner.get() == p.thisObject) state.queue();
+          }
+        });
+    rt.onOptionsChanged(
+        () ->
+            main.post(
+                () -> {
+                  for (State state : new ArrayList<>(states.values())) {
+                    state.fitRejected = false;
+                    state.queue();
+                  }
+                }));
+    Hooks.log("GalaxyCapture: native Samsung recording chip relocation ready");
   }
 
-  void observe(Object owner) {
-    if (failed) return;
-    cast = new WeakReference<>(owner);
-    queue();
-  }
-
-  private void queue() {
-    main.removeCallbacks(refresh);
-    main.post(refresh);
-  }
-
-  private void refresh() {
-    if (failed) return;
+  private static String name(View view) {
     try {
-      samsungRecording = false;
-      Object owner = cast.get();
-      if (owner != null) {
-        Object devices =
-            Reflect.callMethod(Reflect.getObjectField(owner, "castController"), "getCastDevices");
-        if (!(devices instanceof List<?> list))
-          throw new IllegalStateException("Cast list changed");
-        for (Object device : list) {
-          if (!Reflect.getBooleanField(device, "isCasting")) continue;
-          Object tag = Reflect.getObjectField(device, "tag");
-          if (tag != null
-              && "android.media.projection.MediaProjectionInfo".equals(tag.getClass().getName())
-              && "com.samsung.android.app.smartcapture"
-                  .equals(Reflect.callMethod(tag, "getPackageName"))) samsungRecording = true;
-        }
-      }
-      boolean on =
-          rt.options.enabled()
-              && rt.guard.allowed()
-              && rt.options.recordingIconRight()
-              && samsungRecording;
-      if (icons != null && slot != null) {
-        if (on) {
-          if (!owned) nativeVisible = currentVisible();
-          Reflect.callMethod(icons, "setIconVisibility", slot, true);
-          owned = true;
-        } else restoreRight();
-      }
-      refreshContainers();
-    } catch (Throwable error) {
-      fail(error);
+      return view.getResources().getResourceEntryName(view.getId());
+    } catch (android.content.res.Resources.NotFoundException ignored) {
+      return "";
     }
   }
 
-  private boolean currentVisible() {
-    Object list = Reflect.getObjectField(icons, "mStatusBarIconList");
-    Object holder = Reflect.callMethod(list, "getIconHolder", 0, slot);
-    if (holder == null) throw new IllegalStateException("Native recording icon not initialized");
-    Object icon = Reflect.getObjectField(holder, "icon");
-    if (icon == null) throw new IllegalStateException("Native recording icon model missing");
-    return Reflect.getBooleanField(icon, "visible");
-  }
-
-  private void restoreRight() {
-    if (!owned) return;
-    if (currentVisible()) Reflect.callMethod(icons, "setIconVisibility", slot, nativeVisible);
-    owned = false;
-  }
-
-  private boolean statusBar(ViewGroup container) {
-    if (container.getId() == View.NO_ID) return false;
-    return "notificationIcons"
-            .equals(container.getResources().getResourceEntryName(container.getId()))
-        && !Reflect.getBooleanField(container, "mOnKeyguardStatusBar");
-  }
-
-  private boolean rightVisible(View view) {
-    if (iconView.isInstance(view)) {
-      return Objects.equals(slot, Reflect.getObjectField(view, "mSlot"))
-          && Reflect.getObjectField(view, "mNotification") == null
-          && !Reflect.getBooleanField(view, "mBlocked")
-          && view.isShown()
-          && Reflect.getIntField(view, "mVisibleState") == 0;
+  private boolean samsungRecording(Object controller) {
+    if (Reflect.getBooleanField(controller, "isLinkToWindowing")) return false;
+    Object raw =
+        Reflect.callMethod(Reflect.getObjectField(controller, "castController"), "getCastDevices");
+    if (!(raw instanceof List<?> devices))
+      throw new IllegalStateException("Cast device list changed");
+    boolean recording = false;
+    for (Object device : devices) {
+      if (!Reflect.getBooleanField(device, "isCasting")) continue;
+      Object tag = Reflect.getObjectField(device, "tag");
+      if (tag == null
+          || !"android.media.projection.MediaProjectionInfo".equals(tag.getClass().getName())
+          || !"com.samsung.android.app.smartcapture"
+              .equals(Reflect.callMethod(tag, "getPackageName"))) return false;
+      recording = true;
     }
-    if (view instanceof ViewGroup group)
-      for (int i = 0; i < group.getChildCount(); i++)
-        if (rightVisible(group.getChildAt(i))) return true;
-    return false;
-  }
-
-  @SuppressWarnings("unchecked")
-  private void mask(ViewGroup container) {
-    if (!statusBar(container)) return;
-    Mask mask = containers.computeIfAbsent(container, key -> new Mask());
-    mask.indices = new int[0];
-    if (!rt.options.enabled()
-        || !rt.guard.allowed()
-        || !rt.options.recordingIconRight()
-        || !samsungRecording
-        || !owned
-        || !rightVisible(container.getRootView())) return;
-    Object raw = Reflect.getObjectField(container, "mIconStates");
-    if (!(raw instanceof Map<?, ?> states))
-      throw new IllegalStateException("Icon state map changed");
-    List<Integer> hidden = new ArrayList<>();
-    for (int i = 0; i < container.getChildCount(); i++) {
-      View view = container.getChildAt(i);
-      if (!iconView.isInstance(view)) continue;
-      Object notification = Reflect.getObjectField(view, "mNotification");
-      if (!(notification instanceof StatusBarNotification sbn)) continue;
-      if (!RecordingIndicatorPolicy.hideLeft(
-          true,
-          true,
-          true,
-          true,
-          sbn.getPackageName(),
-          sbn.getId(),
-          sbn.getNotification().getChannelId(),
-          sbn.isOngoing())) continue;
-      Object state = states.get(view);
-      if (state == null) continue;
-      float amount = Reflect.getFloatField(state, "iconAppearAmount");
-      if (amount <= 0) continue;
-      mask.original.put(state, amount);
-      Reflect.setFloatField(state, "iconAppearAmount", 0f);
-      Reflect.setBooleanField(state, "hidden", true);
-      hidden.add(i);
-    }
-    mask.indices = hidden.stream().mapToInt(Integer::intValue).toArray();
-  }
-
-  private void restoreMask(ViewGroup container) {
-    Mask mask = containers.get(container);
-    if (mask == null) return;
-    for (var entry : new ArrayList<>(mask.original.entrySet())) {
-      if (entry.getKey() != null && Reflect.getFloatField(entry.getKey(), "iconAppearAmount") == 0f)
-        Reflect.setFloatField(entry.getKey(), "iconAppearAmount", entry.getValue());
-    }
-    mask.original.clear();
-    mask.indices = new int[0];
-    // Native resetViewStates clears hidden/alpha immediately after this callback.
-  }
-
-  private void refreshContainers() {
-    for (ViewGroup container : new ArrayList<>(containers.keySet())) {
-      if (container.isAttachedToWindow()) container.requestLayout();
-    }
+    return recording;
   }
 
   private void fail(Throwable error) {
     failed = true;
-    samsungRecording = false;
-    try {
-      restoreRight();
-    } catch (Throwable ignored) {
-    }
-    refreshContainers();
-    Hooks.log("GalaxyCapture: right recording icon disabled; native indicators retained: " + error);
+    for (State state : new ArrayList<>(states.values())) state.restore();
+    rt.report("Ready; recordingChip=unavailable: " + error.getClass().getSimpleName());
+    Hooks.log("GalaxyCapture: chip relocation disabled; native controls retained: " + error);
   }
 
-  private static final class Mask {
-    final Map<Object, Float> original = new WeakHashMap<>();
-    int[] indices = new int[0];
+  private final class State {
+    final WeakReference<View> root, chip;
+    final WeakReference<LinearLayout> original, target;
+    final WeakReference<Object> owner;
+    final int index;
+    final ViewGroup.LayoutParams originalParams;
+    final View.OnLayoutChangeListener layout;
+    final Runnable apply = this::apply;
+    boolean moved, moving, fitRejected, destroyed;
+    String diagnostic = "";
+
+    State(View bar, View view, LinearLayout start, LinearLayout end, Object controller) {
+      root = new WeakReference<>(bar);
+      chip = new WeakReference<>(view);
+      original = new WeakReference<>(start);
+      target = new WeakReference<>(end);
+      owner = new WeakReference<>(controller);
+      index = start.indexOfChild(view);
+      originalParams = view.getLayoutParams();
+      layout =
+          (v, l, t, r, b, ol, ot, or, ob) -> {
+            if (r - l != or - ol || b - t != ob - ot) fitRejected = false;
+            queue();
+          };
+    }
+
+    void queue() {
+      main.removeCallbacks(apply);
+      if (!destroyed) main.post(apply);
+    }
+
+    void apply() {
+      if (moving || destroyed) return;
+      try {
+        View bar = root.get(), view = chip.get();
+        LinearLayout start = original.get(), end = target.get();
+        Object controller = owner.get();
+        boolean on =
+            !failed
+                && rt.options.enabled()
+                && rt.guard.allowed()
+                && rt.options.recordingIconRight()
+                && !fitRejected;
+        if (!on
+            || bar == null
+            || view == null
+            || start == null
+            || end == null
+            || controller == null
+            || !bar.isAttachedToWindow()
+            || bar.getDisplay() == null
+            || bar.getDisplay().getDisplayId() != 0
+            || bar.getResources().getConfiguration().orientation
+                != Configuration.ORIENTATION_PORTRAIT
+            || view.getRootView() != end.getRootView()
+            || !samsungRecording(controller)) {
+          restore();
+          report(fitRejected ? "left-space-limited" : "left");
+          return;
+        }
+        if (Reflect.getObjectField(controller, "chipView") != view
+            || Reflect.getObjectField(view, "customClickListener") == null) {
+          restore();
+          report("waiting-native-click");
+          return;
+        }
+        if (!moved) {
+          if (view.getParent() != start
+              || !(originalParams instanceof LinearLayout.LayoutParams params))
+            throw new IllegalStateException("Chip parent changed");
+          LinearLayout.LayoutParams next = new LinearLayout.LayoutParams(params);
+          next.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+          next.weight = 0;
+          moving = true;
+          start.removeView(view);
+          try {
+            end.addView(view, 0, next);
+            moved = true;
+          } catch (Throwable error) {
+            start.addView(view, Math.min(index, start.getChildCount()), originalParams);
+            throw error;
+          } finally {
+            moving = false;
+          }
+          // It is the identical View instance; no click listener, clock or dialog is replaced.
+          queue();
+          report("right; nativeView=true; nativeClick=true");
+        } else if (view.getParent() == end
+            && view.getVisibility() == View.VISIBLE
+            && view.getWidth() > 0) {
+          Rect visible = new Rect();
+          if (view.isShown()
+              && (!view.getGlobalVisibleRect(visible)
+                  || visible.width() < view.getWidth()
+                  || visible.height() < view.getHeight())) {
+            fitRejected = true;
+            restore();
+            report("left-space-limited");
+          }
+        }
+      } catch (Throwable error) {
+        fail(error);
+      }
+    }
+
+    void report(String value) {
+      if (value.equals(diagnostic)) return;
+      diagnostic = value;
+      rt.report("Ready; recordingChip=" + value);
+      Hooks.log("GalaxyCapture: recordingChip=" + value);
+    }
+
+    void restore() {
+      View view = chip.get();
+      LinearLayout start = original.get(), end = target.get();
+      if (!moved || moving || view == null || start == null) return;
+      moving = true;
+      try {
+        if (view.getParent() == end) {
+          end.removeView(view);
+          start.addView(view, Math.min(index, start.getChildCount()), originalParams);
+        }
+        moved = false;
+      } catch (Throwable error) {
+        // Preserve the interactive view even if an external layout changes during restoration.
+        if (view.getParent() == null && end != null) {
+          try {
+            end.addView(view);
+          } catch (Throwable ignored) {
+          }
+        }
+        Hooks.log("GalaxyCapture: native chip restoration failed: " + error);
+      } finally {
+        moving = false;
+      }
+    }
+
+    void destroy() {
+      destroyed = true;
+      main.removeCallbacks(apply);
+      View bar = root.get();
+      if (bar != null) bar.removeOnLayoutChangeListener(layout);
+      restore();
+    }
   }
 }

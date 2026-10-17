@@ -106,5 +106,5 @@
     <string name="custom_screenshot_detail">截图限制与操作界面排除</string>
     <string name="custom_back">返回</string>
 <string name="recording_icon_right">在右侧显示录屏图标</string>
-<string name="recording_icon_right_detail">将Galaxy录屏中的图标移至右侧，保留通知内容和停止操作。无法确认右侧图标显示时保留左侧图标。启用时优先抑制重复图标。</string>
+<string name="recording_icon_right_detail">将Galaxy原有的可交互录屏指示移至右侧，保留点击和停止操作，隐藏重复的投屏图标。布局不兼容或空间不足时恢复到左侧。仅支持竖屏。</string>
 </resources>

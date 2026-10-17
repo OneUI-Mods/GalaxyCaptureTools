@@ -106,5 +106,5 @@
     <string name="custom_screenshot_detail">Screenshot restrictions and capture UI exclusion</string>
     <string name="custom_back">Back</string>
 <string name="recording_icon_right">Recording icon on the right</string>
-<string name="recording_icon_right_detail">Moves the Galaxy recording icon to the right side. Keeps the recording notification and stop action. If the right icon cannot be shown, keeps the left icon. Takes priority over duplicate-icon suppression while enabled.</string>
+<string name="recording_icon_right_detail">Moves the original interactive Galaxy recording chip to the right, keeping tap and stop controls. Hides the duplicate casting icon. If the layout is incompatible or space is insufficient, keeps the chip on the left. Portrait display only.</string>
 </resources>

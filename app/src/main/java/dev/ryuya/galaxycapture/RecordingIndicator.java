@@ -7,7 +7,7 @@ import java.util.List;
 /** Removes only the cast icon duplicated by known local recorders; recording UI is untouched. */
 final class RecordingIndicator {
   static void install(HookRuntime rt, ClassLoader loader) {
-    RightRecordingIndicator right = RightRecordingIndicator.install(rt, loader);
+    RightRecordingIndicator.install(rt, loader);
     Class<?> controller =
         Reflect.findClass(
             "com.android.systemui.statusbar.phone.SamsungCastIconController", loader);
@@ -18,7 +18,6 @@ final class RecordingIndicator {
             new HookCallback() {
               @Override
               protected void beforeHookedMethod(MethodHookParam p) {
-                if (p.args.length == 1 && p.args[0] != null) right.observe(p.args[0]);
                 if (!rt.options.enabled()
                     || (!rt.options.hideDuplicateIndicator() && !rt.options.recordingIconRight())
                     || !rt.guard.allowed()) return;
