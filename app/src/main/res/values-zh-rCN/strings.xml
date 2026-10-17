@@ -17,8 +17,8 @@
 <string name="licenses">许可证</string>
 <string name="license_detail">本项目：MIT。Material Components 和 AndroidX：Apache License 2.0。Xposed API 仅在编译时使用。</string>
 <string name="individual_settings">单项设置 · 总开关开启时生效</string>
-<string name="app_audio_only">应用录制默认仅录目标音频</string>
-<string name="app_audio_only_detail">适用于 Android 应用录制。Galaxy 可在开始界面选择目标应用或所有应用音频。麦克风另行设置。</string>
+<string name="app_audio_only">默认仅录制目标应用音频</string>
+<string name="app_audio_only_detail">应用录制的默认音频范围。可在 Android 或 Galaxy 的录制开始界面更改。麦克风设置独立。</string>
 <string name="ignore_half_turns">忽略180度旋转</string>
 <string name="ignore_half_turns_detail">在相同横竖方向间反转设备时保持视频方向。横向开始时，即使黑边校正关闭也可使用。</string>
 <string name="area_full">全屏</string>
@@ -45,4 +45,6 @@
 <string name="no_search_results">没有匹配的应用。</string>
 <string name="change_target">更改录制目标：%1$s</string>
 <string name="playback_audio_scope">设备音频录制范围</string>
+<string name="hide_duplicate_indicator">隐藏重复的录制图标</string>
+<string name="hide_duplicate_indicator_detail">保留左侧录制通知，隐藏本地录屏时右侧重复的投屏图标。保留外部投屏的指示图标。</string>
 </resources>

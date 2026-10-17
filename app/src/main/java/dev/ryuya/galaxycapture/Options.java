@@ -8,8 +8,9 @@ record Options(
     boolean samsungApp,
     boolean singleWindow,
     boolean appAudioOnly,
-    boolean ignoreHalfTurns) {
-  static final Options OFF = new Options(false, false, false, false, true, false);
+    boolean ignoreHalfTurns,
+    boolean hideDuplicateIndicator) {
+  static final Options OFF = new Options(false, false, false, false, true, false, false);
 
   static Options from(Bundle b) {
     return b == null
@@ -20,6 +21,7 @@ record Options(
             b.getBoolean("samsung_app", true),
             b.getBoolean("single_window", false),
             b.getBoolean("app_audio_only", true),
-            b.getBoolean("ignore_half_turns", false));
+            b.getBoolean("ignore_half_turns", false),
+            b.getBoolean("hide_duplicate_indicator", true));
   }
 }

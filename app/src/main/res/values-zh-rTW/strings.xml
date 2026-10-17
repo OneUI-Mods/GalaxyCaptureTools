@@ -17,8 +17,8 @@
 <string name="licenses">授權條款</string>
 <string name="license_detail">本專案：MIT。Material Components 和 AndroidX：Apache License 2.0。Xposed API 僅在編譯時使用。</string>
 <string name="individual_settings">個別設定 · 總開關開啟時生效</string>
-<string name="app_audio_only">應用程式錄製預設僅錄目標音訊</string>
-<string name="app_audio_only_detail">適用於 Android 應用程式錄製。Galaxy 可在開始畫面選擇目標應用程式或所有應用程式音訊。麥克風另行設定。</string>
+<string name="app_audio_only">預設僅錄製目標應用程式音訊</string>
+<string name="app_audio_only_detail">應用程式錄製的預設音訊範圍。可在 Android 或 Galaxy 的錄製開始畫面變更。麥克風設定獨立。</string>
 <string name="ignore_half_turns">忽略180度旋轉</string>
 <string name="ignore_half_turns_detail">在相同橫直方向間反轉裝置時保持影片方向。橫向開始時，即使黑邊校正關閉也可使用。</string>
 <string name="area_full">全螢幕</string>
@@ -45,4 +45,6 @@
 <string name="no_search_results">沒有符合的應用程式。</string>
 <string name="change_target">變更錄製目標：%1$s</string>
 <string name="playback_audio_scope">裝置音訊錄製範圍</string>
+<string name="hide_duplicate_indicator">隱藏重複的錄製圖示</string>
+<string name="hide_duplicate_indicator_detail">保留左側錄製通知，隱藏本機錄影時右側重複的投放圖示。保留外部投放的指示圖示。</string>
 </resources>

@@ -28,7 +28,8 @@ public class SettingsHierarchyTest {
                   R.string.ignore_half_turns,
                   R.string.samsung_app,
                   R.string.single_window,
-                  R.string.app_audio_only
+                  R.string.app_audio_only,
+                  R.string.hide_duplicate_indicator
                 }) {
               MaterialSwitch control = find(a.getWindow().getDecorView(), a.getString(label));
               assertNotNull(control);

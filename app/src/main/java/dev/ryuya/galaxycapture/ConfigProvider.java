@@ -29,7 +29,8 @@ public final class ConfigProvider extends ContentProvider {
             "samsung_app",
             "single_window",
             "app_audio_only",
-            "ignore_half_turns"
+            "ignore_half_turns",
+            "hide_duplicate_indicator"
           })
         b.putBoolean(
             k,

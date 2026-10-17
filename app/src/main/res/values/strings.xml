@@ -18,7 +18,7 @@
 <string name="license_detail">MIT project. Material Components and AndroidX: Apache License 2.0. Xposed API is used only at compile time.</string>
 <string name="individual_settings">Individual features · active only when the master switch is on</string>
 <string name="app_audio_only">Default to target app audio</string>
-<string name="app_audio_only_detail">For Android app recordings, capture the selected app audio. Galaxy recordings can choose target app audio or all app audio in the start dialog. Microphone selection is separate.</string>
+<string name="app_audio_only_detail">Default playback audio scope for app recording. Override it in the Android or Galaxy recording start dialog. Microphone settings are separate.</string>
 <string name="ignore_half_turns">Ignore 180° turns</string>
 <string name="ignore_half_turns_detail">Keep footage in the same direction when switching between opposite portrait or landscape orientations. Works with either recording start orientation, including landscape starts with black-bar correction off.</string>
 <string name="area_full">Full screen</string>
@@ -45,4 +45,6 @@
 <string name="no_search_results">No matching apps.</string>
 <string name="change_target">Change target: %1$s</string>
 <string name="playback_audio_scope">Device audio to record</string>
+<string name="hide_duplicate_indicator">Hide the duplicate recording icon</string>
+<string name="hide_duplicate_indicator_detail">Keeps the recording notification on the left and hides the extra casting icon on the right during local screen recording. External casting indicators are preserved.</string>
 </resources>

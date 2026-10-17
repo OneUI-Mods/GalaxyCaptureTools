@@ -68,6 +68,12 @@ public final class MainActivity extends AppCompatActivity {
         R.string.app_audio_only,
         R.string.app_audio_only_detail,
         true);
+    addSwitch(
+        individual,
+        "hide_duplicate_indicator",
+        R.string.hide_duplicate_indicator,
+        R.string.hide_duplicate_indicator_detail,
+        true);
     updateEnabled();
     status = new com.google.android.material.textview.MaterialTextView(this);
     status.setTextSize(14);

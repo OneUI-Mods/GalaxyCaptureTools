@@ -92,3 +92,10 @@ Android標準のタスク録画＋ウィンドウ固定＋回転で、WindowStat
 - アプリ選択結果のLaunchCookieのbinderとtaskIdへ、今回の音声範囲を結び付ける。カウントダウン・Parcelable経由のサービス開始後、ScreenMediaRecorder.startで一度だけ消費する。未使用の選択は60秒で消去する。別の録画へ最後の値を無条件に適用しない。指定のない呼び出しでは設定アプリの既定値へ従う。
 - この環境の新旧録画サービスはSystemUIと同じプロセスで動く。startのThreadLocalを通して、内部音声レコーダーの作成時だけ選択を適用し、終了時に必ず消去する。アプリの音声のみを選んだ場合は投影対象のUIDへ絞り、端末全体なら標準の音声キャプチャを使う。
 - 20件の単体テスト、Lint、署名済みreleaseの作成は成功。Android標準UIでの表示・音声比較は、SystemUIの読み直し後のロック解除待ち。
+
+## 録画中の重複したキャストアイコン
+
+- SamsungCastIconControllerはAOSPのScreenRecordUxControllerだけを録画中判定に使うため、Samsung CaptureのMediaProjectionもキャストとして表示していた。
+- 録画の通知は変更せず、Samsungの右側キャストアイコンの更新だけを対象にする。キャスト中の項目がSamsung CaptureまたはSystemUIのローカルMediaProjectionだけなら、非表示にして標準の遅延表示処理を実行しない。MediaRouterの外部ルートや別パッケージの投影が含まれる場合は、標準の処理へ戻す。
+- 「録画中の重複アイコンを隠す」を追加し、既定ON・全体スイッチに従う。例外時は標準処理を続けて保護停止する。投影の状態、権限、キャスト一覧、左側の通知は変更しない。
+- 20件の単体テスト、Lint、releaseビルド成功。表示比較の実機確認はロック解除待ち。

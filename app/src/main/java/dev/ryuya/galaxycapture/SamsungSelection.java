@@ -36,6 +36,7 @@ final class SamsungSelection {
             }
           }
         });
+    RecordingIndicator.install(rt, loader);
     AospRecordingUi.install(rt, loader);
     AudioScope.installAosp(rt, loader);
   }
