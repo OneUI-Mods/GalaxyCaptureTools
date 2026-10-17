@@ -242,6 +242,12 @@ final class CaptureTargets {
     selected =
         new Selection(
             owner, c.task, c.window, c.activity, strict, SystemClock.elapsedRealtime() + 60000);
+    Selection pending = selected;
+    rt.worker.postDelayed(
+        () -> {
+          if (selected == pending) selected = null;
+        },
+        60000);
     Bundle out = new Bundle();
     out.putBinder("cookie", binder);
     out.putInt("task_id", c.task);

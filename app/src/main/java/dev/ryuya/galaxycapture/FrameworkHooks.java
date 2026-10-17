@@ -20,6 +20,7 @@ final class FrameworkHooks {
     final RotationPolicy rotationPolicy;
     Object window;
     final boolean mainWindow;
+    boolean needsWindowLayout;
 
     Session(
         Object recordingSession, Object activity, Object window, Options options, int rotation) {
@@ -162,6 +163,7 @@ final class FrameworkHooks {
                   replaceWindowMirror(recorder, old);
                 }
                 if (!validWindow(old.window)) {
+                  old.needsWindowLayout = true;
                   Object surface = field(recorder, "mRecordedSurface");
                   if (surface != null) {
                     Object tx = call(old.activity, "getSyncTransaction");
@@ -189,6 +191,14 @@ final class FrameworkHooks {
                 p.setResult(null);
                 fail(recorder, error);
               }
+              Object currentRecorder = field(p.thisObject, "mContentRecorder");
+              Session current = sessions.get(currentRecorder);
+              if (current != null && current.needsWindowLayout && runtime.guard.allowed()) {
+                recorder = currentRecorder;
+                resumeWindowLayout(currentRecorder, current);
+              }
+            } catch (Throwable error) {
+              if (recorder != null) fail(recorder, error);
             } finally {
               Object previous = p.getObjectExtra("previous");
               if (previous == null) display.remove();
@@ -224,6 +234,29 @@ final class FrameworkHooks {
         "updateMirroredSurface",
         new XC_MethodHook() {
           @Override
+          protected void beforeHookedMethod(MethodHookParam p) {
+            Session s = sessions.get(p.thisObject);
+            if (s == null) return;
+            try {
+              Rect bounds = (Rect) p.args[1];
+              Point output = (Point) p.args[2];
+              if (bounds == null
+                  || bounds.isEmpty()
+                  || output == null
+                  || output.x <= 0
+                  || output.y <= 0
+                  || (s.activity != null && (!validWindow(s.window) || windowFrame(s).isEmpty()))) {
+                s.needsWindowLayout = s.activity != null;
+                hideWindow(p.thisObject, s, p.args[0]);
+                p.setResult(null);
+              }
+            } catch (Throwable error) {
+              p.setResult(null);
+              fail(p.thisObject, error);
+            }
+          }
+
+          @Override
           protected void afterHookedMethod(MethodHookParam p) {
             Session s = sessions.get(p.thisObject);
             if (s == null
@@ -243,18 +276,30 @@ final class FrameworkHooks {
                 return;
               }
             }
-            if (s == null) return;
+            if (s == null || runtime == null || !runtime.guard.allowed()) return;
             try {
               if (p.hasThrowable()) throw p.getThrowable();
               Object surface = field(p.thisObject, "mRecordedSurface");
               if (surface == null) return;
               Rect source = (Rect) p.args[1];
               if (s.activity != null) {
-                if (!validWindow(s.window))
-                  throw new IllegalStateException("Selected window removed");
-                source = (Rect) field(field(s.window, "mWindowFrames"), "mFrame");
+                if (!validWindow(s.window)) {
+                  s.needsWindowLayout = true;
+                  hideWindow(p.thisObject, s, p.args[0]);
+                  return;
+                }
+                source = windowFrame(s);
               }
               Point output = (Point) p.args[2];
+              if (source == null
+                  || source.isEmpty()
+                  || output == null
+                  || output.x <= 0
+                  || output.y <= 0) {
+                s.needsWindowLayout = s.activity != null;
+                hideWindow(p.thisObject, s, p.args[0]);
+                return;
+              }
               int q = s.rotationPolicy.update(rotation(p.thisObject));
               var t =
                   RecordingTransform.fit(source.width(), source.height(), output.x, output.y, q);
@@ -262,6 +307,7 @@ final class FrameworkHooks {
               call(p.args[0], "setMatrix", surface, t.a(), t.b(), t.c(), t.d());
               call(p.args[0], "setPosition", surface, t.x(), t.y());
               if (s.activity != null) call(p.args[0], "setAlpha", surface, 1f);
+              s.needsWindowLayout = false;
               runtime.report(
                   "Recording; rotation="
                       + (q * 90)
@@ -285,10 +331,41 @@ final class FrameworkHooks {
             sessions.remove(p.thisObject);
             if (sessions.isEmpty() && runtime != null) {
               runtime.guard.finish();
-              runtime.report("Ready; recording ended");
+              runtime.report(
+                  runtime.guard.allowed()
+                      ? "Ready; recording ended"
+                      : "Stopped by crash protection");
             }
           }
         });
+  }
+
+  private static Rect windowFrame(Session session) {
+    return (Rect) field(field(session.window, "mWindowFrames"), "mFrame");
+  }
+
+  private static void hideWindow(Object recorder, Session session, Object tx) {
+    if (session.activity == null) return;
+    Object surface = field(recorder, "mRecordedSurface");
+    if (surface != null) call(tx, "setAlpha", surface, 0f);
+  }
+
+  private static void resumeWindowLayout(Object recorder, Session session) {
+    if (session.activity == null || !(boolean) call(session.activity, "isAttached")) return;
+    Object current =
+        session.mainWindow ? call(session.activity, "findMainWindow", false) : session.window;
+    if (!validWindow(current)) return;
+    Rect frame = (Rect) field(field(current, "mWindowFrames"), "mFrame");
+    Point size = (Point) call(recorder, "fetchSurfaceSizeIfPresent");
+    if (frame.isEmpty() || size == null || size.x <= 0 || size.y <= 0) return;
+    if (current != session.window) {
+      session.window = current;
+      replaceWindowMirror(recorder, session);
+    } else if (field(recorder, "mRecordedSurface") != null) {
+      Object tx = call(session.activity, "getSyncTransaction");
+      call(recorder, "updateMirroredSurface", tx, call(session.activity, "getBounds"), size);
+      call(session.activity, "scheduleAnimation");
+    }
   }
 
   private static void replaceWindowMirror(Object recorder, Session session) {
