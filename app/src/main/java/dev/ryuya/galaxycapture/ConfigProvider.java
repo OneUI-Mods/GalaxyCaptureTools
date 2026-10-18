@@ -46,8 +46,10 @@ public final class ConfigProvider extends ContentProvider {
             || (packages != null
                 && (Arrays.asList(packages).contains("com.android.systemui")
                     || Arrays.asList(packages).contains("com.samsung.android.app.smartcapture")));
-    if (method.equals("native_settings") && packages != null
-        && Arrays.asList(packages).contains("com.samsung.android.app.smartcapture") && data != null) {
+    if (method.equals("native_settings")
+        && packages != null
+        && Arrays.asList(packages).contains("com.samsung.android.app.smartcapture")
+        && data != null) {
       // Only Samsung Capture can write the explicit user-facing setting allowlist.
       var edit = c.getSharedPreferences("config", 0).edit();
       for (String key : new String[] {"media_volume", "mic_volume"})

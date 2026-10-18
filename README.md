@@ -38,3 +38,5 @@ MIT License。依存ライブラリの表記はアプリ内と`app/src/main/asse
 導入手順と制限は[リリース案内](docs/releases/0.3.0-experimental.md)、署名付きAPKの作成手順は[配布手順](docs/releasing.md)を参照してください。
 
 設定画面は「共通」「Galaxy」「状態」「情報」のタブから操作できます。「共通」はAndroid標準（AOSP）とGalaxyの両方に適用し、「Galaxy」はSamsungキャプチャ専用です。全体スイッチはどのタブでも表示します。ライセンスは検索可能な一覧から、各ライブラリの本文・著作権表示を確認できます。
+
+ソースを編集する際の書式は[ソースの書式](docs/source-style.md)を参照してください。

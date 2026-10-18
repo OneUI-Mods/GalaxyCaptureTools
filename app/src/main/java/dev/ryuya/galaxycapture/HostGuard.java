@@ -87,7 +87,11 @@ final class HostGuard {
   synchronized void endCapture() {
     captureOperations = Math.max(0, captureOperations - 1);
     state.setProperty("active", Boolean.toString(recordingActive || captureOperations > 0));
-    try { save(); } catch (Throwable error) { blocked = true; }
+    try {
+      save();
+    } catch (Throwable error) {
+      blocked = true;
+    }
   }
 
   synchronized void fail() {

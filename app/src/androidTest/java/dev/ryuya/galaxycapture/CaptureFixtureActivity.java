@@ -101,7 +101,8 @@ public class CaptureFixtureActivity extends Activity {
 
           @Override
           public boolean onTouchEvent(MotionEvent e) {
-            if (e.getAction() == MotionEvent.ACTION_UP && getIntent().getBooleanExtra("interactive", true))
+            if (e.getAction() == MotionEvent.ACTION_UP
+                && getIntent().getBooleanExtra("interactive", true))
               startActivity(new Intent(CaptureFixtureActivity.this, SecondFixtureActivity.class));
             return true;
           }

@@ -252,8 +252,7 @@ final class CaptureTargets {
     boolean strict = data.getBoolean("windows", false);
     if (strict && (c.window == null || !rt.options.singleWindow()))
       throw new IllegalStateException("Window selection disabled");
-    Class<?> cookieClass =
-        Reflect.findClass("android.app.ActivityOptions$LaunchCookie", null);
+    Class<?> cookieClass = Reflect.findClass("android.app.ActivityOptions$LaunchCookie", null);
     Object cookie = Reflect.newInstance(cookieClass, "galaxy_capture_target");
     IBinder binder = (IBinder) field(cookie, "binder");
     if (c.task >= 0) {
@@ -310,8 +309,7 @@ final class CaptureTargets {
                 field(wm, "mRoot"),
                 "getDisplayContent",
                 (int) call(session, "getVirtualDisplayId"));
-        if (dc != null
-            && Reflect.getIntField(field(dc, "mDisplayInfo"), "ownerUid") == owner) {
+        if (dc != null && Reflect.getIntField(field(dc, "mDisplayInfo"), "ownerUid") == owner) {
           app = true;
           uid = (int) call(session, "getTargetUid");
         }

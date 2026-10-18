@@ -101,8 +101,7 @@ final class SamsungSelection {
                         throw new IllegalStateException("Invalid capture target");
                       Object cookie =
                           Reflect.newInstance(
-                              Reflect.findClass(
-                                  "android.app.ActivityOptions$LaunchCookie", null),
+                              Reflect.findClass("android.app.ActivityOptions$LaunchCookie", null),
                               binder);
                       target = new Target(cookie, task, uid, state.audioOnly);
                       rt.guard.arm();
@@ -129,7 +128,9 @@ final class SamsungSelection {
 
           @Override
           protected void afterHookedMethod(MethodHookParam p) {
-            if (p.hasThrowable() || !rt.options.enabled() || rt.options.countdown()
+            if (p.hasThrowable()
+                || !rt.options.enabled()
+                || rt.options.countdown()
                 || !rt.guard.allowed()) return;
             try {
               // Selection/consent must have reached the native countdown. A canceled or pending
@@ -224,8 +225,7 @@ final class SamsungSelection {
     target = null;
     approved = false;
     try {
-      ((android.app.Service) Reflect.getObjectField(owner, "mScreenRecorderService"))
-          .stopSelf();
+      ((android.app.Service) Reflect.getObjectField(owner, "mScreenRecorderService")).stopSelf();
     } catch (Throwable ignored) {
     }
   }

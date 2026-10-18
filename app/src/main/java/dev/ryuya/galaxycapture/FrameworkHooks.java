@@ -52,8 +52,7 @@ final class FrameworkHooks {
 
   private static int rotation(Object recorder) {
     Object source = field(recorder, "mRecordedWindowContainer");
-    return Reflect.getIntField(
-        field(field(source, "mDisplayContent"), "mDisplayInfo"), "rotation");
+    return Reflect.getIntField(field(field(source, "mDisplayContent"), "mDisplayInfo"), "rotation");
   }
 
   private static void stop(Object recorder) {
@@ -131,7 +130,9 @@ final class FrameworkHooks {
                         : (choice != null && choice.window() != null
                             ? choice.window()
                             : call(activity, "findMainWindow", false));
-                if (lock && type == 1 && (window == null || !validWindow(window, options.secureRecording()))) {
+                if (lock
+                    && type == 1
+                    && (window == null || !validWindow(window, options.secureRecording()))) {
                   p.setResult(null);
                   return;
                 }
@@ -144,8 +145,7 @@ final class FrameworkHooks {
                             (int) call(nativeSession, "getDisplayToRecord"))
                         : task;
                 Object sourceDisplay = task == null ? source : field(source, "mDisplayContent");
-                int initial =
-                    Reflect.getIntField(field(sourceDisplay, "mDisplayInfo"), "rotation");
+                int initial = Reflect.getIntField(field(sourceDisplay, "mDisplayInfo"), "rotation");
                 rt.guard.arm();
                 old = new Session(nativeSession, activity, window, options, initial);
                 sessions.put(recorder, old);
@@ -158,7 +158,9 @@ final class FrameworkHooks {
                   stop(recorder);
                   return;
                 }
-                if (current != null && validWindow(current, old.options.secureRecording()) && current != old.window) {
+                if (current != null
+                    && validWindow(current, old.options.secureRecording())
+                    && current != old.window) {
                   old.window = current;
                   replaceWindowMirror(recorder, old);
                 }
@@ -245,7 +247,9 @@ final class FrameworkHooks {
                   || output == null
                   || output.x <= 0
                   || output.y <= 0
-                  || (s.activity != null && (!validWindow(s.window, s.options.secureRecording()) || windowFrame(s).isEmpty()))) {
+                  || (s.activity != null
+                      && (!validWindow(s.window, s.options.secureRecording())
+                          || windowFrame(s).isEmpty()))) {
                 s.needsWindowLayout = s.activity != null;
                 hideWindow(p.thisObject, s, p.args[0]);
                 p.setResult(null);

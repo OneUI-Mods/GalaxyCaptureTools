@@ -10,6 +10,7 @@ import java.util.concurrent.*;
 
 final class AudioScope {
   private static final String SPEAKER_MEDIA = "galaxycapture.speakerMedia";
+
   private record SamsungAudio(int uid, MediaProjection projection) {}
 
   private static final ThreadLocal<SamsungAudio> samsung = new ThreadLocal<>();
@@ -19,44 +20,50 @@ final class AudioScope {
   static void installSamsung(HookRuntime rt, ClassLoader loader) {
     SamsungAudioUi.install(rt, loader);
     for (String name : new String[] {"SystemAudioRecorder", "EnhancedMicAudioRecorder"}) {
-      Class<?> cls = Reflect.findClass(
-          "com.samsung.android.app.smartcapture.screenrecorder.recorder.core." + name, loader);
-      Hooks.hookAllMethods(cls, "createAudioRecord", new HookCallback() {
-        @Override
-        protected void beforeHookedMethod(MethodHookParam p) {
-          Reflect.setAdditionalInstanceField(
-              p.thisObject, SPEAKER_MEDIA, rt.options.enabled() && rt.options.speakerMedia());
-          SamsungSelection.Target t = SamsungSelection.target();
-          if (!rt.options.enabled() || t == null || !t.audioOnly())
-            return;
-          try {
-            Object owner = Reflect.getObjectField(p.thisObject, "pRecorder");
-            samsung.set(
-                new SamsungAudio(t.uid(), SamsungSelection.audioProjection(owner)));
-          } catch (Throwable error) {
-            p.setThrowable(new IllegalStateException("App audio unavailable", error));
-            rt.fail(error);
-          }
-        }
+      Class<?> cls =
+          Reflect.findClass(
+              "com.samsung.android.app.smartcapture.screenrecorder.recorder.core." + name, loader);
+      Hooks.hookAllMethods(
+          cls,
+          "createAudioRecord",
+          new HookCallback() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam p) {
+              Reflect.setAdditionalInstanceField(
+                  p.thisObject, SPEAKER_MEDIA, rt.options.enabled() && rt.options.speakerMedia());
+              SamsungSelection.Target t = SamsungSelection.target();
+              if (!rt.options.enabled() || t == null || !t.audioOnly()) return;
+              try {
+                Object owner = Reflect.getObjectField(p.thisObject, "pRecorder");
+                samsung.set(new SamsungAudio(t.uid(), SamsungSelection.audioProjection(owner)));
+              } catch (Throwable error) {
+                p.setThrowable(new IllegalStateException("App audio unavailable", error));
+                rt.fail(error);
+              }
+            }
 
-        @Override
-        protected void afterHookedMethod(MethodHookParam p) {
-          samsung.remove();
-        }
-      });
+            @Override
+            protected void afterHookedMethod(MethodHookParam p) {
+              samsung.remove();
+            }
+          });
     }
-    int playback = Reflect.getStaticIntField(
-        Reflect.findClass("com.samsung.android.app.smartcapture.screenrecorder.recorder."
-                                + "common.ScreenRecorderDefine$AudioSource",
-            loader),
-        "SEM_PLAYBACK_RECORD");
+    int playback =
+        Reflect.getStaticIntField(
+            Reflect.findClass(
+                "com.samsung.android.app.smartcapture.screenrecorder.recorder."
+                    + "common.ScreenRecorderDefine$AudioSource",
+                loader),
+            "SEM_PLAYBACK_RECORD");
     Reflect.findAndHookMethod(
-        AudioRecord.Builder.class, "setAudioSource", int.class, new HookCallback() {
+        AudioRecord.Builder.class,
+        "setAudioSource",
+        int.class,
+        new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
             SamsungAudio scope = samsung.get();
-            if (scope == null || (int) p.args[0] != playback)
-              return;
+            if (scope == null || (int) p.args[0] != playback) return;
             try {
               AudioPlaybackCaptureConfiguration capture =
                   new AudioPlaybackCaptureConfiguration.Builder(scope.projection())
@@ -76,23 +83,33 @@ final class AudioScope {
         });
     // Enter Samsung's existing digital-mix branch only inside its audio-buffer callback.
     // Never change routing, preferred input, or the actual headphone connection state.
-    Class<?> ownerClass = Reflect.findClass(
-        "com.samsung.android.app.smartcapture.screenrecorder.recorder.core.MP4Recorder", loader);
-    Reflect.findAndHookMethod(ownerClass, "isPlugging", new HookCallback() {
-      @Override protected void afterHookedMethod(MethodHookParam p) {
-        if (SpeakerMixContext.includePlayback(p.thisObject)) p.setResult(true);
-      }
-    });
+    Class<?> ownerClass =
+        Reflect.findClass(
+            "com.samsung.android.app.smartcapture.screenrecorder.recorder.core.MP4Recorder",
+            loader);
+    Reflect.findAndHookMethod(
+        ownerClass,
+        "isPlugging",
+        new HookCallback() {
+          @Override
+          protected void afterHookedMethod(MethodHookParam p) {
+            if (SpeakerMixContext.includePlayback(p.thisObject)) p.setResult(true);
+          }
+        });
     Reflect.findAndHookMethod(
         Reflect.findClass(
-            "com.samsung.android.app.smartcapture.screenrecorder.recorder.core.EnhancedMicAudioRecorder", loader),
+            "com.samsung.android.app.smartcapture.screenrecorder.recorder.core.EnhancedMicAudioRecorder",
+            loader),
         "mixShortArrToByteBuffer",
         Reflect.findClass(
-            "com.samsung.android.app.smartcapture.screenrecorder.recorder.core.AudioBuffer", loader),
-        ByteBuffer.class, new HookCallback() {
-          @Override protected void beforeHookedMethod(MethodHookParam p) {
-            if (!Boolean.TRUE.equals(Reflect.getAdditionalInstanceField(p.thisObject, SPEAKER_MEDIA)))
-              return;
+            "com.samsung.android.app.smartcapture.screenrecorder.recorder.core.AudioBuffer",
+            loader),
+        ByteBuffer.class,
+        new HookCallback() {
+          @Override
+          protected void beforeHookedMethod(MethodHookParam p) {
+            if (!Boolean.TRUE.equals(
+                Reflect.getAdditionalInstanceField(p.thisObject, SPEAKER_MEDIA))) return;
             try {
               Object owner = Reflect.getObjectField(p.thisObject, "pRecorder");
               p.setObjectExtra("previousMixer", SpeakerMixContext.enter(owner));
@@ -101,7 +118,9 @@ final class AudioScope {
               rt.fail(error);
             }
           }
-          @Override protected void afterHookedMethod(MethodHookParam p) {
+
+          @Override
+          protected void afterHookedMethod(MethodHookParam p) {
             if (Boolean.TRUE.equals(p.getObjectExtra("speakerMedia")))
               SpeakerMixContext.restore(p.getObjectExtra("previousMixer"));
           }
@@ -111,11 +130,11 @@ final class AudioScope {
   static void installAosp(HookRuntime rt, ClassLoader loader) {
     Hooks.hookAllMethods(
         Reflect.findClass("com.android.systemui.screenrecord.ScreenMediaRecorder", loader),
-        "start", new HookCallback() {
+        "start",
+        new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
-            if (!rt.options.enabled())
-              return;
+            if (!rt.options.enabled()) return;
             try {
               aospScope.set(AospRecordingUi.takeScope(p.thisObject, rt.options.appAudioOnly()));
             } catch (Throwable error) {
@@ -129,31 +148,34 @@ final class AudioScope {
             aospScope.remove();
           }
         });
-    Class<?> recorder = Reflect.findClass(
-        "com.android.systemui.screenrecord.ScreenInternalAudioRecorder", loader);
-    Hooks.hookAllConstructors(recorder, new HookCallback() {
-      @Override
-      protected void beforeHookedMethod(MethodHookParam p) {
-        Boolean scope = aospScope.get();
-        if (!rt.options.enabled() || !(scope == null ? rt.options.appAudioOnly() : scope))
-          return;
-        try {
-          int uid = resolve(rt);
-          if (uid >= 0)
-            aosp.set(uid);
-        } catch (Throwable error) {
-          p.setThrowable(new java.io.IOException("App audio filtering unavailable", error));
-          rt.fail(error);
-        }
-      }
+    Class<?> recorder =
+        Reflect.findClass("com.android.systemui.screenrecord.ScreenInternalAudioRecorder", loader);
+    Hooks.hookAllConstructors(
+        recorder,
+        new HookCallback() {
+          @Override
+          protected void beforeHookedMethod(MethodHookParam p) {
+            Boolean scope = aospScope.get();
+            if (!rt.options.enabled() || !(scope == null ? rt.options.appAudioOnly() : scope))
+              return;
+            try {
+              int uid = resolve(rt);
+              if (uid >= 0) aosp.set(uid);
+            } catch (Throwable error) {
+              p.setThrowable(new java.io.IOException("App audio filtering unavailable", error));
+              rt.fail(error);
+            }
+          }
 
-      @Override
-      protected void afterHookedMethod(MethodHookParam p) {
-        aosp.remove();
-      }
-    });
+          @Override
+          protected void afterHookedMethod(MethodHookParam p) {
+            aosp.remove();
+          }
+        });
     Hooks.hookAllMethods(
-        AudioPlaybackCaptureConfiguration.Builder.class, "build", new HookCallback() {
+        AudioPlaybackCaptureConfiguration.Builder.class,
+        "build",
+        new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
             Integer uid = aosp.get();
@@ -166,17 +188,20 @@ final class AudioScope {
   private static int resolve(HookRuntime rt) throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     int[] uid = {-2};
-    TargetBridge.request(rt, "audio_uid", null, new ResultReceiver(rt.worker) {
-      @Override
-      protected void onReceiveResult(int code, Bundle result) {
-        if (code == Activity.RESULT_OK && result != null) {
-          int value = result.getInt("uid", -1);
-          if (value >= 0 || !result.getBoolean("app", false))
-            uid[0] = value;
-        }
-        latch.countDown();
-      }
-    });
+    TargetBridge.request(
+        rt,
+        "audio_uid",
+        null,
+        new ResultReceiver(rt.worker) {
+          @Override
+          protected void onReceiveResult(int code, Bundle result) {
+            if (code == Activity.RESULT_OK && result != null) {
+              int value = result.getInt("uid", -1);
+              if (value >= 0 || !result.getBoolean("app", false)) uid[0] = value;
+            }
+            latch.countDown();
+          }
+        });
     if (!latch.await(1500, TimeUnit.MILLISECONDS) || uid[0] == -2)
       throw new IllegalStateException("Audio target not resolved");
     return uid[0];

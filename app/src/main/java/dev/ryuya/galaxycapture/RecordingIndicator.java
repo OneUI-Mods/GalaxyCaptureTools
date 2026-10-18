@@ -9,8 +9,7 @@ final class RecordingIndicator {
   static void install(HookRuntime rt, ClassLoader loader) {
     RightRecordingIndicator.install(rt, loader);
     Class<?> controller =
-        Reflect.findClass(
-            "com.android.systemui.statusbar.phone.SamsungCastIconController", loader);
+        Reflect.findClass("com.android.systemui.statusbar.phone.SamsungCastIconController", loader);
     var hooks =
         Hooks.hookAllMethods(
             controller,

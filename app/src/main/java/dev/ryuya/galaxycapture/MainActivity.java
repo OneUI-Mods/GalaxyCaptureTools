@@ -16,8 +16,10 @@ public final class MainActivity extends AppCompatActivity {
   private SettingsTabs pages;
   private boolean syncing;
   private final java.util.Map<String, MaterialSwitch> toggles = new java.util.HashMap<>();
-  private final java.util.Map<String, com.google.android.material.slider.Slider> levels = new java.util.HashMap<>();
-  private final android.content.SharedPreferences.OnSharedPreferenceChangeListener changed = (p, key) -> syncSettings();
+  private final java.util.Map<String, com.google.android.material.slider.Slider> levels =
+      new java.util.HashMap<>();
+  private final android.content.SharedPreferences.OnSharedPreferenceChangeListener changed =
+      (p, key) -> syncSettings();
 
   @Override
   public void onCreate(Bundle state) {
@@ -74,7 +76,12 @@ public final class MainActivity extends AppCompatActivity {
         R.string.single_window,
         R.string.single_window_detail,
         false);
-    addSwitch(commonOptions, "secure_recording", R.string.secure_recording, R.string.secure_recording_detail, false);
+    addSwitch(
+        commonOptions,
+        "secure_recording",
+        R.string.secure_recording,
+        R.string.secure_recording_detail,
+        false);
     addHeading(commonOptions, R.string.section_audio_display);
     addSwitch(
         commonOptions,
@@ -88,8 +95,12 @@ public final class MainActivity extends AppCompatActivity {
         R.string.hide_duplicate_indicator,
         R.string.hide_duplicate_indicator_detail,
         true);
-    addSwitch(galaxyOptions, "recording_icon_right", R.string.recording_icon_right,
-        R.string.recording_icon_right_detail, false);
+    addSwitch(
+        galaxyOptions,
+        "recording_icon_right",
+        R.string.recording_icon_right,
+        R.string.recording_icon_right_detail,
+        false);
     addHeading(galaxyOptions, R.string.section_recording_start);
     addSwitch(
         galaxyOptions, "samsung_app", R.string.samsung_app, R.string.samsung_app_detail, true);
@@ -101,11 +112,21 @@ public final class MainActivity extends AppCompatActivity {
         R.string.speaker_media,
         R.string.speaker_media_detail,
         true);
-    addSwitch(galaxyOptions, "recording_volume", R.string.recording_volume, R.string.recording_volume_detail, false);
+    addSwitch(
+        galaxyOptions,
+        "recording_volume",
+        R.string.recording_volume,
+        R.string.recording_volume_detail,
+        false);
     addVolume(galaxyOptions, "media_volume", R.string.media_recording_volume);
     addVolume(galaxyOptions, "mic_volume", R.string.mic_recording_volume);
     addHeading(galaxyOptions, R.string.section_screenshot);
-    addSwitch(galaxyOptions, "secure_screenshot", R.string.secure_screenshot, R.string.secure_screenshot_detail, false);
+    addSwitch(
+        galaxyOptions,
+        "secure_screenshot",
+        R.string.secure_screenshot,
+        R.string.secure_screenshot_detail,
+        false);
     addHeading(galaxyOptions, R.string.section_capture_controls);
     addSwitch(
         galaxyOptions,
@@ -174,33 +195,44 @@ public final class MainActivity extends AppCompatActivity {
     heading.setPadding(dp(8), 0, 0, dp(8));
     parent.addView(heading);
     var card = new MaterialCardView(this);
-    card.setRadius(dp(64)); card.setStrokeWidth(0);
-    card.setCardBackgroundColor(com.google.android.material.color.MaterialColors.getColor(
-        parent, com.google.android.material.R.attr.colorSurfaceContainerHigh));
+    card.setRadius(dp(64));
+    card.setStrokeWidth(0);
+    card.setCardBackgroundColor(
+        com.google.android.material.color.MaterialColors.getColor(
+            parent, com.google.android.material.R.attr.colorSurfaceContainerHigh));
     var toggle = new MaterialSwitch(this);
     toggle.setContentDescription(getString(R.string.enabled));
-    toggle.setTextSize(20); toggle.setMinHeight(dp(64));
+    toggle.setTextSize(20);
+    toggle.setMinHeight(dp(64));
     toggle.setPadding(dp(24), dp(8), dp(24), dp(8));
     toggles.put("enabled", toggle);
-    toggle.setOnCheckedChangeListener((button, on) -> {
-      updateMasterLabel(toggle, on);
-      if (syncing) return;
-      getSharedPreferences("config", 0).edit().putBoolean("enabled", on).apply();
-      notifyConfig(); updateEnabled();
-    });
+    toggle.setOnCheckedChangeListener(
+        (button, on) -> {
+          updateMasterLabel(toggle, on);
+          if (syncing) return;
+          getSharedPreferences("config", 0).edit().putBoolean("enabled", on).apply();
+          notifyConfig();
+          updateEnabled();
+        });
     toggle.setChecked(getSharedPreferences("config", 0).getBoolean("enabled", false));
     updateMasterLabel(toggle, toggle.isChecked());
     card.addView(toggle, new android.view.ViewGroup.LayoutParams(-1, -2));
     parent.addView(card);
     var detail = new com.google.android.material.textview.MaterialTextView(this);
-    detail.setText(R.string.master_scope_detail); detail.setTextSize(12);
-    detail.setPadding(dp(8), dp(8), dp(8), dp(8)); parent.addView(detail);
+    detail.setText(R.string.master_scope_detail);
+    detail.setTextSize(12);
+    detail.setPadding(dp(8), dp(8), dp(8), dp(8));
+    parent.addView(detail);
   }
 
   private void updateMasterLabel(MaterialSwitch toggle, boolean on) {
     toggle.setText(on ? R.string.master_on : R.string.master_off);
-    toggle.setTextColor(com.google.android.material.color.MaterialColors.getColor(toggle,
-        on ? com.google.android.material.R.attr.colorPrimary : com.google.android.material.R.attr.colorOnSurface));
+    toggle.setTextColor(
+        com.google.android.material.color.MaterialColors.getColor(
+            toggle,
+            on
+                ? com.google.android.material.R.attr.colorPrimary
+                : com.google.android.material.R.attr.colorOnSurface));
   }
 
   private void addScope(LinearLayout parent, int title, int detail) {
@@ -277,20 +309,25 @@ public final class MainActivity extends AppCompatActivity {
     var slider = new com.google.android.material.slider.Slider(this);
     levels.put(key, slider);
     slider.setContentDescription(getString(title));
-    slider.setValueFrom(0); slider.setValueTo(100); slider.setStepSize(1); slider.setValue(current);
+    slider.setValueFrom(0);
+    slider.setValueTo(100);
+    slider.setStepSize(1);
+    slider.setValue(current);
     var pending = new Handler(Looper.getMainLooper());
     Runnable notify = this::notifyConfig;
-    slider.addOnChangeListener((v, value, user) -> {
-      label.setText(getString(title) + ": " + Math.round(value) + "%");
-      if (user && !syncing) {
-        getSharedPreferences("config", 0).edit().putInt(key, Math.round(value)).apply();
-        pending.removeCallbacks(notify);
-        pending.postDelayed(notify, 200);
-      }
-    });
+    slider.addOnChangeListener(
+        (v, value, user) -> {
+          label.setText(getString(title) + ": " + Math.round(value) + "%");
+          if (user && !syncing) {
+            getSharedPreferences("config", 0).edit().putInt(key, Math.round(value)).apply();
+            pending.removeCallbacks(notify);
+            pending.postDelayed(notify, 200);
+          }
+        });
     box.addView(slider);
     card.addView(box);
-    var lp = new LinearLayout.LayoutParams(-1, -2); lp.bottomMargin = dp(16);
+    var lp = new LinearLayout.LayoutParams(-1, -2);
+    lp.bottomMargin = dp(16);
     parent.addView(card, lp);
   }
 
@@ -299,7 +336,9 @@ public final class MainActivity extends AppCompatActivity {
     for (LinearLayout group : individual) {
       setChildrenEnabled(group, enabled);
       group.setAlpha(enabled ? 1f : .38f);
-      updateVolumeEnabled(group, enabled && getSharedPreferences("config", 0).getBoolean("recording_volume", false));
+      updateVolumeEnabled(
+          group,
+          enabled && getSharedPreferences("config", 0).getBoolean("recording_volume", false));
     }
   }
 
@@ -344,20 +383,26 @@ public final class MainActivity extends AppCompatActivity {
       var prefs = getSharedPreferences("config", 0);
       for (CaptureSettings.Toggle setting : CaptureSettings.all()) {
         MaterialSwitch toggle = toggles.get(setting.key());
-        if (toggle != null) toggle.setChecked(prefs.getBoolean(setting.key(), setting.defaultValue()));
+        if (toggle != null)
+          toggle.setChecked(prefs.getBoolean(setting.key(), setting.defaultValue()));
       }
       for (var entry : levels.entrySet())
         entry.getValue().setValue(AudioLevels.clamp(prefs.getInt(entry.getKey(), 100)));
       updateEnabled();
-    } finally { syncing = false; }
+    } finally {
+      syncing = false;
+    }
   }
 
-  @Override protected void onStart() {
+  @Override
+  protected void onStart() {
     super.onStart();
     getSharedPreferences("config", 0).registerOnSharedPreferenceChangeListener(changed);
     syncSettings();
   }
-  @Override protected void onStop() {
+
+  @Override
+  protected void onStop() {
     getSharedPreferences("config", 0).unregisterOnSharedPreferenceChangeListener(changed);
     super.onStop();
   }

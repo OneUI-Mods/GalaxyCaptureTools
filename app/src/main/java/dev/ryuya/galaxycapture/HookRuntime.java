@@ -11,13 +11,23 @@ final class HookRuntime {
   final HostGuard guard;
   volatile Options options = Options.OFF;
   volatile boolean frameworkReady;
-  private final java.util.List<Runnable> optionListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
-  void onOptionsChanged(Runnable listener) { optionListeners.add(listener); }
+  private final java.util.List<Runnable> optionListeners =
+      new java.util.concurrent.CopyOnWriteArrayList<>();
+
+  void onOptionsChanged(Runnable listener) {
+    optionListeners.add(listener);
+  }
+
   private void notifyOptions() {
     for (Runnable listener : optionListeners) {
-      try { listener.run(); } catch (Throwable error) { Hooks.log("GalaxyCapture option listener: " + error); }
+      try {
+        listener.run();
+      } catch (Throwable error) {
+        Hooks.log("GalaxyCapture option listener: " + error);
+      }
     }
   }
+
   private int configRetries;
   private final Runnable configRetry = this::reload;
 
@@ -27,26 +37,38 @@ final class HookRuntime {
     thread.start();
     worker = new Handler(thread.getLooper());
     guard = new HostGuard(c, host);
-    var receiver = new BroadcastReceiver() {
-      @Override
-      public void onReceive(Context c, Intent i) {
-        worker.post(() -> {
-          configRetries = 0;
-          reload();
-        });
-      }
-    };
-    c.registerReceiver(receiver, new IntentFilter(CONFIG_CHANGED), ConfigProvider.PERMISSION,
-        worker, Context.RECEIVER_EXPORTED);
-    c.registerReceiver(new BroadcastReceiver() {
-      @Override
-      public void onReceive(Context c, Intent i) {
-        worker.post(() -> {
-          configRetries = 0;
-          reload();
-        });
-      }
-    }, new IntentFilter(Intent.ACTION_USER_UNLOCKED), null, worker, Context.RECEIVER_NOT_EXPORTED);
+    var receiver =
+        new BroadcastReceiver() {
+          @Override
+          public void onReceive(Context c, Intent i) {
+            worker.post(
+                () -> {
+                  configRetries = 0;
+                  reload();
+                });
+          }
+        };
+    c.registerReceiver(
+        receiver,
+        new IntentFilter(CONFIG_CHANGED),
+        ConfigProvider.PERMISSION,
+        worker,
+        Context.RECEIVER_EXPORTED);
+    c.registerReceiver(
+        new BroadcastReceiver() {
+          @Override
+          public void onReceive(Context c, Intent i) {
+            worker.post(
+                () -> {
+                  configRetries = 0;
+                  reload();
+                });
+          }
+        },
+        new IntentFilter(Intent.ACTION_USER_UNLOCKED),
+        null,
+        worker,
+        Context.RECEIVER_NOT_EXPORTED);
     worker.post(() -> reload());
   }
 
@@ -59,8 +81,7 @@ final class HookRuntime {
     }
     try {
       var b = context.getContentResolver().call(ConfigProvider.URI, "config", null, null);
-      if (b == null)
-        throw new IllegalStateException("Settings unavailable");
+      if (b == null) throw new IllegalStateException("Settings unavailable");
       configRetries = 0;
       guard.reset(b.getString("reset", ""));
       frameworkReady = b != null && b.getBoolean("framework_ready", false);
@@ -72,16 +93,19 @@ final class HookRuntime {
       // The provider can start after an already-unlocked soft reboot. No root is needed.
       if (configRetries < 7)
         worker.postDelayed(configRetry, Math.min(30000L, 1000L << configRetries++));
-    } finally { notifyOptions(); }
+    } finally {
+      notifyOptions();
+    }
   }
 
   void report(String value) {
-    worker.post(() -> {
-      try {
-        context.getContentResolver().call(ConfigProvider.URI, "status", value, null);
-      } catch (Throwable ignored) {
-      }
-    });
+    worker.post(
+        () -> {
+          try {
+            context.getContentResolver().call(ConfigProvider.URI, "status", value, null);
+          } catch (Throwable ignored) {
+          }
+        });
   }
 
   void fail(Throwable error) {

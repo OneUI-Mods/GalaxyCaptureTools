@@ -1,7 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
-<application android:label="Audio test (internal)" android:allowAudioPlaybackCapture="true" android:testOnly="true" android:theme="@android:style/Theme.Material.NoActionBar">
-<activity android:name=".ToneActivity" android:exported="true"/>
-<service android:name=".ToneService" android:exported="false" android:foregroundServiceType="mediaPlayback"/>
-</application></manifest>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+  <application
+    android:label="Audio test (internal)"
+    android:allowAudioPlaybackCapture="true"
+    android:testOnly="true"
+    android:theme="@android:style/Theme.Material.NoActionBar">
+    <activity
+      android:name=".ToneActivity"
+      android:exported="true" />
+    <service
+      android:name=".ToneService"
+      android:exported="false"
+      android:foregroundServiceType="mediaPlayback" />
+  </application>
+</manifest>

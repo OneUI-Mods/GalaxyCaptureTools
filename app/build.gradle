@@ -1,27 +1,46 @@
-plugins { id 'com.android.application' }
-android {
- namespace 'dev.ryuya.galaxycapture'
- compileSdk 36
- defaultConfig { applicationId 'dev.ryuya.galaxycapture'; minSdk 35; targetSdk 36; versionCode 15; versionName '0.3.1-experimental'; testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner' }
- compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
- buildFeatures { buildConfig true }
+plugins {
+    id 'com.android.application'
 }
+
+android {
+    namespace 'dev.ryuya.galaxycapture'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'dev.ryuya.galaxycapture'
+        minSdk 35
+        targetSdk 36
+        versionCode 15
+        versionName '0.3.1-experimental'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+}
+
 dependencies {
- compileOnly 'io.github.libxposed:api:102.0.0'
+    compileOnly 'io.github.libxposed:api:102.0.0'
     testImplementation 'io.github.libxposed:api:102.0.0'
- implementation 'com.google.android.material:material:1.12.0'
- testImplementation 'junit:junit:4.13.2'
- androidTestImplementation 'androidx.test:runner:1.6.2'
- androidTestImplementation 'androidx.test:core:1.6.1'
- androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    implementation 'com.google.android.material:material:1.12.0'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test:core:1.6.1'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
 }
 
 tasks.register('writeRuntimeDependencyList') {
- doLast {
-  def entries = configurations.releaseRuntimeClasspath.resolvedConfiguration.resolvedArtifacts.collect {
-   def id = it.moduleVersion.id
-   "${id.group}:${id.name}:${id.version}"
-  }.unique().sort()
-  file('build/runtime-dependencies.txt').text = entries.join('\n') + '\n'
- }
+    doLast {
+        def entries = configurations.releaseRuntimeClasspath.resolvedConfiguration.resolvedArtifacts.collect {
+            def id = it.moduleVersion.id
+            "${id.group}:${id.name}:${id.version}"
+        }.unique().sort()
+        file('build/runtime-dependencies.txt').text = entries.join('\n') + '\n'
+    }
 }

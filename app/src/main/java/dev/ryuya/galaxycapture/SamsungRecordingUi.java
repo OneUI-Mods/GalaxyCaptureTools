@@ -233,8 +233,7 @@ final class SamsungRecordingUi {
   private static void openPicker(HookRuntime rt, State s, int mode, Runnable selectFull) {
     if (s.picker != null || !rt.options.enabled() || !rt.guard.allowed()) return;
     try {
-      Dialog parent =
-          (Dialog) Reflect.getObjectField(s.controller, "mSoundSettingSuggestionPopup");
+      Dialog parent = (Dialog) Reflect.getObjectField(s.controller, "mSoundSettingSuggestionPopup");
       if (parent == null || !parent.isShowing()) return;
       // Use the very same Samsung AlertDialog builder and theme as the recording start dialog.
       int theme =
@@ -502,8 +501,7 @@ final class SamsungRecordingUi {
             text.setPadding(dp(c, 16), 0, dp(c, 8), 0);
             row.addView(text, new LinearLayout.LayoutParams(0, -2, 1));
             RadioButton radio = new RadioButton(c);
-            RadioButton model =
-                (RadioButton) Reflect.getObjectField(s.modes.get(0), "radioButton");
+            RadioButton model = (RadioButton) Reflect.getObjectField(s.modes.get(0), "radioButton");
             radio.setButtonTintList(model.getButtonTintList());
             radio.setChecked(
                 s.mode == s.pickerMode && Objects.equals(s.selectedKey, entry.getString("key")));
@@ -537,8 +535,7 @@ final class SamsungRecordingUi {
 
   static void updateStart(State s) {
     try {
-      Dialog dialog =
-          (Dialog) Reflect.getObjectField(s.controller, "mSoundSettingSuggestionPopup");
+      Dialog dialog = (Dialog) Reflect.getObjectField(s.controller, "mSoundSettingSuggestionPopup");
       if (dialog == null) return;
       View start = dialog.findViewById(android.R.id.button1);
       if (start != null) start.setEnabled(s.mode < 2 || s.selected != null);
