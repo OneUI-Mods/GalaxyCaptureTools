@@ -23,9 +23,7 @@ public final class HookEntry extends XposedModule {
   }
 
   private void loadPackage(String packageName, ClassLoader classLoader, boolean systemServer) {
-    if (Build.VERSION.SDK_INT != 36
-        || !Build.MANUFACTURER.equalsIgnoreCase("samsung")
-        || !Build.DISPLAY.equals("BP4A.251205.006.S948QOPS1AZHL")) return;
+    if (!HookCompatibility.isCurrentSupported()) return;
     try {
       if (systemServer) {
         FrameworkHooks.install(classLoader);
