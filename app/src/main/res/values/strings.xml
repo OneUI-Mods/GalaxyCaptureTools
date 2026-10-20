@@ -1,6 +1,6 @@
 <resources>
   <string name="app_name">Galaxy Capture Tools</string>
-  <string name="intro">Keep the video frame fixed while the phone rotates. Choose an app or window directly in Galaxy’s recording start dialog. Settings apply to the next recording. Experimental: Android 16 / One UI 8.5, SM-S948Q. Enable this module for System Framework, SystemUI, and Samsung Capture, then soft-reboot the phone.</string>
+  <string name="intro">Keep the video frame fixed while the phone rotates. Choose an app or window directly in Galaxy’s recording start dialog. Settings apply to the next recording. Experimental: Android 16・17 / One UI 8・9, SM-S948Q. Enable this module for System Framework, SystemUI, and Samsung Capture, then soft-reboot the phone.</string>
   <string name="enabled">All custom features</string>
   <string name="enabled_detail">Master switch. When off, every extension below is disabled. Individual choices are kept for the next time you enable it.</string>
   <string name="rotation">Rotate footage without letterboxing</string>
