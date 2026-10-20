@@ -4,14 +4,15 @@ plugins {
 
 android {
     namespace 'dev.ryuya.galaxycapture'
-    compileSdk 36
+    compileSdk 37
+    buildToolsVersion '37.0.0'
 
     defaultConfig {
         applicationId 'dev.ryuya.galaxycapture'
         minSdk 35
-        targetSdk 36
-        versionCode 17
-        versionName '0.3.3-experimental'
+        targetSdk 37
+        versionCode 18
+        versionName '0.3.4-experimental'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
