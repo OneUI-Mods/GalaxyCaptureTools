@@ -2,4 +2,7 @@
   <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
     <item name="android:fontFamily">sans</item>
   </style>
+  <style name="TonalActionTheme" parent="">
+    <item name="materialButtonStyle">@style/Widget.Material3.Button.TonalButton</item>
+  </style>
 </resources>

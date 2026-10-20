@@ -14,7 +14,10 @@ public final class MainActivity extends AppCompatActivity {
   private TextView status;
   private final java.util.List<LinearLayout> individual = new java.util.ArrayList<>();
   private SettingsTabs pages;
+  private RecordingPreview preview;
   private boolean syncing;
+  private final java.util.Map<LinearLayout, LinearLayout> sections =
+      new java.util.IdentityHashMap<>();
   private final java.util.Map<String, MaterialSwitch> toggles = new java.util.HashMap<>();
   private final java.util.Map<String, com.google.android.material.slider.Slider> levels =
       new java.util.HashMap<>();
@@ -147,11 +150,15 @@ public final class MainActivity extends AppCompatActivity {
     var card = new MaterialCardView(this);
     card.addView(status);
     operation.addView(card);
-    var refresh = new MaterialButton(this);
+    var refresh =
+        new MaterialButton(
+            new androidx.appcompat.view.ContextThemeWrapper(this, R.style.TonalActionTheme));
     refresh.setText(R.string.refresh);
     refresh.setOnClickListener(v -> showStatus());
     operation.addView(refresh);
-    var reset = new MaterialButton(this);
+    var reset =
+        new MaterialButton(
+            this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
     reset.setText(R.string.reset_guard);
     reset.setOnClickListener(
         v ->
@@ -181,7 +188,9 @@ public final class MainActivity extends AppCompatActivity {
     intro.setTextSize(16);
     intro.setPadding(0, dp(16), 0, dp(24));
     information.addView(intro);
-    var notice = new MaterialButton(this);
+    var notice =
+        new MaterialButton(
+            new androidx.appcompat.view.ContextThemeWrapper(this, R.style.TonalActionTheme));
     notice.setText(R.string.licenses);
     notice.setOnClickListener(v -> startActivity(new Intent(this, LicensesActivity.class)));
     information.addView(notice);
@@ -195,11 +204,11 @@ public final class MainActivity extends AppCompatActivity {
     heading.setPadding(dp(8), 0, 0, dp(8));
     parent.addView(heading);
     var card = new MaterialCardView(this);
-    card.setRadius(dp(64));
+    card.setRadius(dp(28));
     card.setStrokeWidth(0);
     card.setCardBackgroundColor(
         com.google.android.material.color.MaterialColors.getColor(
-            parent, com.google.android.material.R.attr.colorSurfaceContainerHigh));
+            parent, com.google.android.material.R.attr.colorPrimaryContainer));
     var toggle = new MaterialSwitch(this);
     toggle.setContentDescription(getString(R.string.enabled));
     toggle.setTextSize(20);
@@ -237,6 +246,8 @@ public final class MainActivity extends AppCompatActivity {
 
   private void addScope(LinearLayout parent, int title, int detail) {
     var card = new MaterialCardView(this);
+    card.setRadius(dp(28));
+    card.setStrokeWidth(0);
     card.setCardBackgroundColor(
         com.google.android.material.color.MaterialColors.getColor(
             parent, com.google.android.material.R.attr.colorSurfaceContainer));
@@ -253,31 +264,72 @@ public final class MainActivity extends AppCompatActivity {
     description.setText(detail);
     description.setPadding(0, dp(8), 0, 0);
     body.addView(description);
+    if (title == R.string.scope_common_title) {
+      preview = new RecordingPreview(this);
+      body.addView(preview, new LinearLayout.LayoutParams(-1, dp(112)));
+    }
     card.addView(body);
     var position = new LinearLayout.LayoutParams(-1, -2);
     position.bottomMargin = dp(20);
     parent.addView(card, position);
   }
 
+  private LinearLayout section(LinearLayout parent) {
+    LinearLayout current = sections.get(parent);
+    if (current != null) return current;
+    var card = new MaterialCardView(this);
+    card.setRadius(dp(28));
+    card.setStrokeWidth(0);
+    card.setCardBackgroundColor(
+        com.google.android.material.color.MaterialColors.getColor(
+            parent, com.google.android.material.R.attr.colorSurfaceContainerLow));
+    var body = new LinearLayout(this);
+    body.setOrientation(LinearLayout.VERTICAL);
+    body.setPadding(dp(4), dp(4), dp(4), dp(4));
+    card.addView(body);
+    var position = new LinearLayout.LayoutParams(-1, -2);
+    position.bottomMargin = dp(16);
+    parent.addView(card, position);
+    sections.put(parent, body);
+    return body;
+  }
+
+  private void appendRow(LinearLayout parent, LinearLayout row) {
+    LinearLayout body = section(parent);
+    if (body.getChildCount() > 0
+        && !"section-heading".equals(body.getChildAt(body.getChildCount() - 1).getTag())) {
+      var divider = new com.google.android.material.divider.MaterialDivider(this);
+      var position = new LinearLayout.LayoutParams(-1, -2);
+      position.setMargins(dp(16), 0, dp(16), 0);
+      body.addView(divider, position);
+    }
+    body.addView(row, new LinearLayout.LayoutParams(-1, -2));
+  }
+
   private void addHeading(LinearLayout parent, int title) {
+    sections.remove(parent);
     var label = new com.google.android.material.textview.MaterialTextView(this);
+    label.setTag("section-heading");
     label.setText(title);
     label.setTextAppearance(
         com.google.android.material.R.style.TextAppearance_Material3_TitleSmall);
-    label.setPadding(dp(4), dp(4), 0, dp(12));
+    label.setTextColor(
+        com.google.android.material.color.MaterialColors.getColor(
+            label, androidx.appcompat.R.attr.colorPrimary));
+    label.setPadding(dp(16), dp(16), dp(16), dp(4));
     androidx.core.view.ViewCompat.setAccessibilityHeading(label, true);
-    parent.addView(label);
+    section(parent).addView(label);
   }
 
   private void addSwitch(LinearLayout parent, String key, int label, int detail, boolean def) {
-    var card = new MaterialCardView(this);
     var box = new LinearLayout(this);
     box.setOrientation(LinearLayout.VERTICAL);
     box.setPadding(dp(16), dp(12), dp(16), dp(16));
-    card.addView(box);
     var toggle = new MaterialSwitch(this);
     toggle.setText(label);
-    toggle.setTextSize(17);
+    toggle.setTextAppearance(
+        com.google.android.material.R.style.TextAppearance_Material3_TitleMedium);
+    toggle.setMinHeight(dp(48));
     toggle.setChecked(getSharedPreferences("config", 0).getBoolean(key, def));
     toggles.put(key, toggle);
     toggle.setOnCheckedChangeListener(
@@ -290,14 +342,17 @@ public final class MainActivity extends AppCompatActivity {
     box.addView(toggle);
     var desc = new com.google.android.material.textview.MaterialTextView(this);
     desc.setText(detail);
+    desc.setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium);
+    desc.setTextColor(
+        com.google.android.material.color.MaterialColors.getColor(
+            desc, com.google.android.material.R.attr.colorOnSurfaceVariant));
+    desc.setLineSpacing(dp(2), 1f);
+    desc.setPadding(0, dp(4), dp(40), 0);
     box.addView(desc);
-    var lp = new LinearLayout.LayoutParams(-1, -2);
-    lp.bottomMargin = dp(16);
-    parent.addView(card, lp);
+    appendRow(parent, box);
   }
 
   private void addVolume(LinearLayout parent, String key, int title) {
-    var card = new MaterialCardView(this);
     var box = new LinearLayout(this);
     box.setTag("recording-volume");
     box.setOrientation(LinearLayout.VERTICAL);
@@ -325,13 +380,11 @@ public final class MainActivity extends AppCompatActivity {
           }
         });
     box.addView(slider);
-    card.addView(box);
-    var lp = new LinearLayout.LayoutParams(-1, -2);
-    lp.bottomMargin = dp(16);
-    parent.addView(card, lp);
+    appendRow(parent, box);
   }
 
   private void updateEnabled() {
+    if (preview != null) preview.invalidate();
     boolean enabled = getSharedPreferences("config", 0).getBoolean("enabled", false);
     for (LinearLayout group : individual) {
       setChildrenEnabled(group, enabled);
@@ -378,6 +431,7 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void syncSettings() {
+    if (preview != null) preview.invalidate();
     syncing = true;
     try {
       var prefs = getSharedPreferences("config", 0);
