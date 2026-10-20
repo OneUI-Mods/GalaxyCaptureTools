@@ -241,9 +241,11 @@ final class SamsungRecordingUi {
               .getResources()
               .getIdentifier(
                   "RecorderDialogAlertTheme", "style", "com.samsung.android.app.smartcapture");
+      HookCompatibility.SamsungDialog binding =
+          HookCompatibility.samsungDialog(android.os.Build.VERSION.SDK_INT);
       Object builder =
           Reflect.newInstance(
-              Reflect.findClass("M4.c", s.controller.getClass().getClassLoader()),
+              Reflect.findClass(binding.builderClass(), s.controller.getClass().getClassLoader()),
               s.context,
               theme);
       Object params = Reflect.getObjectField(builder, "b");
@@ -302,7 +304,7 @@ final class SamsungRecordingUi {
       FrameLayout frame = new FrameLayout(themed);
       frame.addView(content, new FrameLayout.LayoutParams(-1, height));
       Reflect.setObjectField(params, "o", frame);
-      Dialog picker = (Dialog) Reflect.callMethod(builder, "f");
+      Dialog picker = (Dialog) Reflect.callMethod(builder, binding.createMethod());
       s.picker = picker;
       Window window = picker.getWindow();
       window.setType(parent.getWindow().getAttributes().type);

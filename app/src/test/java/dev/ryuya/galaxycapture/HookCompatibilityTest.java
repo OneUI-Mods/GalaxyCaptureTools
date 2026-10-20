@@ -18,6 +18,7 @@ public class HookCompatibilityTest {
     assertFalse(
         HookCompatibility.supports(
             37, "samsung", "SM-S948Q", "m3q", Android17Hooks.CANDIDATE_FIRMWARE));
+    assertFalse(HookCompatibility.supports(37, "samsung", "SM-S948Q", "m3q", Android17Hooks.BUILD));
   }
 
   @Test
@@ -27,5 +28,15 @@ public class HookCompatibilityTest {
       assertFalse(
           HookCompatibility.supports(sdk, "samsung", "SM-S948Q", "m3q", Android16Hooks.BUILD));
     }
+  }
+
+  @Test
+  public void nativeSamsungDialogBindingsAreVersionSpecific() {
+    var old = HookCompatibility.samsungDialog(36);
+    assertEquals("M4.c", old.builderClass());
+    assertEquals("f", old.createMethod());
+    var current = HookCompatibility.samsungDialog(37);
+    assertEquals("androidx.recyclerview.widget.g2", current.builderClass());
+    assertEquals("h", current.createMethod());
   }
 }

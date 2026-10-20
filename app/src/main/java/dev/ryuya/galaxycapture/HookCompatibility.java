@@ -18,6 +18,19 @@ final class HookCompatibility {
         android.os.Build.DISPLAY);
   }
 
+  record SamsungDialog(String builderClass, String createMethod) {}
+
+  static SamsungDialog samsungDialog(int sdk) {
+    return switch (platform(sdk)) {
+      case ANDROID_16 ->
+          new SamsungDialog(Android16Hooks.DIALOG_BUILDER, Android16Hooks.DIALOG_CREATE);
+      case ANDROID_17 ->
+          new SamsungDialog(Android17Hooks.DIALOG_BUILDER, Android17Hooks.DIALOG_CREATE);
+      case UNSUPPORTED ->
+          throw new UnsupportedOperationException("Unreviewed Samsung dialog platform");
+    };
+  }
+
   static Platform platform(int sdk) {
     return switch (sdk) {
       case 36 -> Platform.ANDROID_16;

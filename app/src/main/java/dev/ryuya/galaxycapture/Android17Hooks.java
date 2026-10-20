@@ -2,6 +2,10 @@ package dev.ryuya.galaxycapture;
 
 /** Android 17 is reviewed independently; never fall back to Android 16 on a mismatch. */
 final class Android17Hooks {
+  static final String DIALOG_BUILDER = "androidx.recyclerview.widget.g2";
+  static final String DIALOG_CREATE = "h";
+  static final String BUILD = "CP2A.260605.016.S948QOPU1BZI9";
+  static final long RECORDER_VERSION = 624429000L;
   static final String CANDIDATE_FIRMWARE = "S948QOPU1BZI9";
 
   static boolean supports(

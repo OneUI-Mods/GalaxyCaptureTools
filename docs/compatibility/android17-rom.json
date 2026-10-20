@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "recorded_on": "2026-10-20",
+  "android": 17,
+  "sdk": 37,
+  "firmware": "S948QOPU1BZI9",
+  "build_display": "CP2A.260605.016.S948QOPU1BZI9",
+  "one_ui_version": "90000",
+  "system_partition_fingerprint": "samsung/m3qjpnw/qssi_64:17/CP2A.260605.016/S948QOPU1BZI9:user/release-keys",
+  "runtime_fingerprint": null,
+  "runtime_verified": false,
+  "hook_profile_enabled": false,
+  "artifacts": [
+    {
+      "name": "smartcapture.apk",
+      "image": "system_a.img",
+      "path": "/system/app/SmartCapture/SmartCapture.apk",
+      "size": 116359579,
+      "sha256": "211481dd628e2bd40c38e80038128c2f2c25b4e4bcab110a3c00ce258ee75b58",
+      "version_name": "6.2.44.29",
+      "version_code": 624429000
+    },
+    {
+      "name": "systemui.apk",
+      "image": "system_ext_a.img",
+      "path": "/priv-app/SystemUI/SystemUI.apk",
+      "size": 64866348,
+      "sha256": "d3b4d96eab96a7b536628c448031fc8f0f61ef0eb1612ca4f82b5a6a3672f6ae",
+      "version_name": "17",
+      "version_code": 37
+    },
+    {
+      "name": "framework.jar",
+      "image": "system_a.img",
+      "path": "/system/framework/framework.jar",
+      "size": 54707468,
+      "sha256": "a895cb27bf6be0cfe9f9b21ee091e17b53d926aa467ff9bbebe77fe8f101d30a"
+    },
+    {
+      "name": "services.jar",
+      "image": "system_a.img",
+      "path": "/system/framework/services.jar",
+      "size": 28183414,
+      "sha256": "f91580934cb971715a117ac640be05c62668c8a30a7d9c1d25f17243a924bce7"
+    }
+  ]
+}

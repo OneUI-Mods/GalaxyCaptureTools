@@ -33,6 +33,16 @@ final class RightRecordingIndicator {
   }
 
   private void install(ClassLoader loader) throws Exception {
+    if (HookCompatibility.platform(android.os.Build.VERSION.SDK_INT)
+        == HookCompatibility.Platform.ANDROID_17) {
+      installAndroid17(loader);
+    } else {
+      installAndroid16(loader);
+    }
+  }
+
+  /** Preserves the Android 16 Fragment lifecycle and binding contract. */
+  private void installAndroid16(ClassLoader loader) throws Exception {
     Class<?> fragment =
         Reflect.findClass(
             "com.android.systemui.statusbar.phone.fragment.CollapsedStatusBarFragment", loader);
@@ -117,6 +127,113 @@ final class RightRecordingIndicator {
     Hooks.log("GalaxyCapture: native Samsung recording chip relocation ready");
   }
 
+  /** Android 17 binds the native chip through its controller instead of the removed Fragment. */
+  private void installAndroid17(ClassLoader loader) throws Exception {
+    Class<?> controller =
+        Reflect.findClass(
+            "com.android.systemui.statusbar.phone.ongoingcast.SamsungOngoingCastController",
+            loader);
+    nativeChip =
+        Reflect.findClass("com.android.systemui.statusbar.phone.TouchInterceptFrameLayout", loader);
+    controller.getDeclaredMethod("setChipView", View.class);
+    controller.getDeclaredMethod("updateAll", String.class);
+    if (!ViewGroup.class.isAssignableFrom(nativeChip)
+        || nativeChip.getDeclaredField("customClickListener").getType()
+            != View.OnClickListener.class
+        || nativeChip.getDeclaredField("touchForwardView").getType() != View.class)
+      throw new IllegalStateException("Android 17 native interactive chip contract changed");
+    Hooks.hookAllMethods(
+        controller,
+        "setChipView",
+        new HookCallback() {
+          @Override
+          protected void afterHookedMethod(MethodHookParam p) {
+            if (failed || p.hasThrowable()) return;
+            State previous = states.remove(p.thisObject);
+            if (previous != null) previous.destroy();
+            if (!(p.args[0] instanceof View chip)) return;
+            Object owner = p.thisObject;
+            if (chip.isAttachedToWindow()) {
+              main.post(() -> bindAndroid17(owner, chip));
+            } else {
+              chip.addOnAttachStateChangeListener(
+                  new View.OnAttachStateChangeListener() {
+                    public void onViewAttachedToWindow(View view) {
+                      view.removeOnAttachStateChangeListener(this);
+                      main.post(() -> bindAndroid17(owner, view));
+                    }
+
+                    public void onViewDetachedFromWindow(View view) {}
+                  });
+            }
+          }
+        });
+    Hooks.hookAllMethods(
+        controller,
+        "updateAll",
+        new HookCallback() {
+          @Override
+          protected void afterHookedMethod(MethodHookParam p) {
+            State state = states.get(p.thisObject);
+            if (!failed && !p.hasThrowable() && state != null) state.queue();
+          }
+        });
+    rt.onOptionsChanged(
+        () ->
+            main.post(
+                () -> {
+                  for (State state : new ArrayList<>(states.values())) {
+                    state.fitRejected = false;
+                    state.queue();
+                  }
+                }));
+    Hooks.log("GalaxyCapture: Android 17 controller chip binding registered; visual test pending");
+  }
+
+  private void bindAndroid17(Object owner, View chip) {
+    if (failed || !chip.isAttachedToWindow()) return;
+    try {
+      if (Reflect.getObjectField(owner, "chipView") != chip) return;
+      State previous = states.get(owner);
+      if (previous != null && previous.chip.get() == chip) {
+        previous.queue();
+        return;
+      }
+      previous = states.remove(owner);
+      if (previous != null) previous.destroy();
+      View root = chip.getRootView();
+      if (!nativeChip.isInstance(chip) || !"samsung_ongoing_cast_chip".equals(name(chip)))
+        throw new IllegalStateException("Android 17 cast chip view changed");
+      int id =
+          root.getResources()
+              .getIdentifier("status_bar_end_side_content", "id", "com.android.systemui");
+      View end = id == 0 ? null : root.findViewById(id);
+      if (!(end instanceof LinearLayout target)
+          || target.getOrientation() != LinearLayout.HORIZONTAL
+          || !(chip.getParent() instanceof LinearLayout original))
+        throw new IllegalStateException("Android 17 chip containers require further validation");
+      State state = new State(root, chip, original, target, owner);
+      states.put(owner, state);
+      root.addOnLayoutChangeListener(state.layout);
+      state.attachment =
+          new View.OnAttachStateChangeListener() {
+            public void onViewAttachedToWindow(View view) {}
+
+            public void onViewDetachedFromWindow(View view) {
+              // Moving the chip between its native containers also dispatches a detach.
+              if (state.moving) return;
+              Object boundOwner = state.owner.get();
+              state.destroy();
+              if (boundOwner != null && states.get(boundOwner) == state) states.remove(boundOwner);
+            }
+          };
+      chip.addOnAttachStateChangeListener(state.attachment);
+      state.queue();
+    } catch (Throwable error) {
+      fail(error);
+    }
+  }
+
   private static String name(View view) {
     try {
       return view.getResources().getResourceEntryName(view.getId());
@@ -158,6 +275,7 @@ final class RightRecordingIndicator {
     final int index;
     final ViewGroup.LayoutParams originalParams;
     final View.OnLayoutChangeListener layout;
+    View.OnAttachStateChangeListener attachment;
     final Runnable apply = this::apply;
     boolean moved, moving, fitRejected, destroyed;
     String diagnostic = "";
@@ -293,6 +411,8 @@ final class RightRecordingIndicator {
       main.removeCallbacks(apply);
       View bar = root.get();
       if (bar != null) bar.removeOnLayoutChangeListener(layout);
+      View view = chip.get();
+      if (view != null && attachment != null) view.removeOnAttachStateChangeListener(attachment);
       restore();
     }
   }
