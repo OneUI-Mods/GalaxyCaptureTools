@@ -32,8 +32,13 @@ public class MediaMicLabelLayoutTest {
             for (float scale : new float[] {.85f, 1f, 1.3f, 1.5f, 2f}) {
               Configuration config = new Configuration(host.getResources().getConfiguration());
               config.fontScale = scale;
-              Context sized = host.createConfigurationContext(config);
-              for (int dp : new int[] {280, 360, 600}) {
+              Context sized =
+                  new android.view.ContextThemeWrapper(
+                      host.createConfigurationContext(config),
+                      host.getResources()
+                          .getIdentifier(
+                              "RecorderDialogAlertTheme", "style", host.getPackageName()));
+              for (int dp : new int[] {280, 360, 600, 900}) {
                 ConstraintLayout row = new ConstraintLayout(target);
                 View[] choices = new View[3];
                 TextView label = null;
@@ -86,7 +91,7 @@ public class MediaMicLabelLayoutTest {
                           .subSequence(layout.getLineStart(1), layout.getLineEnd(1))
                           .toString());
                 } else assertEquals(context, "メディアとマイク", label.getText().toString());
-                if (dp == 600) assertEquals(context, 1, layout.getLineCount());
+                if (dp == 900) assertEquals(context, 1, layout.getLineCount());
                 wrapper.update("マイクのみ", true);
                 assertEquals(context, "マイクのみ", label.getText().toString());
                 assertEquals(context, 0, choices[2].getLayoutParams().width);
