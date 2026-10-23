@@ -32,6 +32,7 @@ final class SamsungAudioUi {
               if (choice == null) return;
               TextView label = (TextView) Reflect.getObjectField(choice, "textView");
               CharSequence original = label.getText();
+              MediaMicLabel wrapping = new MediaMicLabel(label, choice);
               Context strings = host.createPackageContext(BuildConfig.APPLICATION_ID, 0);
               AudioManager audio = host.getSystemService(AudioManager.class);
               Handler main = new Handler(Looper.getMainLooper());
@@ -52,9 +53,11 @@ final class SamsungAudioUi {
                               && !rt.options.speakerMedia()
                               && !plugged
                               && !audio.isMicrophoneMute();
-                      label.setText(micOnly ? strings.getText(R.string.microphone_only) : original);
+                      wrapping.update(
+                          micOnly ? strings.getText(R.string.microphone_only) : original,
+                          rt.options.enabled());
                     } catch (Throwable error) {
-                      label.setText(original);
+                      wrapping.update(original, false);
                       Hooks.log("GalaxyCapture: sound label unavailable: " + error);
                     }
                   };
