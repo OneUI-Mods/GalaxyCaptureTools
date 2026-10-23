@@ -87,7 +87,7 @@ final class RightRecordingIndicator {
               if (prior != null) prior.destroy();
               State state = new State(root, chip, original, target, owner);
               states.put(p.thisObject, state);
-              root.addOnLayoutChangeListener(state.layout);
+              state.observe();
               state.queue();
             } catch (Throwable error) {
               fail(error);
@@ -112,7 +112,7 @@ final class RightRecordingIndicator {
           protected void afterHookedMethod(MethodHookParam p) {
             if (failed || p.hasThrowable()) return;
             for (State state : new ArrayList<>(states.values()))
-              if (state.owner.get() == p.thisObject) state.queue();
+              if (state.owner.get() == p.thisObject) state.nativeUpdated();
           }
         });
     rt.onOptionsChanged(
@@ -154,13 +154,13 @@ final class RightRecordingIndicator {
             if (!(p.args[0] instanceof View chip)) return;
             Object owner = p.thisObject;
             if (chip.isAttachedToWindow()) {
-              main.post(() -> bindAndroid17(owner, chip));
+              bindAndroid17(owner, chip);
             } else {
               chip.addOnAttachStateChangeListener(
                   new View.OnAttachStateChangeListener() {
                     public void onViewAttachedToWindow(View view) {
                       view.removeOnAttachStateChangeListener(this);
-                      main.post(() -> bindAndroid17(owner, view));
+                      bindAndroid17(owner, view);
                     }
 
                     public void onViewDetachedFromWindow(View view) {}
@@ -175,7 +175,7 @@ final class RightRecordingIndicator {
           @Override
           protected void afterHookedMethod(MethodHookParam p) {
             State state = states.get(p.thisObject);
-            if (!failed && !p.hasThrowable() && state != null) state.queue();
+            if (!failed && !p.hasThrowable() && state != null) state.nativeUpdated();
           }
         });
     rt.onOptionsChanged(
@@ -214,7 +214,7 @@ final class RightRecordingIndicator {
         throw new IllegalStateException("Android 17 chip containers require further validation");
       State state = new State(root, chip, original, target, owner);
       states.put(owner, state);
-      root.addOnLayoutChangeListener(state.layout);
+      state.observe();
       state.attachment =
           new View.OnAttachStateChangeListener() {
             public void onViewAttachedToWindow(View view) {}
@@ -277,7 +277,9 @@ final class RightRecordingIndicator {
     final View.OnLayoutChangeListener layout;
     View.OnAttachStateChangeListener attachment;
     final Runnable apply = this::apply;
-    boolean moved, moving, fitRejected, destroyed;
+    final ViewTreeObserver.OnPreDrawListener beforeDraw = this::beforeDraw;
+    boolean moved, moving, fitRejected, destroyed, pending;
+    int parentRevision;
     String diagnostic = "";
 
     State(View bar, View view, LinearLayout start, LinearLayout end, Object controller) {
@@ -295,12 +297,41 @@ final class RightRecordingIndicator {
           };
     }
 
+    void observe() {
+      View bar = root.get();
+      if (bar == null) return;
+      bar.addOnLayoutChangeListener(layout);
+      bar.getViewTreeObserver().addOnPreDrawListener(beforeDraw);
+    }
+
     void queue() {
       main.removeCallbacks(apply);
-      if (!destroyed) main.post(apply);
+      if (!destroyed) {
+        pending = true;
+        main.post(apply);
+      }
+    }
+
+    void nativeUpdated() {
+      // updateAll has already installed the native click listener and visibility.
+      // Reparent in the same main-thread call, before the first visible frame.
+      if (Looper.myLooper() == Looper.getMainLooper()) apply();
+      else queue();
+    }
+
+    boolean beforeDraw() {
+      if (destroyed || !pending) return true;
+      int revision = parentRevision;
+      main.removeCallbacks(apply);
+      apply();
+      View bar = root.get();
+      // If attachment or a layout event moved the chip during this traversal,
+      // wait for its new parent to measure it. Never render the old left layout.
+      return parentRevision == revision || bar == null || !bar.isLayoutRequested();
     }
 
     void apply() {
+      pending = false;
       if (moving || destroyed) return;
       try {
         View bar = root.get(), view = chip.get();
@@ -347,6 +378,7 @@ final class RightRecordingIndicator {
           try {
             end.addView(view, 0, next);
             moved = true;
+            parentRevision++;
           } catch (Throwable error) {
             start.addView(view, Math.min(index, start.getChildCount()), originalParams);
             throw error;
@@ -390,6 +422,7 @@ final class RightRecordingIndicator {
         if (view.getParent() == end) {
           end.removeView(view);
           start.addView(view, Math.min(index, start.getChildCount()), originalParams);
+          parentRevision++;
         }
         moved = false;
       } catch (Throwable error) {
@@ -410,7 +443,11 @@ final class RightRecordingIndicator {
       destroyed = true;
       main.removeCallbacks(apply);
       View bar = root.get();
-      if (bar != null) bar.removeOnLayoutChangeListener(layout);
+      if (bar != null) {
+        bar.removeOnLayoutChangeListener(layout);
+        ViewTreeObserver observer = bar.getViewTreeObserver();
+        if (observer.isAlive()) observer.removeOnPreDrawListener(beforeDraw);
+      }
       View view = chip.get();
       if (view != null && attachment != null) view.removeOnAttachStateChangeListener(attachment);
       restore();
