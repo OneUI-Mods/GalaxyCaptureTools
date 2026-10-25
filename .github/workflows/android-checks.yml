@@ -24,3 +24,5 @@ jobs:
         run: python3 tools/check_license_catalog.py
       - name: Inspect the unsigned release APK
         run: python3 tools/package_release.py --check-release-apk app/build/outputs/apk/release/app-release-unsigned.apk
+      - name: Compile internal audio fixtures without publishing them
+        run: ./gradlew -PcaptureFixtures :app:assembleDebugAndroidTest :audioFixture:assembleRelease

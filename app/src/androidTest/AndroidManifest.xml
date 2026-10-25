@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
   <application
+    android:allowAudioPlaybackCapture="true"
     android:label="Capture test (internal)"
     android:theme="@android:style/Theme.Material.NoActionBar">
     <activity

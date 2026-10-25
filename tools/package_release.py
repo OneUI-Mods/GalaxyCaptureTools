@@ -53,10 +53,25 @@ def validate(apk, aapt):
         ):
             raise RuntimeError("Legacy Xposed API reference in release DEX.")
         fixture = (
-            "CaptureFixtureActivity" in manifest
+            any(
+                name in manifest
+                for name in (
+                    "CaptureFixtureActivity",
+                    "SecondFixtureActivity",
+                    "captureaudiofixture",
+                )
+            )
             or any("contrast_fixture" in name for name in archive.namelist())
             or any(
-                b"CaptureFixtureActivity" in archive.read(name)
+                any(
+                    marker in archive.read(name)
+                    for marker in (
+                        b"CaptureFixtureActivity",
+                        b"SecondFixtureActivity",
+                        b"Ldev/ryuya/fixtureaudio/",
+                        b"Ldev/ryuya/captureaudiofixture/",
+                    )
+                )
                 for name in archive.namelist()
                 if name.endswith(".dex")
             )

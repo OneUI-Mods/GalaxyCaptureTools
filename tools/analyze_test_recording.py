@@ -16,6 +16,7 @@ p = argparse.ArgumentParser(description=__doc__)
 p.add_argument("video", type=Path)
 p.add_argument("--times", nargs="+", type=float, required=True)
 p.add_argument("--output-dir", type=Path, required=True)
+p.add_argument("--tones", nargs="+", type=int, default=[440, 880])
 a = p.parse_args()
 a.output_dir.mkdir(parents=True, exist_ok=True)
 meta = json.loads(
@@ -120,8 +121,7 @@ if any(s["codec_type"] == "audio" for s in meta["streams"]):
         spec = np.abs(np.fft.rfft(chunk * np.hanning(len(chunk))))
         frequencies = np.fft.rfftfreq(len(chunk), 1 / 48000)
         bands = {
-            str(hz): float(np.max(spec[np.abs(frequencies - hz) < 5]))
-            for hz in (440, 880)
+            str(hz): float(np.max(spec[np.abs(frequencies - hz) < 5])) for hz in a.tones
         }
         print(
             json.dumps(

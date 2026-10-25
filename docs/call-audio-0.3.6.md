@@ -33,8 +33,25 @@ Android 16（AZHL）とAndroid 17（BZI9）のローカル調査資料を別々�
 
 JUnitで、UID保持、両ホストの明示ONとprojection、別パッケージ／UID偽装の拒否、経路・role・privileged／redirectionの拒否、tagとcriteriaの制限、権限の種類・service・UID・スレッド・ネスト・例外の範囲を確認する。既存分を含む66件、Lint、releaseビルドが成功。ライセンス56項目を照合した。
 
-実機操作禁止の指示に従い、実機へのインストール・再読み込み・通話・録画は行っていない。通話の実音収録、Samsungの全画面経路変更、混音・ルート変更との実機比較は未確認。更新後に機能を読み込むには、後日、対象ホストとフレームワークをソフトリブートで読み込み直す必要がある。
+公開時点では実機操作禁止の指示に従い、PC側の検証のみを行った。その後、端末の利用時間をほかの作業と調整して署名済みrelease版を実機へ更新し、zygoteのソフトリブートで反映した。カーネルのboot IDが変わらないことと、Samsung・SystemUI・フレームワークが新しい設定を含むReady状態になったことを確認した。通話の実音収録、Samsungの全画面経路変更、混音・ルート変更との実機比較はまだ未確認。ロック解除後に以下の専用fixtureで確認する。
 
 携帯回線やBluetoothなど、OSの通常の再生mixへ現れない音声は収録できない場合がある。別UIDで再生される音声を対象UIDへ付け替えない。メディアusageで流される通話や、スピーカーからマイクへ回り込む音声の内容判別はしない。通話用と分類された再生音だけの切り替えであり、会話の両側を保証する機能とは扱わない。
 
 参照：[AOSPの音声mix判定](https://android.googlesource.com/platform/frameworks/av/+/dd833ba601e642d72da2200a2fd9c3fa1cb69d2d/services/audiopolicy/common/managerdefinitions/src/AudioPolicyMix.cpp)でもusage条件とUID条件の双方が必要となり、NO_SYSTEM_CAPTUREは別に拒否される。対象アプリの音声制限を解除する処理は追加していない。
+
+## 実機用の内部fixture
+
+`-PcaptureFixtures`で別UIDの音声アプリを有効にし、`:app:assembleDebugAndroidTest :audioFixture:assembleRelease`をビルドする。共有の`TonePlayback`はandroidTestとfixture専用のsource setにだけ含まれる。release APKの検査ではActivity名とfixture名前空間の両方を拒否する。CIはコンパイルのみ行い、これらのAPKを公開しない。
+
+対象の`CaptureFixtureActivity`は`--ez tone true`でMEDIAの440 Hz、`--ez voice true`でVOICE_COMMUNICATIONの660 Hzを再生する。singleTopのIntentで後からvoiceを開始できる。別UIDの`ToneActivity`はMEDIAの880 Hz、同じvoice引数でVOICE_COMMUNICATIONの1100 Hzを再生する。別UIDのサービスは60秒で自動停止する。実際の通話への参加や個人の会話の録音は不要。
+
+| 音声範囲 | 通話音声 | 期待する周波数 | 混入してはいけない周波数 |
+| --- | --- | --- | --- |
+| 対象アプリのみ | OFF | 440 | 660・880・1100 |
+| 対象アプリのみ | ON | 440・660 | 880・1100 |
+| 端末全体 | OFF | 440・880 | 660・1100 |
+| 端末全体 | ON | 440・660・880・1100 | なし |
+
+最初は内部音声だけで比較し、スピーカーからマイクへの回り込みを除外する。`tools/analyze_test_recording.py`に`--tones 440 660 880 1100`と時点を渡して周波数を比較する。通話音声の録画途中の開始も別途確認する。
+
+内部の`CallAudioConfigTest`は明示した`capture_audio_driver`引数がない通常のテストではスキップする。`snapshot`、`update`、`restore`の順で使用し、元の設定は端末のアプリ専用領域に保存する。updateは音声検証に必要なキーだけを受け付け、restoreで値と型を戻す。既存の退避がある場合は上書きしない。終了時には録画とテスト音を停止し、設定・変更した端末音量を戻し、今回導入した検証用APKだけを削除する。

@@ -2,11 +2,15 @@ package dev.ryuya.captureaudiofixture;
 
 import android.app.*;
 import android.content.Intent;
-import android.media.*;
+import android.media.AudioAttributes;
 import android.os.*;
+import dev.ryuya.fixtureaudio.TonePlayback;
 
+/** Other UID: media at 880 Hz, with optional simulated voice playback at 1100 Hz. */
 public class ToneService extends Service {
-  private volatile boolean running;
+  private TonePlayback media, voice;
+  private final Handler handler = new Handler(Looper.getMainLooper());
+  private final Runnable stop = this::stopSelf;
 
   @Override
   public void onCreate() {
@@ -18,59 +22,29 @@ public class ToneService extends Service {
         1,
         new Notification.Builder(this, "test")
             .setSmallIcon(android.R.drawable.ic_media_play)
-            .setContentTitle("Internal audio test: 880 Hz")
+            .setContentTitle("Internal audio test")
             .build());
-    running = true;
-    new Thread(
-            () -> {
-              AudioTrack track =
-                  new AudioTrack.Builder()
-                      .setAudioAttributes(
-                          new AudioAttributes.Builder()
-                              .setUsage(AudioAttributes.USAGE_MEDIA)
-                              .setAllowedCapturePolicy(AudioAttributes.ALLOW_CAPTURE_BY_ALL)
-                              .build())
-                      .setAudioFormat(
-                          new AudioFormat.Builder()
-                              .setSampleRate(48000)
-                              .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                              .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                              .build())
-                      .setBufferSizeInBytes(19200)
-                      .setTransferMode(AudioTrack.MODE_STREAM)
-                      .build();
-              try {
-                track.play();
-                short[] samples = new short[4800];
-                long end = SystemClock.elapsedRealtime() + 60000, frame = 0;
-                while (running && SystemClock.elapsedRealtime() < end) {
-                  for (int i = 0; i < samples.length; i++, frame++)
-                    samples[i] = (short) (1400 * Math.sin(2 * Math.PI * 880 * frame / 48000));
-                  if (track.write(samples, 0, samples.length) < 0) break;
-                }
-              } finally {
-                track.stop();
-                track.release();
-                stopSelf();
-              }
-            },
-            "InternalOtherAppTone")
-        .start();
+    media = new TonePlayback(AudioAttributes.USAGE_MEDIA, 880);
+    handler.postDelayed(stop, 60000);
   }
 
   @Override
-  public int onStartCommand(Intent i, int flags, int id) {
+  public int onStartCommand(Intent intent, int flags, int id) {
+    if (voice == null && intent != null && intent.getBooleanExtra("voice", false))
+      voice = new TonePlayback(AudioAttributes.USAGE_VOICE_COMMUNICATION, 1100);
     return START_NOT_STICKY;
   }
 
   @Override
   public void onDestroy() {
-    running = false;
+    handler.removeCallbacks(stop);
+    if (media != null) media.close();
+    if (voice != null) voice.close();
     super.onDestroy();
   }
 
   @Override
-  public IBinder onBind(Intent i) {
+  public IBinder onBind(Intent intent) {
     return null;
   }
 }

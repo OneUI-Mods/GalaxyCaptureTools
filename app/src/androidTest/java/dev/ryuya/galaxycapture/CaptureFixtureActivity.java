@@ -6,48 +6,31 @@ import android.content.pm.ActivityInfo;
 import android.graphics.*;
 import android.os.Bundle;
 import android.view.*;
+import android.media.AudioAttributes;
+import dev.ryuya.fixtureaudio.TonePlayback;
 
 /** Internal test APK only. A new Activity must never leak into a window-locked recording. */
 public class CaptureFixtureActivity extends Activity {
-  private android.media.AudioTrack tone;
+  private TonePlayback tone;
+  private TonePlayback voiceTone;
 
   @Override
   public void onCreate(Bundle b) {
     super.onCreate(b);
     if (b != null) getIntent().putExtra("rotation", b.getInt("rotation", 0));
     apply(getIntent());
-    if (getIntent().getBooleanExtra("tone", false)) {
-      tone =
-          new android.media.AudioTrack.Builder()
-              .setAudioAttributes(
-                  new android.media.AudioAttributes.Builder()
-                      .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-                      .setAllowedCapturePolicy(android.media.AudioAttributes.ALLOW_CAPTURE_BY_ALL)
-                      .build())
-              .setAudioFormat(
-                  new android.media.AudioFormat.Builder()
-                      .setSampleRate(48000)
-                      .setChannelMask(android.media.AudioFormat.CHANNEL_OUT_MONO)
-                      .setEncoding(android.media.AudioFormat.ENCODING_PCM_16BIT)
-                      .build())
-              .setBufferSizeInBytes(96000)
-              .setTransferMode(android.media.AudioTrack.MODE_STATIC)
-              .build();
-      short[] samples = new short[48000];
-      for (int n = 0; n < samples.length; n++)
-        samples[n] = (short) (1400 * Math.sin(2 * Math.PI * 440 * n / 48000));
-      tone.write(samples, 0, samples.length);
-      tone.setLoopPoints(0, samples.length, -1);
-      tone.play();
-    }
+    updateAudio(getIntent());
   }
 
   @Override
   protected void onDestroy() {
     if (tone != null) {
-      tone.stop();
-      tone.release();
+      tone.close();
       tone = null;
+    }
+    if (voiceTone != null) {
+      voiceTone.close();
+      voiceTone = null;
     }
     super.onDestroy();
   }
@@ -61,8 +44,27 @@ public class CaptureFixtureActivity extends Activity {
   @Override
   public void onNewIntent(Intent i) {
     super.onNewIntent(i);
+    for (String key : new String[] {"tone", "voice"})
+      if (!i.hasExtra(key)) i.putExtra(key, getIntent().getBooleanExtra(key, false));
     setIntent(i);
     apply(i);
+    updateAudio(i);
+  }
+
+  private void updateAudio(Intent intent) {
+    if (intent.getBooleanExtra("tone", false)) {
+      if (tone == null) tone = new TonePlayback(AudioAttributes.USAGE_MEDIA, 440);
+    } else if (tone != null) {
+      tone.close();
+      tone = null;
+    }
+    if (intent.getBooleanExtra("voice", false)) {
+      if (voiceTone == null)
+        voiceTone = new TonePlayback(AudioAttributes.USAGE_VOICE_COMMUNICATION, 660);
+    } else if (voiceTone != null) {
+      voiceTone.close();
+      voiceTone = null;
+    }
   }
 
   private void apply(Intent i) {
