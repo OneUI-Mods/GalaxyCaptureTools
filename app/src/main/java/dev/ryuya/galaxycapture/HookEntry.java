@@ -28,6 +28,11 @@ public final class HookEntry extends XposedModule {
       if (systemServer) {
         FrameworkHooks.install(classLoader);
         SecureCapture.installFramework(classLoader);
+        try {
+          CallAudioCapture.installFramework(classLoader);
+        } catch (Throwable error) {
+          Hooks.log("GalaxyCapture call audio unavailable: " + error);
+        }
         Hooks.hookAllMethods(
             Reflect.findClass("com.android.server.SystemServer", classLoader),
             "startOtherServices",

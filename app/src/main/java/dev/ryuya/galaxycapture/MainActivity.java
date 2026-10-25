@@ -94,6 +94,12 @@ public final class MainActivity extends AppCompatActivity {
         true);
     addSwitch(
         commonOptions,
+        "include_call_audio",
+        R.string.include_call_audio,
+        R.string.include_call_audio_detail,
+        false);
+    addSwitch(
+        commonOptions,
         "hide_duplicate_indicator",
         R.string.hide_duplicate_indicator,
         R.string.hide_duplicate_indicator_detail,

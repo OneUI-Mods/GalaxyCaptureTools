@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "recorded_on": "2026-10-25",
+  "runtime_call_recording_verified": false,
+  "profiles": {
+    "android16": {
+      "artifacts": {
+        "framework.jar": "5953e27bfe048411154e5c2de6893adca8606e8ca7c3e8910b7cee62cebe8308",
+        "services.jar": "c1100fed60fdbb7541004ae8e46a6c4d642d9d605c904762cf854e4809da10ed"
+      },
+      "registration": "registerAudioPolicy(AudioPolicyConfig, IAudioPolicyCallback, boolean, boolean, boolean, boolean, IMediaProjection, AttributionSource)",
+      "permissionCheck": "callerHasPermission(String)",
+      "voiceRule": 2,
+      "loopbackRender": 3,
+      "playerRole": 0
+    },
+    "android17": {
+      "artifacts": {
+        "framework.jar": "a895cb27bf6be0cfe9f9b21ee091e17b53d926aa467ff9bbebe77fe8f101d30a",
+        "services.jar": "f91580934cb971715a117ac640be05c62668c8a30a7d9c1d25f17243a924bce7"
+      },
+      "registration": "registerAudioPolicy(AudioPolicyConfig, IAudioPolicyCallback, boolean, boolean, boolean, boolean, IMediaProjection, AttributionSource)",
+      "permissionCheck": "callerHasPermission(String)",
+      "voiceRule": 2,
+      "loopbackRender": 3,
+      "playerRole": 0
+    }
+  }
+}

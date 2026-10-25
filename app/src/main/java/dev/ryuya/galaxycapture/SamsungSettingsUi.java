@@ -202,6 +202,7 @@ final class SamsungSettingsUi {
         {
           "audio",
           "app_audio_only",
+          "include_call_audio",
           "speaker_media",
           "recording_volume",
           "media_volume",

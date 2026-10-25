@@ -7,7 +7,7 @@ public class CaptureUiPolicyTest {
   private Options options(boolean enabled, boolean exclude, boolean hide) {
     return new Options(
         enabled, true, true, false, true, false, true, true, exclude, hide, true, false, false,
-        false, 100, 100, false);
+        false, 100, 100, false, false);
   }
 
   @Test

@@ -19,6 +19,7 @@ Android SDKのコンパイル対象は37です。JDK・Gradle・依存関係の�
 ## ドキュメント一覧
 
 - [署名・配布手順](releasing.md)
+- [内部音声の通話選択](call-audio-0.3.6.md)
 - [ソースの書式](source-style.md)
 - [Android 16の互換性](compatibility/android16.md)
 - [Android 17の互換性](compatibility/android17.md)

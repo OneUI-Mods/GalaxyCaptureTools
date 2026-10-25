@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -140,7 +141,23 @@ def main():
             signed,
             aligned,
         )
-        run(build_tools / "apksigner", "verify", "--verbose", "--print-certs", signed)
+        verification = run(
+            build_tools / "apksigner",
+            "verify",
+            "--verbose",
+            "--print-certs",
+            signed,
+            capture=True,
+        ).stdout
+        certificates = re.findall(
+            r"certificate SHA-256 digest: ([0-9a-f]+)", verification
+        )
+        if certificates != [
+            "3c18719ba633ed0e891d8dca62053c849986156fd10410bd5f0115113ffa6075"
+        ]:
+            raise RuntimeError(
+                "Release signing certificate does not match the published application."
+            )
         run(build_tools / "zipalign", "-c", "-P", "16", "4", signed)
         validate(signed, build_tools / "aapt2")
         shutil.copyfile(signed, apk)
@@ -152,10 +169,27 @@ def main():
         f"--output={source}",
         args.source_ref,
     )
+    signature = dist / f"GalaxyCaptureTools-{version}-signature.txt"
+    signature.write_text(verification)
+    build_info = dist / "release-metadata.json"
+    build_info.write_text(
+        json.dumps(
+            {
+                "schema": 1,
+                "packageName": "dev.ryuya.galaxycapture",
+                "versionCode": element["versionCode"],
+                "versionName": version,
+                "apk": apk.name,
+                "sha256": hashlib.sha256(apk.read_bytes()).hexdigest(),
+            },
+            indent=2,
+        )
+        + "\n"
+    )
     sums.write_text(
         "".join(
             hashlib.sha256(path.read_bytes()).hexdigest() + "  " + path.name + "\n"
-            for path in (apk, source)
+            for path in (apk, source, signature, build_info)
         )
     )
     print(f"Release APK: {apk.name}\nSource: {source.name}\nChecksums: {sums.name}")

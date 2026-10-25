@@ -107,4 +107,6 @@
   <string name="custom_back">戻る</string>
   <string name="recording_icon_right">録画中アイコンを右側に表示</string>
   <string name="recording_icon_right_detail">Galaxyの操作付き録画表示をそのまま右側へ移し、タップからの停止操作も保ちます。重複するミラーリングアイコンは隠します。配置が非対応・空き領域不足の場合は左側へ戻します。縦画面のみ対応。</string>
+  <string name="include_call_audio">内部音声に通話音声を含める</string>
+  <string name="include_call_audio_detail">端末で再生される通話音声を内部音声の対象に追加します。OFFでは通話用に分類された再生音を除外します。マイクは録音する音声の選択に従い、対象アプリのみの指定も維持します。次の録画から反映。携帯回線の通話や一部の音声経路は収録できない場合があります。</string>
 </resources>

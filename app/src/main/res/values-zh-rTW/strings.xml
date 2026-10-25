@@ -107,4 +107,6 @@
   <string name="custom_back">返回</string>
   <string name="recording_icon_right">在右側顯示錄影圖示</string>
   <string name="recording_icon_right_detail">將Galaxy原有的互動式錄影指示移至右側，保留點選與停止操作，隱藏重複的投放圖示。配置不相容或空間不足時還原至左側。僅支援直向畫面。</string>
+  <string name="include_call_audio">內部音訊包含通話音訊</string>
+  <string name="include_call_audio_detail">將可用的通話播放聲音加入內部音訊。關閉時排除被分類為語音通訊的播放聲音。麥克風仍依照所選錄音模式，並保留僅錄製目標應用程式音訊的範圍。下次錄影生效；行動網路通話及部分音訊路徑可能無法錄製。</string>
 </resources>

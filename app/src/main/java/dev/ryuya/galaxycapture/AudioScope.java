@@ -10,11 +10,12 @@ import java.util.concurrent.*;
 
 final class AudioScope {
   private static final String SPEAKER_MEDIA = "galaxycapture.speakerMedia";
+  private static final String AUDIO_SELECTION = "galaxycapture.audioSelection";
 
-  private record SamsungAudio(int uid, MediaProjection projection) {}
+  private record SamsungAudio(CallAudioPolicy.Selection selection, MediaProjection projection) {}
 
   private static final ThreadLocal<SamsungAudio> samsung = new ThreadLocal<>();
-  private static final ThreadLocal<Integer> aosp = new ThreadLocal<>();
+  private static final ThreadLocal<CallAudioPolicy.Selection> aosp = new ThreadLocal<>();
   private static final ThreadLocal<Boolean> aospScope = new ThreadLocal<>();
 
   static void installSamsung(HookRuntime rt, ClassLoader loader) {
@@ -29,22 +30,38 @@ final class AudioScope {
           new HookCallback() {
             @Override
             protected void beforeHookedMethod(MethodHookParam p) {
+              p.setObjectExtra("previousSamsungAudio", samsung.get());
+              p.setObjectExtra("samsungAudioEntered", true);
+              samsung.remove();
               Reflect.setAdditionalInstanceField(
                   p.thisObject, SPEAKER_MEDIA, rt.options.enabled() && rt.options.speakerMedia());
-              SamsungSelection.Target t = SamsungSelection.target();
-              if (!rt.options.enabled() || t == null || !t.audioOnly()) return;
+              if (!rt.options.enabled()) return;
               try {
+                CallAudioPolicy.Selection selection =
+                    (CallAudioPolicy.Selection)
+                        Reflect.getAdditionalInstanceField(p.thisObject, AUDIO_SELECTION);
+                if (selection == null) {
+                  SamsungSelection.Target target = SamsungSelection.target();
+                  selection =
+                      new CallAudioPolicy.Selection(
+                          target != null && target.audioOnly() ? target.uid() : -1,
+                          rt.options.includeCallAudio());
+                  Reflect.setAdditionalInstanceField(p.thisObject, AUDIO_SELECTION, selection);
+                }
                 Object owner = Reflect.getObjectField(p.thisObject, "pRecorder");
-                samsung.set(new SamsungAudio(t.uid(), SamsungSelection.audioProjection(owner)));
+                samsung.set(new SamsungAudio(selection, SamsungSelection.audioProjection(owner)));
               } catch (Throwable error) {
-                p.setThrowable(new IllegalStateException("App audio unavailable", error));
+                p.setThrowable(new IllegalStateException("Playback audio unavailable", error));
                 rt.fail(error);
               }
             }
 
             @Override
             protected void afterHookedMethod(MethodHookParam p) {
-              samsung.remove();
+              if (!Boolean.TRUE.equals(p.getObjectExtra("samsungAudioEntered"))) return;
+              SamsungAudio previous = (SamsungAudio) p.getObjectExtra("previousSamsungAudio");
+              if (previous == null) samsung.remove();
+              else samsung.set(previous);
             }
           });
     }
@@ -65,18 +82,21 @@ final class AudioScope {
             SamsungAudio scope = samsung.get();
             if (scope == null || (int) p.args[0] != playback) return;
             try {
-              AudioPlaybackCaptureConfiguration capture =
+              AudioPlaybackCaptureConfiguration.Builder capture =
                   new AudioPlaybackCaptureConfiguration.Builder(scope.projection())
                       .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
                       .addMatchingUsage(AudioAttributes.USAGE_GAME)
-                      .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
-                      .addMatchingUid(scope.uid())
-                      .build();
-              ((AudioRecord.Builder) p.thisObject).setAudioPlaybackCaptureConfig(capture);
+                      .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN);
+              CallAudioCapture.configure(capture, scope.selection());
+              ((AudioRecord.Builder) p.thisObject).setAudioPlaybackCaptureConfig(capture.build());
               p.setResult(p.thisObject);
-              rt.report("Recording target app audio only");
+              rt.report(
+                  scope.selection().includeCalls()
+                      ? "Recording playback including available call audio"
+                      : "Recording media playback without call audio");
             } catch (Throwable error) {
-              p.setThrowable(new IllegalStateException("App audio filtering unavailable", error));
+              p.setThrowable(
+                  new IllegalStateException("Playback audio filtering unavailable", error));
               rt.fail(error);
             }
           }
@@ -155,12 +175,15 @@ final class AudioScope {
         new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
-            Boolean scope = aospScope.get();
-            if (!rt.options.enabled() || !(scope == null ? rt.options.appAudioOnly() : scope))
-              return;
+            p.setObjectExtra("previousAospAudio", aosp.get());
+            p.setObjectExtra("aospAudioEntered", true);
+            aosp.remove();
+            if (!rt.options.enabled()) return;
             try {
-              int uid = resolve(rt);
-              if (uid >= 0) aosp.set(uid);
+              Boolean scope = aospScope.get();
+              boolean appOnly = scope == null ? rt.options.appAudioOnly() : scope;
+              int uid = appOnly ? resolve(rt) : -1;
+              aosp.set(new CallAudioPolicy.Selection(uid, rt.options.includeCallAudio()));
             } catch (Throwable error) {
               p.setThrowable(new java.io.IOException("App audio filtering unavailable", error));
               rt.fail(error);
@@ -169,7 +192,11 @@ final class AudioScope {
 
           @Override
           protected void afterHookedMethod(MethodHookParam p) {
-            aosp.remove();
+            if (!Boolean.TRUE.equals(p.getObjectExtra("aospAudioEntered"))) return;
+            CallAudioPolicy.Selection previous =
+                (CallAudioPolicy.Selection) p.getObjectExtra("previousAospAudio");
+            if (previous == null) aosp.remove();
+            else aosp.set(previous);
           }
         });
     Hooks.hookAllMethods(
@@ -178,9 +205,10 @@ final class AudioScope {
         new HookCallback() {
           @Override
           protected void beforeHookedMethod(MethodHookParam p) {
-            Integer uid = aosp.get();
-            if (uid != null)
-              ((AudioPlaybackCaptureConfiguration.Builder) p.thisObject).addMatchingUid(uid);
+            CallAudioPolicy.Selection selection = aosp.get();
+            if (selection != null)
+              CallAudioCapture.configure(
+                  (AudioPlaybackCaptureConfiguration.Builder) p.thisObject, selection);
           }
         });
   }

@@ -19,11 +19,12 @@ record Options(
     boolean recordingVolume,
     int mediaVolume,
     int micVolume,
-    boolean recordingIconRight) {
+    boolean recordingIconRight,
+    boolean includeCallAudio) {
   static final Options OFF =
       new Options(
           false, false, false, false, true, false, false, false, false, false, true, false, false,
-          false, 100, 100, false);
+          false, 100, 100, false, false);
 
   static Options from(Bundle b) {
     return b == null
@@ -45,6 +46,7 @@ record Options(
             b.getBoolean("recording_volume", false),
             AudioLevels.clamp(b.getInt("media_volume", 100)),
             AudioLevels.clamp(b.getInt("mic_volume", 100)),
-            b.getBoolean("recording_icon_right", false));
+            b.getBoolean("recording_icon_right", false),
+            b.getBoolean("include_call_audio", false));
   }
 }

@@ -107,4 +107,6 @@
   <string name="custom_back">返回</string>
   <string name="recording_icon_right">在右侧显示录屏图标</string>
   <string name="recording_icon_right_detail">将Galaxy原有的可交互录屏指示移至右侧，保留点击和停止操作，隐藏重复的投屏图标。布局不兼容或空间不足时恢复到左侧。仅支持竖屏。</string>
+  <string name="include_call_audio">内部音频包含通话音频</string>
+  <string name="include_call_audio_detail">将可用的通话播放声音加入内部音频。关闭时排除被分类为语音通信的播放声音。麦克风仍遵循所选录音模式，并保留仅录制目标应用音频的范围。下次录屏生效；蜂窝通话及部分音频路径可能无法录制。</string>
 </resources>

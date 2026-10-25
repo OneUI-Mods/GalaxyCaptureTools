@@ -15,6 +15,11 @@ final class CaptureSettings {
         "secure_recording", R.string.secure_recording, R.string.secure_recording_detail, false),
     new Toggle("app_audio_only", R.string.app_audio_only, R.string.app_audio_only_detail, true),
     new Toggle(
+        "include_call_audio",
+        R.string.include_call_audio,
+        R.string.include_call_audio_detail,
+        false),
+    new Toggle(
         "hide_duplicate_indicator",
         R.string.hide_duplicate_indicator,
         R.string.hide_duplicate_indicator_detail,

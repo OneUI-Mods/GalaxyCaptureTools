@@ -107,4 +107,6 @@
   <string name="custom_back">Back</string>
   <string name="recording_icon_right">Recording icon on the right</string>
   <string name="recording_icon_right_detail">Moves the original interactive Galaxy recording chip to the right, keeping tap and stop controls. Hides the duplicate casting icon. If the layout is incompatible or space is insufficient, keeps the chip on the left. Portrait display only.</string>
+  <string name="include_call_audio">Include call audio in internal audio</string>
+  <string name="include_call_audio_detail">Add available call playback to internal audio. Off excludes playback classified as voice communication. Microphone capture follows the selected sound mode. The selected-app audio scope is preserved. Applies to the next recording; cellular calls and some audio routes may be unavailable.</string>
 </resources>
