@@ -7,12 +7,14 @@ import android.text.*;
 import android.view.*;
 import android.widget.*;
 import dev.ryuya.galaxycapture.hook.*;
+import java.lang.ref.WeakReference;
 import java.util.*;
 
 /** Samsung-native recording choices and a separate, reversible target-selection dialog. */
 final class SamsungRecordingUi {
   static final class State {
     final Object controller;
+    final View sourceRoot;
     final Context context;
     final LinearLayout targetBox;
     final TextView summary;
@@ -32,12 +34,14 @@ final class SamsungRecordingUi {
 
     State(
         Object controller,
+        View sourceRoot,
         Context context,
         LinearLayout targetBox,
         TextView summary,
         List<View> modes,
         Context strings) {
       this.controller = controller;
+      this.sourceRoot = sourceRoot;
       this.context = context;
       this.targetBox = targetBox;
       this.summary = summary;
@@ -46,7 +50,8 @@ final class SamsungRecordingUi {
     }
   }
 
-  private static final Map<Object, java.lang.ref.WeakReference<State>> states = new WeakHashMap<>();
+  private static final Map<Object, WeakReference<State>> states = new WeakHashMap<>();
+  private static final Map<Object, WeakReference<View>> pendingRoots = new WeakHashMap<>();
   private static final Handler main = new Handler(Looper.getMainLooper());
 
   static State state(Object controller) {
@@ -55,6 +60,19 @@ final class SamsungRecordingUi {
   }
 
   static void install(HookRuntime rt, ClassLoader loader) {
+    // Configuration arrives off the UI thread. A cold-started popup can already be visible
+    // before the first read completes, so finish that popup when the settings become ready.
+    rt.onOptionsChanged(
+        () ->
+            main.post(
+                () -> {
+                  for (Object owner : new ArrayList<>(pendingRoots.keySet())) {
+                    var reference = pendingRoots.get(owner);
+                    View root = reference == null ? null : reference.get();
+                    if (root == null) pendingRoots.remove(owner);
+                    else if (root.isAttachedToWindow()) attachPending(rt, owner);
+                  }
+                }));
     Class<?> controller =
         Reflect.findClass(
             "com.samsung.android.app.smartcapture.screenrecorder.ScreenRecorderController", loader);
@@ -64,12 +82,8 @@ final class SamsungRecordingUi {
         new HookCallback() {
           @Override
           protected void afterHookedMethod(MethodHookParam p) {
-            if (!rt.options.enabled() || !rt.options.samsungApp()) return;
-            try {
-              attach(rt, p.thisObject, (View) p.args[0]);
-            } catch (Throwable error) {
-              rt.fail(error);
-            }
+            pendingRoots.put(p.thisObject, new WeakReference<>((View) p.args[0]));
+            attachPending(rt, p.thisObject);
           }
         });
     Hooks.hookAllMethods(
@@ -78,10 +92,27 @@ final class SamsungRecordingUi {
         new HookCallback() {
           @Override
           protected void afterHookedMethod(MethodHookParam p) {
+            attachPending(rt, p.thisObject);
             State s = state(p.thisObject);
             if (s != null) updateStart(s);
           }
         });
+  }
+
+  private static void attachPending(HookRuntime rt, Object owner) {
+    if (!rt.options.enabled() || !rt.options.samsungApp()) return;
+    var reference = pendingRoots.get(owner);
+    View root = reference == null ? null : reference.get();
+    if (root == null) return;
+    try {
+      State current = state(owner);
+      if (current == null || current.sourceRoot != root) attach(rt, owner, root);
+      State attached = state(owner);
+      if (attached != null && attached.sourceRoot == root) pendingRoots.remove(owner);
+    } catch (Throwable error) {
+      pendingRoots.remove(owner);
+      rt.fail(error);
+    }
   }
 
   private static int id(Context host, String name) {
@@ -172,8 +203,8 @@ final class SamsungRecordingUi {
       audio.addView(choice, new LinearLayout.LayoutParams(0, -2, 1));
       audioChoices.add(choice);
     }
-    State s = new State(controller, c, targetBox, summary, modes, strings);
-    states.put(controller, new java.lang.ref.WeakReference<>(s));
+    State s = new State(controller, root, c, targetBox, summary, modes, strings);
+    states.put(controller, new WeakReference<>(s));
     s.audioOnly = rt.options.appAudioOnly();
     for (int i = 0; i < audioChoices.size(); i++) {
       final boolean only = i == 0;
