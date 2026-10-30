@@ -107,7 +107,7 @@ open class SettingsHierarchyTest {
             if (
                 root is MaterialSwitch &&
                     (root.getText().toString() == text ||
-                        text == root.getContentDescription().toString())
+                        text == root.getContentDescription()?.toString())
             )
                 return root
             if (root is ViewGroup)

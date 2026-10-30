@@ -571,10 +571,10 @@ object SamsungRecordingUi {
             "list",
             query,
             object : ResultReceiver(SamsungRecordingUi.main) {
-                override fun onReceiveResult(code: Int, result: Bundle) {
+                override fun onReceiveResult(code: Int, result: Bundle?) {
                     if (generation != s.generation || s.picker == null) return
                     received[0] = true
-                    if (code != Activity.RESULT_OK) {
+                    if (code != Activity.RESULT_OK || result == null) {
                         s.message!!.setText(s.strings.getString(R.string.target_unavailable))
                         return
                     }
