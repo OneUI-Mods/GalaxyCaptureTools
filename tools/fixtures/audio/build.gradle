@@ -15,7 +15,7 @@ android {
         versionName 'internal'
     }
 
-    sourceSets.main.java.srcDir(rootProject.file('tools/fixtures/common/java'))
+    sourceSets.main.kotlin.srcDir(rootProject.file('tools/fixtures/common/java'))
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
