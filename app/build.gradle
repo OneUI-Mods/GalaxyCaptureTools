@@ -11,8 +11,8 @@ android {
         applicationId 'dev.ryuya.galaxycapture'
         minSdk 35
         targetSdk 37
-        versionCode 21
-        versionName '0.3.7-experimental'
+        versionCode 22
+        versionName '0.3.8-experimental'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
@@ -29,6 +29,8 @@ android {
 }
 
 dependencies {
+    implementation 'io.github.libxposed:service:102.0.0'
+
     compileOnly 'io.github.libxposed:api:102.0.0'
     testImplementation 'io.github.libxposed:api:102.0.0'
     implementation 'com.google.android.material:material:1.12.0'
