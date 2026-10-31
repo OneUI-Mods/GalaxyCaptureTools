@@ -590,7 +590,7 @@ object SamsungRecordingUi {
 
     @JvmStatic
     private fun updateHeading(s: SamsungRecordingUi.State) {
-        val search: Boolean = !s.query.isBlank()
+        val search: Boolean = !TextCompatibility.isBlank(s.query)
         s.section!!.setText(
             s.strings.getString(
                 if (s.pickerMode == 3) R.string.area_window
@@ -609,7 +609,7 @@ object SamsungRecordingUi {
         s.query = query
         SamsungRecordingUi.updateHeading(s)
         val filtered = ArrayList<Bundle?>()
-        val filter = query.trim().lowercase()
+        val filter = TextCompatibility.strip(query).lowercase()
         val search: Boolean = !filter.isEmpty()
         val shownApps = HashSet<String?>()
         for (e in s.entries) {
