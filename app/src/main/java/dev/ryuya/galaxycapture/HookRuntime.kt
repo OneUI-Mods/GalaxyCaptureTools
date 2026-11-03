@@ -7,6 +7,7 @@ import android.content.IntentFilter
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.UserManager
+import dev.ryuya.galaxycapture.compat.DexSymbols
 import dev.ryuya.galaxycapture.hook.Hooks
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.Volatile
@@ -41,6 +42,7 @@ class HookRuntime(c: Context, host: String?) {
 
     init {
         context = c
+        DexSymbols.configure(c)
         val thread = HandlerThread("GalaxyCaptureConfig")
         thread.start()
         worker = Handler(thread.getLooper())

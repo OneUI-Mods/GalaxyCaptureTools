@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Bitmap.Config
 import android.graphics.Color
 import android.os.Binder
+import dev.ryuya.galaxycapture.compat.compatibleName
 import dev.ryuya.galaxycapture.hook.HookCallback
 import dev.ryuya.galaxycapture.hook.HookCallback.MethodHookParam
 import dev.ryuya.galaxycapture.hook.Hooks
@@ -215,11 +216,11 @@ object SecureCapture {
         for (method in
             Reflect.findClass("com.android.server.display.DisplayManagerService", loader)!!
                 .getDeclaredMethods()) if (
-            method.getName().contains("createVirtualDisplayInternal")
+            method.compatibleName().contains("createVirtualDisplayInternal")
         )
             Hooks.deoptimize(method)
         for (method in shots!!.getDeclaredMethods()) if (
-            method.getName() == "takeScreenshotToTargetWindow"
+            method.compatibleName() == "takeScreenshotToTargetWindow"
         )
             Hooks.deoptimize(method)
     }

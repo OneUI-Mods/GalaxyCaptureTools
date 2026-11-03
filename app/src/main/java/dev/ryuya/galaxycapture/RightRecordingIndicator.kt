@@ -14,6 +14,9 @@ import android.view.View.OnLayoutChangeListener
 import android.view.ViewGroup
 import android.view.ViewTreeObserver.OnPreDrawListener
 import android.widget.LinearLayout
+import dev.ryuya.galaxycapture.compat.compatibleDeclaredField
+import dev.ryuya.galaxycapture.compat.compatibleDeclaredMethod
+import dev.ryuya.galaxycapture.compat.compatibleName
 import dev.ryuya.galaxycapture.hook.HookCallback
 import dev.ryuya.galaxycapture.hook.HookCallback.MethodHookParam
 import dev.ryuya.galaxycapture.hook.Hooks
@@ -73,15 +76,16 @@ class RightRecordingIndicator private constructor(runtime: HookRuntime) {
             )
         check(
             !(!ViewGroup::class.java.isAssignableFrom(nativeChip) ||
-                (nativeChip!!.getDeclaredField("customClickListener").getType() !=
+                (nativeChip!!.compatibleDeclaredField("customClickListener").getType() !=
                     OnClickListener::class.java) ||
-                nativeChip!!.getDeclaredField("touchForwardView").getType() != View::class.java)
+                nativeChip!!.compatibleDeclaredField("touchForwardView").getType() !=
+                    View::class.java)
         ) {
             "Native interactive chip contract changed"
         }
-        fragment!!.getDeclaredMethod("onViewCreated", View::class.java, Bundle::class.java)
-        fragment!!.getDeclaredMethod("onDestroyView")
-        controller!!.getDeclaredMethod("updateAll", String::class.java)
+        fragment!!.compatibleDeclaredMethod("onViewCreated", View::class.java, Bundle::class.java)
+        fragment!!.compatibleDeclaredMethod("onDestroyView")
+        controller!!.compatibleDeclaredMethod("updateAll", String::class.java)
         Hooks.hookAllMethods(
             fragment,
             "onViewCreated",
@@ -182,13 +186,14 @@ class RightRecordingIndicator private constructor(runtime: HookRuntime) {
                 "com.android.systemui.statusbar.phone.TouchInterceptFrameLayout",
                 loader,
             )
-        controller!!.getDeclaredMethod("setChipView", View::class.java)
-        controller!!.getDeclaredMethod("updateAll", String::class.java)
+        controller!!.compatibleDeclaredMethod("setChipView", View::class.java)
+        controller!!.compatibleDeclaredMethod("updateAll", String::class.java)
         check(
             !(!ViewGroup::class.java.isAssignableFrom(nativeChip) ||
-                (nativeChip!!.getDeclaredField("customClickListener").getType() !=
+                (nativeChip!!.compatibleDeclaredField("customClickListener").getType() !=
                     OnClickListener::class.java) ||
-                nativeChip!!.getDeclaredField("touchForwardView").getType() != View::class.java)
+                nativeChip!!.compatibleDeclaredField("touchForwardView").getType() !=
+                    View::class.java)
         ) {
             "Android 17 native interactive chip contract changed"
         }
@@ -315,7 +320,8 @@ class RightRecordingIndicator private constructor(runtime: HookRuntime) {
             val tag = Reflect.getObjectField(device!!, "tag")
             if (
                 tag == null ||
-                    ("android.media.projection.MediaProjectionInfo" != tag.javaClass.getName()) ||
+                    ("android.media.projection.MediaProjectionInfo" !=
+                        tag.javaClass.compatibleName()) ||
                     ("com.samsung.android.app.smartcapture" !=
                         Reflect.callMethod(tag, "getPackageName"))
             )

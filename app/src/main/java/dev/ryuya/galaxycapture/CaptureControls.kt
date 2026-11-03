@@ -2,6 +2,7 @@ package dev.ryuya.galaxycapture
 
 import android.view.View
 import android.view.WindowManager.LayoutParams
+import dev.ryuya.galaxycapture.compat.compatibleName
 import dev.ryuya.galaxycapture.hook.HookCallback
 import dev.ryuya.galaxycapture.hook.HookCallback.MethodHookParam
 import dev.ryuya.galaxycapture.hook.Hooks
@@ -40,7 +41,7 @@ object CaptureControls {
             object : HookCallback() {
                 override fun beforeHookedMethod(p: MethodHookParam) {
                     if (
-                        p.thisObject!!.javaClass.getName() !=
+                        p.thisObject!!.javaClass.compatibleName() !=
                             CaptureControls.PREFIX + "screenshot.ServiceFragmentForStandAlone"
                     )
                         return

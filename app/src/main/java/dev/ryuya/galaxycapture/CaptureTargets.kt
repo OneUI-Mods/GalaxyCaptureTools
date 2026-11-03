@@ -15,6 +15,7 @@ import android.os.IBinder
 import android.os.ResultReceiver
 import android.os.SystemClock
 import android.view.WindowManager.LayoutParams
+import dev.ryuya.galaxycapture.compat.compatibleName
 import dev.ryuya.galaxycapture.hook.Hooks
 import dev.ryuya.galaxycapture.hook.Reflect
 import java.text.Collator
@@ -131,7 +132,7 @@ object CaptureTargets {
         seen: MutableSet<Any?>,
     ) {
         if (node == null || seen.size > 4096 || !seen.add(node)) return
-        val name = node.javaClass.getName()
+        val name = node.javaClass.compatibleName()
         if (name == "com.android.server.wm.Task") tasks.add(node)
         if (name == "com.android.server.wm.WindowState" && CaptureTargets.allowedWindow(node))
             windows.add(node)

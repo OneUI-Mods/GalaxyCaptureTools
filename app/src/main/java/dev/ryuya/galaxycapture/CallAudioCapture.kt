@@ -3,6 +3,7 @@ package dev.ryuya.galaxycapture
 import android.content.AttributionSource
 import android.media.AudioAttributes
 import android.os.Binder
+import dev.ryuya.galaxycapture.compat.compatibleDeclaredMethod
 import dev.ryuya.galaxycapture.hook.HookCallback
 import dev.ryuya.galaxycapture.hook.HookCallback.MethodHookParam
 import dev.ryuya.galaxycapture.hook.Hooks
@@ -43,7 +44,7 @@ object CallAudioCapture {
         val registration: Method?
         try {
             registration =
-                service!!.getDeclaredMethod(
+                service!!.compatibleDeclaredMethod(
                     "registerAudioPolicy",
                     Reflect.findClass("android.media.audiopolicy.AudioPolicyConfig", loader),
                     Reflect.findClass("android.media.audiopolicy.IAudioPolicyCallback", loader),

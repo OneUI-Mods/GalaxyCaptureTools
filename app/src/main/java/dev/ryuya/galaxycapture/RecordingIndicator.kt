@@ -1,6 +1,7 @@
 package dev.ryuya.galaxycapture
 
 import android.os.Handler
+import dev.ryuya.galaxycapture.compat.compatibleName
 import dev.ryuya.galaxycapture.hook.HookCallback
 import dev.ryuya.galaxycapture.hook.HookCallback.MethodHookParam
 import dev.ryuya.galaxycapture.hook.Hooks
@@ -42,7 +43,7 @@ object RecordingIndicator {
                                 val tag = Reflect.getObjectField(device!!, "tag")
                                 if (
                                     tag == null ||
-                                        (tag.javaClass.getName() !=
+                                        (tag.javaClass.compatibleName() !=
                                             "android.media.projection.MediaProjectionInfo")
                                 )
                                     return

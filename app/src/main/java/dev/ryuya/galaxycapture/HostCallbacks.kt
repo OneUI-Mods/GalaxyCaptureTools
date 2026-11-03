@@ -1,5 +1,6 @@
 package dev.ryuya.galaxycapture
 
+import dev.ryuya.galaxycapture.compat.compatibleName
 import dev.ryuya.galaxycapture.hook.Hooks
 import java.lang.Boolean as JavaBoolean
 import java.lang.reflect.InvocationHandler
@@ -17,7 +18,7 @@ object HostCallbacks {
             arrayOf<Class<*>?>(type),
             InvocationHandler { proxy: Any?, method: Method?, args: Array<Any?>? ->
                 if (method!!.getDeclaringClass() == Any::class.java) {
-                    return@InvocationHandler when (method!!.getName()) {
+                    return@InvocationHandler when (method!!.compatibleName()) {
                         "hashCode" -> System.identityHashCode(proxy)
                         "equals" -> proxy === args!![0]
                         else -> "GalaxyCapture settings listener"

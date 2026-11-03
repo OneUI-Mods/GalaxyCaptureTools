@@ -2,6 +2,7 @@ package dev.ryuya.galaxycapture
 
 import android.app.Application
 import android.content.Context
+import dev.ryuya.galaxycapture.compat.DexSymbols
 import dev.ryuya.galaxycapture.hook.HookCallback
 import dev.ryuya.galaxycapture.hook.HookCallback.MethodHookParam
 import dev.ryuya.galaxycapture.hook.Hooks
@@ -69,16 +70,20 @@ class HookEntry : XposedModule() {
                         override fun afterHookedMethod(param: MethodHookParam) {
                             if (loaded) return
                             loaded = true
-                            val runtime =
-                                HookRuntime(
-                                    param!!.args!![0] as Context,
-                                    if (system) "systemui" else "samsung",
-                                )
-                            try {
-                                if (system) SamsungSelection.installSystemUi(runtime, classLoader)
-                                else SamsungSelection.installRecorder(runtime, classLoader)
-                            } catch (e: Throwable) {
-                                runtime.fail(e)
+                            val hostContext = param.args!![0] as Context
+                            DexSymbols.whenPrepared(hostContext) {
+                                val runtime =
+                                    HookRuntime(
+                                        param!!.args!![0] as Context,
+                                        if (system) "systemui" else "samsung",
+                                    )
+                                try {
+                                    if (system)
+                                        SamsungSelection.installSystemUi(runtime, classLoader)
+                                    else SamsungSelection.installRecorder(runtime, classLoader)
+                                } catch (e: Throwable) {
+                                    runtime.fail(e)
+                                }
                             }
                         }
                     },
