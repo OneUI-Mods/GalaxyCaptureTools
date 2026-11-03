@@ -1,12 +1,13 @@
 package dev.ryuya.galaxycapture.compat
 
 internal object DexKitConfig {
-    const val SCHEMA = 1
+    const val SCHEMA = 2
     const val MODULE_ID = "dev.ryuya.galaxycapture"
     val MODULE_VERSION
         get() = dev.ryuya.galaxycapture.BuildConfig.VERSION_CODE
 
     const val PROFILE_HASH = "16bf56e3065758877698cbe078a09e9bec54a80b5a1a513b5adec43cef484199"
+    val FEATURE_PREFIXES = setOf<String>()
     val TARGETS = setOf("com.android.systemui", "com.samsung.android.app.smartcapture")
     val HOSTS = setOf("com.android.systemui", "com.samsung.android.app.smartcapture")
     val CLASSES_BY_TARGET =
