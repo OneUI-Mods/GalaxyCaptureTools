@@ -1,5 +1,7 @@
 # Galaxy Capture Tools
 
+[日本語](README.md) · [English](README.en.md)
+
 Android標準とSamsungの画面録画・スクリーンショットを拡張する、実験的なVectorモジュールです。
 
 ## 主な機能
