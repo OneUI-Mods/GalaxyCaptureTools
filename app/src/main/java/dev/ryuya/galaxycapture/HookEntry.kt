@@ -7,6 +7,7 @@ import dev.ryuya.galaxycapture.hook.HookCallback
 import dev.ryuya.galaxycapture.hook.HookCallback.MethodHookParam
 import dev.ryuya.galaxycapture.hook.Hooks
 import dev.ryuya.galaxycapture.hook.Reflect
+import dev.ryuya.galaxycapture.startup.FirstUnlockGate
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
 import io.github.libxposed.api.XposedModuleInterface.PackageReadyParam
@@ -14,6 +15,8 @@ import io.github.libxposed.api.XposedModuleInterface.SystemServerStartingParam
 import kotlin.math.log
 
 class HookEntry : XposedModule() {
+    private val firstUnlock = FirstUnlockGate()
+
     override fun onModuleLoaded(p: ModuleLoadedParam) {
         Hooks.attach(this)
     }
@@ -71,19 +74,8 @@ class HookEntry : XposedModule() {
                             if (loaded) return
                             loaded = true
                             val hostContext = param.args!![0] as Context
-                            DexSymbols.whenPrepared(hostContext) {
-                                val runtime =
-                                    HookRuntime(
-                                        param!!.args!![0] as Context,
-                                        if (system) "systemui" else "samsung",
-                                    )
-                                try {
-                                    if (system)
-                                        SamsungSelection.installSystemUi(runtime, classLoader)
-                                    else SamsungSelection.installRecorder(runtime, classLoader)
-                                } catch (e: Throwable) {
-                                    runtime.fail(e)
-                                }
+                            firstUnlock.run(hostContext) {
+                                installHost(hostContext, classLoader, system)
                             }
                         }
                     },
@@ -91,6 +83,22 @@ class HookEntry : XposedModule() {
             }
         } catch (e: Throwable) {
             Hooks.log("GalaxyCapture hook initialization stopped: " + e)
+        }
+    }
+
+    private fun installHost(hostContext: Context, classLoader: ClassLoader?, system: Boolean) {
+        DexSymbols.whenPrepared(hostContext) {
+            val runtime =
+                HookRuntime(
+                    hostContext,
+                    if (system) "systemui" else "samsung",
+                )
+            try {
+                if (system) SamsungSelection.installSystemUi(runtime, classLoader)
+                else SamsungSelection.installRecorder(runtime, classLoader)
+            } catch (e: Throwable) {
+                runtime.fail(e)
+            }
         }
     }
 }

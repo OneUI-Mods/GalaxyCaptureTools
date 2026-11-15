@@ -4,6 +4,10 @@
 
 An experimental Vector module extending Android's stock and Samsung screen-recording and screenshot features.
 
+## First unlock after boot
+
+Hook initialization that needs settings or cached discovery results waits for the first user unlock after boot. A later ordinary screen lock does not repeat initialization. Existing screen-off power-saving and security behavior is preserved. Unlock delivery is event-driven, with no polling or new resident service.
+
 ## Features
 
 - Keep the output dimensions chosen at recording start and rotate captured content by 90 degrees as the device rotates, reducing black bars.
