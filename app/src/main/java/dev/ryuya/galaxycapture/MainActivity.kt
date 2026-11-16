@@ -79,6 +79,26 @@ class MainActivity : AppCompatActivity() {
         val galaxy = pages!!.page(R.string.tab_galaxy)
         val operation = pages!!.page(R.string.tab_status)
         val information = pages!!.page(R.string.tab_about)
+        val startupCard = MaterialCardView(this)
+        val startup =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(16), dp(8), dp(16), dp(16))
+            }
+        startup.addView(
+            MaterialSwitch(this).apply {
+                setText(R.string.start_on_boot)
+                minHeight = (56 * resources.displayMetrics.density).toInt()
+                isChecked = BootSettings.enabled(this@MainActivity)
+                setOnCheckedChangeListener { _, checked ->
+                    BootSettings.setEnabled(this@MainActivity, checked)
+                }
+            },
+        )
+        startup.addView(MaterialTextView(this).apply { setText(R.string.start_on_boot_detail) })
+        startupCard.addView(startup)
+        information.addView(startupCard)
+
         addScope(common, R.string.scope_common_title, R.string.scope_common_detail)
         addScope(galaxy, R.string.scope_galaxy_title, R.string.scope_galaxy_detail)
         val commonOptions = LinearLayout(this)
@@ -228,13 +248,13 @@ class MainActivity : AppCompatActivity() {
                         },
                     )
                     .show()
-            }
+            },
         )
         operation.addView(reset)
         val version = MaterialTextView(this)
         version.setText(getString(R.string.app_version, BuildConfig.VERSION_NAME))
         version.setTextAppearance(
-            com.google.android.material.R.style.TextAppearance_Material3_TitleMedium
+            com.google.android.material.R.style.TextAppearance_Material3_TitleMedium,
         )
         information.addView(version)
         val intro = MaterialTextView(this)
@@ -247,7 +267,7 @@ class MainActivity : AppCompatActivity() {
         notice.setOnClickListener(
             android.view.View.OnClickListener { v: View? ->
                 startActivity(Intent(this, LicensesActivity::class.java))
-            }
+            },
         )
         information.addView(notice)
         pages!!.restore()
@@ -266,7 +286,7 @@ class MainActivity : AppCompatActivity() {
             MaterialColors.getColor(
                 parent,
                 com.google.android.material.R.attr.colorPrimaryContainer,
-            )
+            ),
         )
         val toggle = MaterialSwitch(this)
         toggle.setContentDescription(getString(R.string.enabled))
@@ -281,7 +301,7 @@ class MainActivity : AppCompatActivity() {
                 getSharedPreferences("config", 0).edit().putBoolean("enabled", on).apply()
                 notifyConfig()
                 updateEnabled()
-            }
+            },
         )
         toggle.setChecked(getSharedPreferences("config", 0).getBoolean("enabled", false))
         updateMasterLabel(toggle, toggle.isChecked())
@@ -301,7 +321,7 @@ class MainActivity : AppCompatActivity() {
                 toggle,
                 if (on) com.google.android.material.R.attr.colorPrimary
                 else com.google.android.material.R.attr.colorOnSurface,
-            )
+            ),
         )
     }
 
@@ -313,7 +333,7 @@ class MainActivity : AppCompatActivity() {
             MaterialColors.getColor(
                 parent,
                 com.google.android.material.R.attr.colorSurfaceContainer,
-            )
+            ),
         )
         val body = LinearLayout(this)
         body.setOrientation(LinearLayout.VERTICAL)
@@ -321,7 +341,7 @@ class MainActivity : AppCompatActivity() {
         val label = MaterialTextView(this)
         label.setText(title)
         label.setTextAppearance(
-            com.google.android.material.R.style.TextAppearance_Material3_TitleMedium
+            com.google.android.material.R.style.TextAppearance_Material3_TitleMedium,
         )
         ViewCompat.setAccessibilityHeading(label, true)
         body.addView(label)
@@ -349,7 +369,7 @@ class MainActivity : AppCompatActivity() {
             MaterialColors.getColor(
                 parent,
                 com.google.android.material.R.attr.colorSurfaceContainerLow,
-            )
+            ),
         )
         val body = LinearLayout(this)
         body.setOrientation(LinearLayout.VERTICAL)
@@ -382,13 +402,13 @@ class MainActivity : AppCompatActivity() {
         label.setTag("section-heading")
         label.setText(title)
         label.setTextAppearance(
-            com.google.android.material.R.style.TextAppearance_Material3_TitleSmall
+            com.google.android.material.R.style.TextAppearance_Material3_TitleSmall,
         )
         label.setTextColor(
             MaterialColors.getColor(
                 label,
                 androidx.appcompat.R.attr.colorPrimary,
-            )
+            ),
         )
         label.setPadding(dp(16), dp(16), dp(16), dp(4))
         ViewCompat.setAccessibilityHeading(label, true)
@@ -408,7 +428,7 @@ class MainActivity : AppCompatActivity() {
         val toggle = MaterialSwitch(this)
         toggle.setText(label)
         toggle.setTextAppearance(
-            com.google.android.material.R.style.TextAppearance_Material3_TitleMedium
+            com.google.android.material.R.style.TextAppearance_Material3_TitleMedium,
         )
         toggle.setMinHeight(dp(48))
         toggle.setChecked(getSharedPreferences("config", 0).getBoolean(key, def))
@@ -419,19 +439,19 @@ class MainActivity : AppCompatActivity() {
                 getSharedPreferences("config", 0).edit().putBoolean(key, on).apply()
                 notifyConfig()
                 if (key == "enabled" || key == "recording_volume") updateEnabled()
-            }
+            },
         )
         box.addView(toggle)
         val desc = MaterialTextView(this)
         desc.setText(detail)
         desc.setTextAppearance(
-            com.google.android.material.R.style.TextAppearance_Material3_BodyMedium
+            com.google.android.material.R.style.TextAppearance_Material3_BodyMedium,
         )
         desc.setTextColor(
             MaterialColors.getColor(
                 desc,
                 com.google.android.material.R.attr.colorOnSurfaceVariant,
-            )
+            ),
         )
         desc.setLineSpacing(dp(2).toFloat(), 1f)
         desc.setPadding(0, dp(4), dp(40), 0)
@@ -465,7 +485,7 @@ class MainActivity : AppCompatActivity() {
                     pending.removeCallbacks(notify)
                     pending.postDelayed(notify, 200)
                 }
-            }
+            },
         )
         box.addView(slider)
         appendRow(parent, box)
@@ -528,7 +548,7 @@ class MainActivity : AppCompatActivity() {
                     toggle.setChecked(prefs.getBoolean(setting!!.key, setting!!.defaultValue))
             }
             for (entry in levels.entries) entry.value!!.setValue(
-                AudioLevels.clamp(prefs.getInt(entry.key, 100)).toFloat()
+                AudioLevels.clamp(prefs.getInt(entry.key, 100)).toFloat(),
             )
             updateEnabled()
         } finally {
