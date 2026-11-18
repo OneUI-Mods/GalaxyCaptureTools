@@ -322,7 +322,7 @@ object SamsungSettingsUi {
                     InvocationHandler { proxy: Any?, method: Method?, args: Array<Any?>? ->
                         val key =
                             (Reflect.callMethod(args!![0]!!, "getKey") as String).substring(
-                                SamsungSettingsUi.KEY.length
+                                SamsungSettingsUi.KEY.length,
                             )
                         val update = Bundle()
                         if (args!![1] is Boolean) update.putBoolean(key, args[1] as Boolean)
@@ -484,11 +484,9 @@ object SamsungSettingsUi {
                 Reflect.setAdditionalInstanceField(host, SamsungSettingsUi.ACTIVITY_STATE, null)
                 Reflect.callMethod(fragment, "setPreferenceScreen", originalScreen)
                 title(originalTitle)
-                Reflect.callMethod(
-                    (host as Activity).findViewById<View?>(resource("id", "app_bar")),
-                    "setExpanded",
-                    false,
-                )
+                (host as Activity).findViewById<View?>(resource("id", "app_bar"))?.let { appBar ->
+                    Reflect.callMethod(appBar, "setExpanded", false)
+                }
                 val nativeList: View? = list
                 val savedPosition: Parcelable? = originalListState
                 nativeList!!.post(
@@ -498,7 +496,7 @@ object SamsungSettingsUi {
                             "onRestoreInstanceState",
                             savedPosition,
                         )
-                    }
+                    },
                 )
             }
             switchBar = null

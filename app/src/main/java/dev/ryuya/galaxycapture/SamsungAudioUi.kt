@@ -56,7 +56,16 @@ object SamsungAudioUi {
                         val original = label!!.getText()
                         val wrapping = MediaMicLabel(label!!, choice)
                         val strings = host.createPackageContext(BuildConfig.APPLICATION_ID, 0)
-                        val audio = host.getSystemService<AudioManager?>(AudioManager::class.java)
+                        val audio =
+                            checkNotNull(
+                                checkNotNull(
+                                    host.getSystemService<AudioManager?>(AudioManager::class.java),
+                                ) {
+                                    "AudioManager unavailable"
+                                },
+                            ) {
+                                "Audio service unavailable"
+                            }
                         val main = Handler(Looper.getMainLooper())
                         val refresh = Runnable {
                             try {
@@ -95,7 +104,7 @@ object SamsungAudioUi {
                                 }
 
                                 override fun onAudioDevicesRemoved(
-                                    removed: Array<AudioDeviceInfo?>?
+                                    removed: Array<AudioDeviceInfo?>?,
                                 ) {
                                     update()
                                 }
@@ -122,10 +131,10 @@ object SamsungAudioUi {
                                         devicesRegistered = true
                                         val filter =
                                             IntentFilter(
-                                                "android.media.STREAM_DEVICES_CHANGED_ACTION"
+                                                "android.media.STREAM_DEVICES_CHANGED_ACTION",
                                             )
                                         filter.addAction(
-                                            AudioManager.ACTION_MICROPHONE_MUTE_CHANGED
+                                            AudioManager.ACTION_MICROPHONE_MUTE_CHANGED,
                                         )
                                         host.registerReceiver(
                                             route,
@@ -137,7 +146,7 @@ object SamsungAudioUi {
                                     } catch (error: Throwable) {
                                         Hooks.log(
                                             "GalaxyCapture: sound route listener unavailable: " +
-                                                error
+                                                error,
                                         )
                                     }
                                 }
@@ -152,7 +161,7 @@ object SamsungAudioUi {
                                     devicesRegistered = receiverRegistered
                                     main.removeCallbacks(refresh)
                                 }
-                            }
+                            },
                         )
                         refresh.run()
                     } catch (error: Throwable) {

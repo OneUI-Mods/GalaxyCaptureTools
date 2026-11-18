@@ -319,7 +319,7 @@ class MainActivity : AppCompatActivity() {
         toggle.setTextColor(
             MaterialColors.getColor(
                 toggle,
-                if (on) com.google.android.material.R.attr.colorPrimary
+                if (on) androidx.appcompat.R.attr.colorPrimary
                 else com.google.android.material.R.attr.colorOnSurface,
             ),
         )

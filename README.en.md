@@ -67,3 +67,5 @@ Certain whitespace in capture-target search now follows the previous behavior ag
 ## Compatibility after updates
 
 After a target-app update, open this module once to complete preparation, then reopen the target. Discovery results are stored in this module's own internal app data and reused while unchanged. No other OneUI Mods app is required. Features stop applying when a unique compatible target cannot be confirmed. Compatibility with every OS or app update is not guaranteed.
+
+[Build environment / ビルド環境](docs/build-environment.md)

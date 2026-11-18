@@ -54,7 +54,7 @@ class HookRuntime(c: Context, host: String?) {
                         Runnable {
                             configRetries = 0
                             reload()
-                        }
+                        },
                     )
                 }
             }
@@ -72,7 +72,7 @@ class HookRuntime(c: Context, host: String?) {
                         Runnable {
                             configRetries = 0
                             reload()
-                        }
+                        },
                     )
                 }
             },
@@ -86,7 +86,10 @@ class HookRuntime(c: Context, host: String?) {
 
     private fun reload() {
         worker.removeCallbacks(configRetry)
-        if (!context.getSystemService<UserManager?>(UserManager::class.java).isUserUnlocked()) {
+        if (
+            context.getSystemService<UserManager?>(UserManager::class.java)?.isUserUnlocked() !=
+                true
+        ) {
             options = Options.OFF
             notifyOptions()
             return // USER_UNLOCKED resumes without polling encrypted storage.
@@ -116,7 +119,7 @@ class HookRuntime(c: Context, host: String?) {
                 try {
                     context.getContentResolver().call(ConfigProvider.URI!!, "status", value, null)
                 } catch (ignored: Throwable) {}
-            }
+            },
         )
     }
 

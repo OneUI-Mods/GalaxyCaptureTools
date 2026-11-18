@@ -15,7 +15,7 @@ open class CallAudioPolicyTest {
                 CallAudioPolicy.Criterion(1, 1, -1, false),
                 CallAudioPolicy.Criterion(1, 14, -1, false),
                 CallAudioPolicy.Criterion(1, 2, -1, true),
-            )
+            ),
         )
     }
 
@@ -47,7 +47,7 @@ open class CallAudioPolicyTest {
             assertFalse(
                 fullDevice!!.stream().anyMatch { rule: CallAudioPolicy.Criterion? ->
                     rule!!.rule === 4
-                }
+                },
             )
         }
     }
@@ -55,7 +55,7 @@ open class CallAudioPolicyTest {
     @Test
     open fun bothHostsNeedExplicitOptInAnOwnedAttributionAndACurrentAudioProjection() {
         for (host in
-            List.of<CallAudioPolicy.Caller?>(
+            List.of<CallAudioPolicy.Caller>(
                 CallAudioPolicyTest.SAMSUNG,
                 CallAudioPolicy.Caller(1000, 1000, "com.android.systemui", true),
             )) {
@@ -67,7 +67,7 @@ open class CallAudioPolicyTest {
                     true,
                     false,
                     List.of<CallAudioPolicy.Mix?>(mix(criteria())),
-                )
+                ),
             )
             assertFalse(
                 CallAudioPolicy.authorize(
@@ -77,7 +77,7 @@ open class CallAudioPolicyTest {
                     true,
                     false,
                     List.of<CallAudioPolicy.Mix?>(mix(criteria())),
-                )
+                ),
             )
             assertFalse(
                 CallAudioPolicy.authorize(
@@ -87,7 +87,7 @@ open class CallAudioPolicyTest {
                     true,
                     false,
                     List.of<CallAudioPolicy.Mix?>(mix(criteria())),
-                )
+                ),
             )
             assertFalse(
                 CallAudioPolicy.authorize(
@@ -97,7 +97,7 @@ open class CallAudioPolicyTest {
                     false,
                     false,
                     List.of<CallAudioPolicy.Mix?>(mix(criteria())),
-                )
+                ),
             )
             assertFalse(
                 CallAudioPolicy.authorize(
@@ -107,11 +107,11 @@ open class CallAudioPolicyTest {
                     true,
                     true,
                     List.of<CallAudioPolicy.Mix?>(mix(criteria())),
-                )
+                ),
             )
         }
         for (untrusted in
-            List.of<CallAudioPolicy.Caller?>(
+            List.of<CallAudioPolicy.Caller>(
                 CallAudioPolicy.Caller(
                     10050,
                     1000,
@@ -133,7 +133,7 @@ open class CallAudioPolicyTest {
                 true,
                 false,
                 List.of<CallAudioPolicy.Mix?>(mix(criteria())),
-            )
+            ),
         )
     }
 
@@ -155,7 +155,7 @@ open class CallAudioPolicyTest {
                 true,
                 false,
                 java.util.List.of<CallAudioPolicy.Mix?>(),
-            )
+            ),
         )
         assertFalse(
             CallAudioPolicy.authorize(
@@ -165,7 +165,7 @@ open class CallAudioPolicyTest {
                 true,
                 false,
                 List.of<CallAudioPolicy.Mix?>(mix(rules), mix(rules)),
-            )
+            ),
         )
     }
 
@@ -204,7 +204,7 @@ open class CallAudioPolicyTest {
                     service,
                     10050,
                     "android.permission.CAPTURE_AUDIO_OUTPUT",
-                )
+                ),
             )
             assertFalse(CallAudioPermissionScope.allows(Any(), 10050, CallAudioPolicy.PERMISSION))
             assertFalse(CallAudioPermissionScope.allows(service, 1000, CallAudioPolicy.PERMISSION))
@@ -223,7 +223,7 @@ open class CallAudioPolicyTest {
             val outer = CallAudioPermissionScope.enter(null)
             try {
                 assertFalse(
-                    CallAudioPermissionScope.allows(service, 10050, CallAudioPolicy.PERMISSION)
+                    CallAudioPermissionScope.allows(service, 10050, CallAudioPolicy.PERMISSION),
                 )
                 throw IllegalStateException("Native registration failed")
             } catch (expected: IllegalStateException) {} finally {
@@ -245,16 +245,16 @@ open class CallAudioPolicyTest {
         try {
             assertFalse(
                 worker
-                    .submit<Boolean?>(
+                    .submit<Boolean>(
                         Callable {
                             CallAudioPermissionScope.allows(
                                 service,
                                 10050,
                                 CallAudioPolicy.PERMISSION,
                             )
-                        }
+                        },
                     )
-                    .get()
+                    .get(),
             )
         } finally {
             CallAudioPermissionScope.restore(previous)
