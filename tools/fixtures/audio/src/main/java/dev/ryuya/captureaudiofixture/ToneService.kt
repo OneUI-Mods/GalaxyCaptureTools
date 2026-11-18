@@ -21,7 +21,7 @@ open class ToneService : Service() {
     override fun onCreate() {
         super.onCreate()
         val notifications = getSystemService<NotificationManager?>(NotificationManager::class.java)
-        notifications.createNotificationChannel(
+        notifications?.createNotificationChannel(
             NotificationChannel("test", "Internal audio test", NotificationManager.IMPORTANCE_LOW)
         )
         startForeground(
