@@ -14,6 +14,7 @@ import android.graphics.Shader
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
+import android.graphics.drawable.LayerDrawable
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -27,6 +28,7 @@ import kotlin.math.roundToInt
 internal class RecordingStartGlass(private val runtime: HookRuntime) {
     private val main = Handler(Looper.getMainLooper())
     private val blur by lazy { runCatching { SamsungWindowBlur() }.getOrNull() }
+    private val capture by lazy { runCatching { WindowBackdropCapture() }.getOrNull() }
     private var active: Session? = null
     private var reportedFailure = false
 
@@ -77,6 +79,14 @@ internal class RecordingStartGlass(private val runtime: HookRuntime) {
         private var blurRejected = false
         private var appliedAlpha: Int? = null
         private var styled = false
+        private var originalBackground: Drawable? = null
+        private var glassBackground: Drawable? = null
+        private val backdrop by lazy {
+            if (secure) null else capture?.let { source ->
+                runCatching { RecordingDialogBackdrop(panel, main, corner, density, source, ::update) }
+                    .onFailure(::reportFailure).getOrNull()
+            }
+        }
         private val settings = object : ContentObserver(main) {
             override fun onChange(selfChange: Boolean) = update()
         }
@@ -99,9 +109,21 @@ internal class RecordingStartGlass(private val runtime: HookRuntime) {
                     return
                 }
                 val dark = panel.resources.configuration.isNightModeActive
-                val nativeBlur = updateBlur(dark)
+                val glass = backdrop
+                glass?.dark = dark
+                glass?.start()
+                val refracts = glass?.ready == true
+                val nativeBlur = if (refracts) {
+                    clearBlur()
+                    installBackdrop(requireNotNull(glass))
+                    false
+                } else {
+                    removeBackdrop()
+                    updateBlur(dark)
+                }
                 val opacity = when {
                     secure -> 1f
+                    refracts -> .72f
                     nativeBlur -> .78f
                     dark -> .89f
                     else -> .92f
@@ -146,7 +168,36 @@ internal class RecordingStartGlass(private val runtime: HookRuntime) {
             if (api.current(panel) === inserted) api.clear(panel)
         }
 
+        private fun installBackdrop(effect: RecordingDialogBackdrop) {
+            if (glassBackground != null && panel.background === glassBackground) return
+            originalBackground = panel.background
+            val native = originalBackground
+            val combined = if (native == null) effect else LayerDrawable(arrayOf(native, effect)).apply {
+                paddingMode = LayerDrawable.PADDING_MODE_STACK
+            }
+            setBackground(combined)
+            glassBackground = combined
+        }
+
+        private fun removeBackdrop() {
+            if (glassBackground != null && panel.background === glassBackground) setBackground(originalBackground)
+            glassBackground = null
+            originalBackground = null
+        }
+
+        private fun setBackground(drawable: Drawable?) {
+            val start = panel.paddingStart
+            val top = panel.paddingTop
+            val end = panel.paddingEnd
+            val bottom = panel.paddingBottom
+            panel.background = drawable
+            panel.setPaddingRelative(start, top, end, bottom)
+        }
+
         private fun restore() {
+            // Drop the installed drawable before stopping, since stopping can update source availability.
+            removeBackdrop()
+            backdrop?.stop()
             panel.overlay.remove(chrome)
             if (appliedAlpha != null && stock?.alpha == appliedAlpha) stock?.alpha = stockAlpha
             appliedAlpha = null
@@ -169,7 +220,7 @@ internal class RecordingStartGlass(private val runtime: HookRuntime) {
             oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) = update()
     }
 
-    private fun reportFailure(error: Exception) {
+    private fun reportFailure(error: Throwable) {
         if (!reportedFailure) {
             reportedFailure = true
             Hooks.log("Recording start glass unavailable: ${error.javaClass.simpleName}")
