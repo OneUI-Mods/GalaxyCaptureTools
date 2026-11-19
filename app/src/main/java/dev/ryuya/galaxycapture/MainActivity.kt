@@ -196,6 +196,8 @@ class MainActivity : AppCompatActivity() {
             false,
         )
         addHeading(galaxyOptions, R.string.section_capture_controls)
+        addSwitch(galaxyOptions, "glass_capture_controls", R.string.glass_capture_controls,
+            R.string.glass_capture_controls_detail, true)
         addSwitch(
             galaxyOptions,
             "exclude_capture_controls",

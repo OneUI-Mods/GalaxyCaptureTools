@@ -22,6 +22,7 @@ Hook initialization that needs settings or cached discovery results waits for th
 - Optionally include call playback in internal audio. Shared by Samsung and stock Android recording; defaults OFF.
 - Media-plus-microphone recording, the speaker-mode microphone-priority branch, and Samsung recording-volume controls.
 - Separately adjust the recording toolbar, countdown, and duplicate right-side mirroring icon.
+- Give Samsung's screenshot and recording toolbars a glass finish, with a toggle in Custom settings.
 - Move Samsung's recording indicator to the right while preserving its tap-to-stop action. Portrait-oriented; defaults OFF.
 - Mitigate control overlays appearing during rotation or repeated screenshots.
 - Separate screenshot and screen-recording restriction overrides, both OFF by default.

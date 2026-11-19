@@ -287,6 +287,7 @@ object SamsungSettingsUi {
                         "hide_duplicate_indicator",
                         "recording_icon_right",
                         "hide_recording_controls",
+                        "glass_capture_controls",
                     ),
                     arrayOf<String?>(
                         "screenshots",
