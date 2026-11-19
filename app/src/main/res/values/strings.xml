@@ -66,8 +66,8 @@
   <string name="speaker_media_detail">Galaxy only: bypass the speaker-only microphone branch of Media and mic, using Galaxy’s standard internal-audio and microphone mixer. When off, the speaker path uses microphone only. Does not change audio routing. Applies to the next recording.</string>
   <string name="microphone_only">Microphone only</string>
   <string name="module_description">Screen recording rotation, app targets, and audio options for One UI.</string>
-  <string name="glass_capture_controls">Glass capture controls</string>
-  <string name="glass_capture_controls_detail">Give Samsung’s screenshot and recording toolbars a translucent glass finish.</string>
+  <string name="glass_capture_controls">Glass recording dialog and controls</string>
+  <string name="glass_capture_controls_detail">Apply a translucent glass finish to the Galaxy recording confirmation window and Samsung’s screenshot and recording toolbars.</string>
   <string name="exclude_capture_controls">Keep capture controls out of saved images and videos</string>
   <string name="exclude_capture_controls_detail">Exclude the Galaxy recording toolbar and post-screenshot controls from captured images and videos, including during rotation. Controls remain usable on the phone. Applies to the next recording or screenshot.</string>
   <string name="hide_recording_controls">Hide the Galaxy recording toolbar</string>
