@@ -100,9 +100,15 @@ internal class RecordingStartGlass(private val runtime: HookRuntime) {
                 }
                 val dark = panel.resources.configuration.isNightModeActive
                 val nativeBlur = updateBlur(dark)
-                val alpha = if (nativeBlur) (stockAlpha * 0.78f).roundToInt() else stockAlpha
-                if (stockColor != null && appliedAlpha != alpha) {
-                    stock?.mutate()?.alpha = alpha
+                val opacity = when {
+                    secure -> 1f
+                    nativeBlur -> .78f
+                    dark -> .89f
+                    else -> .92f
+                }
+                val alpha = (stockAlpha * opacity).roundToInt()
+                if (stock != null && appliedAlpha != alpha) {
+                    stock.mutate().alpha = alpha
                     appliedAlpha = alpha
                 }
                 chrome.resize(panel.width, panel.height, dark)
@@ -119,7 +125,7 @@ internal class RecordingStartGlass(private val runtime: HookRuntime) {
 
         private fun updateBlur(dark: Boolean): Boolean {
             // Samsung's per-view blur uses its own compositor support, separate from AOSP window blur.
-            // Retain the native opaque plate if Samsung rejects this request.
+            // The native plate still provides a more opaque tinted face if this request is rejected.
             if (secure || blurRejected) return false
             val api = blur ?: return false
             val current = api.current(panel)

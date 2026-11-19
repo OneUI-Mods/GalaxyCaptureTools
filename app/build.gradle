@@ -13,8 +13,8 @@ android {
         applicationId 'dev.ryuya.galaxycapture'
         minSdk 35
         targetSdk 37
-        versionCode 32
-        versionName '0.4.8'
+        versionCode 33
+        versionName '0.4.9'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
