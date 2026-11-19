@@ -21,7 +21,6 @@ import android.view.View
 import android.view.WindowManager
 import androidx.core.graphics.ColorUtils
 import dev.ryuya.galaxycapture.hook.Hooks
-import java.util.function.Consumer
 import kotlin.math.roundToInt
 
 /** Adds a backdrop and edge lighting to Samsung's recording confirmation dialog. */
@@ -70,15 +69,14 @@ internal class RecordingStartGlass(private val runtime: HookRuntime) {
         val secure: Boolean,
         val stock: GradientDrawable?,
     ) : View.OnAttachStateChangeListener, View.OnLayoutChangeListener {
-        private val windowManager = panel.context.getSystemService(WindowManager::class.java)
         private val resolver = panel.context.contentResolver
         private val chrome = Rim(density, corner)
         private val stockColor: ColorStateList? = stock?.color
         private val stockAlpha = stock?.alpha ?: 255
         private var blurInfo: Any? = null
+        private var blurRejected = false
         private var appliedAlpha: Int? = null
         private var styled = false
-        private val change = Consumer<Boolean> { update() }
         private val settings = object : ContentObserver(main) {
             override fun onChange(selfChange: Boolean) = update()
         }
@@ -87,7 +85,6 @@ internal class RecordingStartGlass(private val runtime: HookRuntime) {
             panel.addOnAttachStateChangeListener(this)
             panel.addOnLayoutChangeListener(this)
             resolver.registerContentObserver(Settings.System.getUriFor(REDUCE_TRANSPARENCY), false, settings)
-            if (!secure) windowManager?.addCrossWindowBlurEnabledListener(panel.context.mainExecutor, change)
             update()
         }
 
@@ -121,10 +118,9 @@ internal class RecordingStartGlass(private val runtime: HookRuntime) {
         }
 
         private fun updateBlur(dark: Boolean): Boolean {
-            if (secure || windowManager?.isCrossWindowBlurEnabled != true) {
-                clearBlur()
-                return false
-            }
+            // Samsung's per-view blur uses its own compositor support, separate from AOSP window blur.
+            // Retain the native opaque plate if Samsung rejects this request.
+            if (secure || blurRejected) return false
             val api = blur ?: return false
             val current = api.current(panel)
             if (blurInfo != null && current === blurInfo) return true
@@ -133,6 +129,7 @@ internal class RecordingStartGlass(private val runtime: HookRuntime) {
                 ?: if (dark) 0xff222731.toInt() else 0xffedf2f7.toInt()
             val tone = ColorUtils.setAlphaComponent(base, if (dark) 205 else 217)
             blurInfo = api.apply(panel, (23f * density).roundToInt(), corner, tone)
+            blurRejected = blurInfo == null
             return blurInfo != null
         }
 
@@ -156,7 +153,6 @@ internal class RecordingStartGlass(private val runtime: HookRuntime) {
             panel.removeOnAttachStateChangeListener(this)
             panel.removeOnLayoutChangeListener(this)
             resolver.unregisterContentObserver(settings)
-            if (!secure) windowManager?.removeCrossWindowBlurEnabledListener(change)
             if (active === this) active = null
         }
 
