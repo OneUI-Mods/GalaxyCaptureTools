@@ -19,6 +19,7 @@ import android.view.View
 import android.view.ViewGroup
 import dev.ryuya.galaxycapture.hook.HookCallback
 import dev.ryuya.galaxycapture.hook.Hooks
+import dev.ryuya.galaxycapture.hook.Reflect
 import java.util.WeakHashMap
 import kotlin.math.min
 
@@ -26,6 +27,7 @@ import kotlin.math.min
 internal class CaptureToolbarGlass(private val runtime: HookRuntime) {
     private val main = Handler(Looper.getMainLooper())
     private val plates = WeakHashMap<View, Plate>()
+    private val screenshotPlates = WeakHashMap<View, Plate>()
     private val reported = mutableSetOf<String>()
     private var reduceTransparency = readTransparencySetting()
     private val targets = buildMap {
@@ -41,8 +43,11 @@ internal class CaptureToolbarGlass(private val runtime: HookRuntime) {
 
     private data class Targets(val name: String, val ids: List<Int>)
 
-    private fun install() {
+    private fun install(loader: ClassLoader?) {
         if (targets.isEmpty()) return
+        val screenshotDraw = runCatching { installScreenshotDraw(loader) }.onFailure {
+            Hooks.log("Capture screenshot plate will use its layout: ${it.javaClass.simpleName}")
+        }.isSuccess
         val inflate = LayoutInflater::class.java.getMethod("inflate", Int::class.javaPrimitiveType,
             ViewGroup::class.java, Boolean::class.javaPrimitiveType)
         Hooks.hook(inflate, object : HookCallback() {
@@ -54,6 +59,7 @@ internal class CaptureToolbarGlass(private val runtime: HookRuntime) {
 
             override fun afterHookedMethod(p: MethodHookParam) {
                 val spec = targets[p.args?.getOrNull(0) as? Int] ?: return
+                if (screenshotDraw && spec.name == SCREENSHOT_LAYOUT) return
                 val inflated = p.result as? View ?: return
                 if (inflated.context.packageName != runtime.context.packageName) return
                 val parent = p.args?.getOrNull(1) as? ViewGroup
@@ -68,23 +74,48 @@ internal class CaptureToolbarGlass(private val runtime: HookRuntime) {
                 }
             }
         })
-        runtime.onOptionsChanged { main.post { plates.entries.toList().forEach { (view, effect) -> update(view, effect) } } }
+        runtime.onOptionsChanged { main.post { refresh() } }
         runtime.context.contentResolver.registerContentObserver(
             Settings.System.getUriFor(REDUCE_TRANSPARENCY), false, object : ContentObserver(main) {
                 override fun onChange(selfChange: Boolean) {
                     reduceTransparency = readTransparencySetting()
-                    plates.entries.toList().forEach { (view, effect) -> update(view, effect) }
+                    refresh()
                 }
             },
         )
         Hooks.log("CAPTURE_TOOLBAR_GLASS_READY layouts=${targets.size}")
     }
 
+    private fun installScreenshotDraw(loader: ClassLoader?) {
+        val toolbar = Reflect.findClass(
+            "com.samsung.android.app.smartcapture.screenshot.toolbar.ToolbarBackgroundView", loader,
+        )
+        Hooks.hook(toolbar.getDeclaredMethod("onDraw", Canvas::class.java), object : HookCallback() {
+            override fun afterHookedMethod(p: MethodHookParam) {
+                if (!enabled() || !main.looper.isCurrentThread) return
+                val view = p.thisObject as? View ?: return
+                val canvas = p.args?.getOrNull(0) as? Canvas ?: return
+                if (!view.isShown || view.width <= 0 || view.height <= 0) return
+                val plate = screenshotPlates.getOrPut(view) { createPlate(SCREENSHOT_LAYOUT) }
+                plate.update(view, invalidate = false)
+                plate.draw(canvas)
+            }
+        })
+    }
+
+    private fun refresh() {
+        plates.entries.toList().forEach { (view, effect) -> update(view, effect) }
+        screenshotPlates.keys.toList().forEach(View::invalidate)
+    }
+
+    private fun enabled(): Boolean {
+        val options = runtime.options
+        return options?.enabled == true && options.glassCaptureControls && !reduceTransparency
+    }
+
     private fun bind(view: View, layout: String) {
         if (plates.containsKey(view)) return
-        val effect = Plate {
-            if (reported.add(layout)) Hooks.log("CAPTURE_TOOLBAR_GLASS_DRAWN $layout")
-        }
+        val effect = createPlate(layout)
         plates[view] = effect
         view.addOnLayoutChangeListener { target, _, _, _, _, _, _, _, _ -> update(target, effect) }
         view.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
@@ -95,9 +126,7 @@ internal class CaptureToolbarGlass(private val runtime: HookRuntime) {
     }
 
     private fun update(view: View, effect: Plate) {
-        val options = runtime.options
-        if (options?.enabled != true || !options.glassCaptureControls || !view.isAttachedToWindow ||
-            view.width <= 0 || view.height <= 0 || reduceTransparency) {
+        if (!enabled() || !view.isAttachedToWindow || view.width <= 0 || view.height <= 0) {
             view.overlay.remove(effect)
             return
         }
@@ -107,6 +136,10 @@ internal class CaptureToolbarGlass(private val runtime: HookRuntime) {
 
     private fun readTransparencySetting(): Boolean =
         Settings.System.getInt(runtime.context.contentResolver, REDUCE_TRANSPARENCY, 0) != 0
+
+    private fun createPlate(layout: String) = Plate {
+        if (reported.add(layout)) Hooks.log("CAPTURE_TOOLBAR_GLASS_DRAWN $layout")
+    }
 
     private class Plate(private val onDrawn: () -> Unit) : Drawable() {
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -119,7 +152,7 @@ internal class CaptureToolbarGlass(private val runtime: HookRuntime) {
         private var density = 1f
         private var dark = false
 
-        fun update(view: View) {
+        fun update(view: View, invalidate: Boolean = true) {
             val night = view.resources.configuration.isNightModeActive
             outline.setEmpty()
             view.background?.getOutline(outline)
@@ -136,7 +169,7 @@ internal class CaptureToolbarGlass(private val runtime: HookRuntime) {
                 else intArrayOf(0x59ffffff, 0x06f2f7ff, 0x24476982))
             rim = gradient(if (dark) intArrayOf(0xcff4f9ff.toInt(), 0x42e2f0ff, 0x72364658)
                 else intArrayOf(0xeaffffff.toInt(), 0x509eabb7, 0x795c7a91))
-            invalidateSelf()
+            if (invalidate) invalidateSelf()
         }
 
         private fun gradient(colors: IntArray): LinearGradient =
@@ -167,12 +200,13 @@ internal class CaptureToolbarGlass(private val runtime: HookRuntime) {
 
     companion object {
         private const val REDUCE_TRANSPARENCY = "accessibility_reduce_transparency"
+        private const val SCREENSHOT_LAYOUT = "scroll_capture_action_button_stand_alone"
         private val LAYOUTS = mapOf(
-            "scroll_capture_action_button_stand_alone" to listOf("screenshot_toolbar_background"),
+            SCREENSHOT_LAYOUT to listOf("screenshot_toolbar_background"),
             "screen_recorder_floating_button" to listOf("button_layout", "pen_setting_layout", "handler_layout"),
             "partial_recording_toolbar" to listOf("partial_toolbar_record_container_view", "partial_toolbar_operation_container_view"),
         )
 
-        fun install(runtime: HookRuntime) = CaptureToolbarGlass(runtime).install()
+        fun install(runtime: HookRuntime, loader: ClassLoader?) = CaptureToolbarGlass(runtime).install(loader)
     }
 }
