@@ -60,8 +60,6 @@ object SamsungSelection {
     @JvmStatic
     fun installRecorder(rt: HookRuntime, loader: ClassLoader?) {
         CaptureControls.install(rt, loader)
-        runCatching { CaptureToolbarGlass.install(rt, loader) }
-            .onFailure { Hooks.log("Capture toolbar glass unavailable: ${it.javaClass.simpleName}") }
         RecordingVolume.install(rt, loader)
         SecureCapture.installRecorder(rt, loader)
         SamsungRecordingUi.install(rt, loader)

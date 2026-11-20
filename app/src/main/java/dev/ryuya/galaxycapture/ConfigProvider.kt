@@ -17,6 +17,21 @@ class ConfigProvider : ContentProvider() {
     }
 
     override fun call(method: String, arg: String?, data: Bundle?): Bundle? {
+        if (method == "glass_export") {
+            val app = requireNotNull(context)
+            val pkg = "dev.ryuya.galaxyglass"
+            val cert = "e19cfbca86a4988919d8eb58a9655518a126f3d2d96f03cf96285438364bad7e"
+                .chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+            if (Binder.getCallingUid() / 100000 != 0 || callingPackage != pkg ||
+                !app.packageManager.hasSigningCertificate(pkg, cert, android.content.pm.PackageManager.CERT_INPUT_SHA256)) {
+                throw SecurityException("Galaxy Glass Tools only")
+            }
+            val prefs = app.getSharedPreferences("config", 0)
+            return Bundle().apply {
+                putBoolean("glass_capture_controls", prefs.getBoolean("enabled", false) &&
+                    prefs.getBoolean("glass_capture_controls", true))
+            }
+        }
         val c = getContext()
         if (c == null) return Bundle.EMPTY
         if (method == "config") {

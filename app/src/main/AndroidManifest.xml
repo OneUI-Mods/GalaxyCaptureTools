@@ -5,6 +5,7 @@
     android:protectionLevel="signature" />
   <uses-permission android:name="dev.ryuya.galaxycapture.permission.CONFIG" />
   <queries>
+        <package android:name="dev.ryuya.galaxyglass"/>
     <package android:name="com.android.systemui" />
     <package android:name="com.samsung.android.app.smartcapture" />
   </queries>

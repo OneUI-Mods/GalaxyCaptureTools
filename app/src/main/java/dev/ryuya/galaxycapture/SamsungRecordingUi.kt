@@ -62,7 +62,6 @@ object SamsungRecordingUi {
 
     @JvmStatic
     fun install(rt: HookRuntime, loader: ClassLoader?) {
-        val startGlass = RecordingStartGlass(rt)
         // Configuration arrives off the UI thread. A cold-started popup can already be visible
         // before the first read completes, so finish that popup when the settings become ready.
         rt.onOptionsChanged(
@@ -106,12 +105,6 @@ object SamsungRecordingUi {
                     SamsungRecordingUi.attachPending(rt, p.thisObject!!)
                     val s = SamsungRecordingUi.state(p.thisObject)
                     if (s != null) SamsungRecordingUi.updateStart(s)
-                    if (!p.hasThrowable()) {
-                        runCatching {
-                            (Reflect.getObjectField(p.thisObject!!, "mSoundSettingSuggestionPopup") as? Dialog)
-                                ?.let(startGlass::attach)
-                        }.onFailure { Hooks.log("Recording start glass unavailable: ${it.javaClass.simpleName}") }
-                    }
                 }
             },
         )
@@ -480,7 +473,10 @@ object SamsungRecordingUi {
                     if (s.picker !== picker) return@OnDismissListener
                     s.picker = null
                     s.generation++
-                    if (parentAttached[0] && decor.isAttachedToWindow()) parent.show()
+                    if (parentAttached[0] && decor.isAttachedToWindow()) {
+                        parent.show()
+
+                    }
                 }
             )
             s.other!!.setOnClickListener(
@@ -510,10 +506,12 @@ object SamsungRecordingUi {
                     override fun afterTextChanged(e: Editable?) {}
                 }
             )
+            window.decorView.tag = "dev.ryuya.galaxyglass.capture_target"
             picker!!.show()
             // hide() keeps Samsung's cancellation/service lifecycle intact; dismiss() would abort
             // setup.
             parent.hide()
+
             SamsungRecordingUi.load(rt, s, selectFull)
         } catch (error: Throwable) {
             if (s.picker != null) s!!.picker!!.dismiss()

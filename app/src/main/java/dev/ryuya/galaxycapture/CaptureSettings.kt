@@ -101,12 +101,6 @@ object CaptureSettings {
                 R.string.hide_recording_controls_detail,
                 false,
             ),
-            CaptureSettings.Toggle(
-                "glass_capture_controls",
-                R.string.glass_capture_controls,
-                R.string.glass_capture_controls_detail,
-                true,
-            ),
         )
 
     @JvmStatic

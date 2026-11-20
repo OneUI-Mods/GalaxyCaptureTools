@@ -22,7 +22,7 @@ Hook initialization that needs settings or cached discovery results waits for th
 - Optionally include call playback in internal audio. Shared by Samsung and stock Android recording; defaults OFF.
 - Media-plus-microphone recording, the speaker-mode microphone-priority branch, and Samsung recording-volume controls.
 - Separately adjust the recording toolbar, countdown, and duplicate right-side mirroring icon.
-- Give Samsung's recording confirmation dialog and capture toolbars a glass finish, with a toggle in Custom settings.
+- Starting with 0.4.15, [Galaxy Glass Tools](https://github.com/OneUI-Mods/GalaxyGlassTools) manages the glass appearance of Samsung's capture UI and imports the existing glass preference once.
 - Move Samsung's recording indicator to the right while preserving its tap-to-stop action. Portrait-oriented; defaults OFF.
 - Mitigate control overlays appearing during rotation or repeated screenshots.
 - Separate screenshot and screen-recording restriction overrides, both OFF by default.

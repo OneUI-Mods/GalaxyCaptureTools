@@ -25,7 +25,6 @@ data class Options(
     val micVolume: Int,
     val recordingIconRight: Boolean,
     val includeCallAudio: Boolean,
-    val glassCaptureControls: Boolean = false,
 ) {
 
     companion object {
@@ -75,11 +74,10 @@ data class Options(
                     AudioLevels.clamp(b.getInt("mic_volume", 100)),
                     b.getBoolean("recording_icon_right", false),
                     b.getBoolean("include_call_audio", false),
-                    b.getBoolean("glass_capture_controls", true),
                 )
         }
     }
 
     override fun toString(): String =
-        "Options[enabled=$enabled, rotation=$rotation, samsungApp=$samsungApp, singleWindow=$singleWindow, appAudioOnly=$appAudioOnly, ignoreHalfTurns=$ignoreHalfTurns, hideDuplicateIndicator=$hideDuplicateIndicator, speakerMedia=$speakerMedia, excludeCaptureControls=$excludeCaptureControls, hideRecordingControls=$hideRecordingControls, countdown=$countdown, secureScreenshot=$secureScreenshot, secureRecording=$secureRecording, recordingVolume=$recordingVolume, mediaVolume=$mediaVolume, micVolume=$micVolume, recordingIconRight=$recordingIconRight, includeCallAudio=$includeCallAudio, glassCaptureControls=$glassCaptureControls]"
+        "Options[enabled=$enabled, rotation=$rotation, samsungApp=$samsungApp, singleWindow=$singleWindow, appAudioOnly=$appAudioOnly, ignoreHalfTurns=$ignoreHalfTurns, hideDuplicateIndicator=$hideDuplicateIndicator, speakerMedia=$speakerMedia, excludeCaptureControls=$excludeCaptureControls, hideRecordingControls=$hideRecordingControls, countdown=$countdown, secureScreenshot=$secureScreenshot, secureRecording=$secureRecording, recordingVolume=$recordingVolume, mediaVolume=$mediaVolume, micVolume=$micVolume, recordingIconRight=$recordingIconRight, includeCallAudio=$includeCallAudio]"
 }
