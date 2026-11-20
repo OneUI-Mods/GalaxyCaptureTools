@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.ColorFilter
+import android.graphics.LinearGradient
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.PixelFormat
@@ -26,17 +27,28 @@ internal class RecordingDialogBackdrop(
     private val panel: View,
     private val main: Handler,
     private val radius: Float,
-    private val density: Float,
+    density: Float,
     private val capture: WindowBackdropCapture,
     private val onSourceChanged: () -> Unit,
 ) : Drawable() {
-    private data class Region(val display: Int, val rotation: Int, val type: Int, val tag: String, val crop: Rect)
+    private data class Region(val display: Int, val rotation: Int, val type: Int, val tag: String, val crop: Rect) {
+        val expectedWindow = "[Window_Target:$tag]"
+    }
 
     private val location = IntArray(2)
+    private val visibleFrame = Rect()
+    private val candidateCrop = Rect()
     private val keyguard = panel.context.getSystemService(KeyguardManager::class.java)
     private val matrix = Matrix()
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val lens = RuntimeShader(REFRACTION)
+    private val lens = RuntimeShader(REFRACTION).apply {
+        setFloatUniform("radius", radius)
+        setFloatUniform("diffusion", (5f * density).coerceAtLeast(2f))
+        setFloatUniform("night", 0f)
+    }
+    private var lastRegion: Region? = null
+    private var shaderWidth = 0
+    private var shaderHeight = 0
     private var source: Bitmap? = null
     private var sourceRegion: Region? = null
     private var enabled = false
@@ -52,6 +64,7 @@ internal class RecordingDialogBackdrop(
         set(value) {
             if (field == value) return
             field = value
+            lens.setFloatUniform("night", if (value) 1f else 0f)
             invalidateSelf()
         }
 
@@ -67,6 +80,7 @@ internal class RecordingDialogBackdrop(
         revision++
         main.removeCallbacks(readNext)
         replaceSource(null, null, notify = false)
+        lastRegion = null
     }
 
     private fun currentRegion(): Region? {
@@ -77,12 +91,16 @@ internal class RecordingDialogBackdrop(
         if (display.displayId != 0 || params.type !in RECORDING_DIALOG_TYPES ||
             params.flags and WindowManager.LayoutParams.FLAG_SECURE != 0) return null
         panel.getLocationOnScreen(location)
-        val frame = Rect()
-        panel.getWindowVisibleDisplayFrame(frame)
-        val crop = Rect(location[0], location[1], location[0] + panel.width, location[1] + panel.height)
-        if (!frame.contains(crop)) return null
+        panel.getWindowVisibleDisplayFrame(visibleFrame)
+        candidateCrop.set(location[0], location[1], location[0] + panel.width, location[1] + panel.height)
+        if (!visibleFrame.contains(candidateCrop)) return null
+        val rotation = display.rotation
         val tag = params.title?.toString().orEmpty().ifBlank { panel.context.packageName }
-        return Region(display.displayId, display.rotation, params.type, tag, crop)
+        lastRegion?.let {
+            if (it.display == display.displayId && it.rotation == rotation && it.type == params.type &&
+                it.tag == tag && it.crop == candidateCrop) return it
+        }
+        return Region(display.displayId, rotation, params.type, tag, Rect(candidateCrop)).also { lastRegion = it }
     }
 
     private fun read() {
@@ -97,7 +115,7 @@ internal class RecordingDialogBackdrop(
         val request = revision
         inFlight = true
         worker.execute {
-            val result = capture.read(region.display, region.type, region.tag, region.crop)
+            val result = capture.read(region.display, region.type, region.expectedWindow, region.crop)
             main.post {
                 inFlight = false
                 when {
@@ -129,21 +147,24 @@ internal class RecordingDialogBackdrop(
         val wasReady = ready
         source = bitmap
         sourceRegion = region
-        paint.shader = null
         if (bitmap != null && region != null) {
             val shader = BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
             shader.setFilterMode(BitmapShader.FILTER_MODE_LINEAR)
-            matrix.setScale(region.crop.width().toFloat() / bitmap.width, region.crop.height().toFloat() / bitmap.height)
+            val width = region.crop.width()
+            val height = region.crop.height()
+            matrix.setScale(width.toFloat() / bitmap.width, height.toFloat() / bitmap.height)
             shader.setLocalMatrix(matrix)
             lens.setInputShader("backdrop", shader)
-            lens.setFloatUniform("size", region.crop.width().toFloat(), region.crop.height().toFloat())
-            lens.setFloatUniform("radius", radius)
-            lens.setFloatUniform("diffusion", (5f * density).coerceAtLeast(2f))
-            paint.shader = lens
+            if (shaderWidth != width || shaderHeight != height) {
+                lens.setFloatUniform("size", width.toFloat(), height.toFloat())
+                shaderWidth = width
+                shaderHeight = height
+            }
+            if (!wasReady) paint.shader = lens
         } else {
             // Release the last image held by the shader without retaining a dialog frame.
-            lens.setInputShader("backdrop", android.graphics.LinearGradient(
-                0f, 0f, 1f, 0f, 0, 0, Shader.TileMode.CLAMP))
+            paint.shader = null
+            lens.setInputShader("backdrop", EMPTY_BACKDROP)
         }
         if (notify && wasReady != ready) onSourceChanged()
         invalidateSelf()
@@ -153,7 +174,6 @@ internal class RecordingDialogBackdrop(
         if (!ready || !canvas.isHardwareAccelerated || bounds.isEmpty) return
         val r = radius.coerceAtMost(minOf(bounds.width(), bounds.height()) * .5f)
         try {
-            lens.setFloatUniform("night", if (dark) 1f else 0f)
             canvas.drawRoundRect(0f, 0f, bounds.width().toFloat(), bounds.height().toFloat(), r, r, paint)
         } catch (error: RuntimeException) {
             main.post { fail(error) }
@@ -180,6 +200,7 @@ internal class RecordingDialogBackdrop(
 
     private companion object {
         val RECORDING_DIALOG_TYPES = setOf(2038, 2012)
+        val EMPTY_BACKDROP = LinearGradient(0f, 0f, 1f, 0f, 0, 0, Shader.TileMode.CLAMP)
         val worker = ThreadPoolExecutor(0, 1, 5, TimeUnit.SECONDS, LinkedBlockingQueue()) { work ->
             Thread(work, "RecordingDialogGlass")
         }
@@ -233,12 +254,12 @@ internal class WindowBackdropCapture {
     private val image = takeScreenshot.returnType.getMethod("getCapturedBitmap")
     private var reported = false
 
-    fun read(display: Int, type: Int, tag: String, crop: Rect): Bitmap? = try {
+    fun read(display: Int, type: Int, expectedWindow: String, crop: Rect): Bitmap? = try {
         val result = takeScreenshot.invoke(manager, display, type, false, crop,
             ceil(crop.width() / 6f).toInt(), ceil(crop.height() / 6f).toInt(), false, false)
         val bitmap = result?.let { image.invoke(it) as? Bitmap }
         val policy = result?.let { failedReason.invoke(it) as Int }
-        val targetMatched = result != null && targetName.invoke(result) == "[Window_Target:$tag]"
+        val targetMatched = result != null && targetName.invoke(result) == expectedWindow
         val protected = result != null && !(secureName.invoke(result) as? String).isNullOrEmpty()
         if (policy == 0 && targetMatched && !protected) bitmap
         else {
