@@ -91,6 +91,8 @@
   <string name="skip_screenshot_toolbar_analysis_detail">촬영 직후 CPU 부하를 줄입니다. 도구 모음에 텍스트 추출과 관련 동작이 자동으로 표시되지 않습니다. 스크린샷은 평소대로 저장됩니다.</string>
   <string name="system_screenshot_standby">SystemUI 스크린샷 프로세스 대기 유지</string>
   <string name="system_screenshot_standby_detail">SystemUI의 스크린샷 전용 프로세스를 메모리에 유지하여 촬영 시 시작 부하를 줄입니다. 켜져 있는 동안 메모리 사용량이 늘어납니다.</string>
+  <string name="hide_game_screenshot_toolbar">게임 중 스크린샷 도구 모음 숨기기</string>
+  <string name="hide_game_screenshot_toolbar_detail">게임 중에 스크린샷을 찍으면 화면 하단의 도구 모음을 숨기고 이미지는 평소처럼 저장합니다.</string>
   <string name="samsung_capture_standby">Samsung 캡처 대기 유지</string>
   <string name="samsung_capture_standby_detail">Samsung 캡처를 메모리에 유지하여 스크린샷 촬영 시 시작 부하를 줄입니다. 켜져 있는 동안 메모리 사용량이 늘어납니다.</string>
   <string name="secure_screenshot">스크린샷 제한 해제</string>

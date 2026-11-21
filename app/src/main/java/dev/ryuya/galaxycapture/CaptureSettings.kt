@@ -6,6 +6,12 @@ import kotlin.jvm.JvmStatic
 
 /* One catalog for module UI, Samsung settings, and the provider write allowlist. */
 object CaptureSettings {
+    val HIDE_GAME_SCREENSHOT_TOOLBAR = Toggle(
+        "hide_game_screenshot_toolbar",
+        R.string.hide_game_screenshot_toolbar,
+        R.string.hide_game_screenshot_toolbar_detail,
+        false,
+    )
     val SAMSUNG_CAPTURE_STANDBY = Toggle(
         "samsung_capture_standby",
         R.string.samsung_capture_standby,
@@ -114,6 +120,7 @@ object CaptureSettings {
                 R.string.secure_screenshot_detail,
                 false,
             ),
+            HIDE_GAME_SCREENSHOT_TOOLBAR,
             SAMSUNG_CAPTURE_STANDBY,
             SYSTEM_SCREENSHOT_STANDBY,
             SKIP_SCREENSHOT_TOOLBAR_ANALYSIS,

@@ -91,6 +91,8 @@
   <string name="skip_screenshot_toolbar_analysis_detail">降低截图后的 CPU 负载。工具栏不会自动显示文字提取和相关操作。截图仍会正常保存。</string>
   <string name="system_screenshot_standby">让 SystemUI 截图进程保持待机</string>
   <string name="system_screenshot_standby_detail">将 SystemUI 的专用截图进程保留在内存中，减少截图时的启动开销。启用后会增加内存占用。</string>
+  <string name="hide_game_screenshot_toolbar">游戏中隐藏截图工具栏</string>
+  <string name="hide_game_screenshot_toolbar_detail">在游戏中截图时隐藏屏幕底部的工具栏，并照常保存截图。</string>
   <string name="samsung_capture_standby">让 Samsung 截图保持待机</string>
   <string name="samsung_capture_standby_detail">将 Samsung 截图保留在内存中，减少截图时的启动开销。启用后会增加内存占用。</string>
   <string name="secure_screenshot">解除截图限制</string>

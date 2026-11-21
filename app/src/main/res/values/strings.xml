@@ -91,6 +91,8 @@
   <string name="skip_screenshot_toolbar_analysis_detail">Reduces CPU use just after a screenshot. The toolbar no longer suggests text and related actions automatically. Screenshots still save normally.</string>
   <string name="system_screenshot_standby">Keep SystemUI’s screenshot process ready</string>
   <string name="system_screenshot_standby_detail">Prepares Android’s separate screenshot process to reduce startup work when you take a screenshot. Uses extra RAM while enabled.</string>
+  <string name="hide_game_screenshot_toolbar">Hide screenshot toolbar in games</string>
+  <string name="hide_game_screenshot_toolbar_detail">Save screenshots normally while hiding the toolbar at the bottom when capturing a game.</string>
   <string name="samsung_capture_standby">Keep Samsung Capture ready</string>
   <string name="samsung_capture_standby_detail">Keeps Samsung Capture in memory to reduce startup work for screenshots. Uses extra RAM while enabled.</string>
   <string name="secure_screenshot">Capture restricted screenshots</string>

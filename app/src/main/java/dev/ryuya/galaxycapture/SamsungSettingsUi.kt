@@ -290,6 +290,7 @@ object SamsungSettingsUi {
                     ),
                     arrayOf<String?>(
                         "screenshots",
+                        CaptureSettings.HIDE_GAME_SCREENSHOT_TOOLBAR.key,
                         CaptureSettings.SAMSUNG_CAPTURE_STANDBY.key,
                         CaptureSettings.SYSTEM_SCREENSHOT_STANDBY.key,
                         CaptureSettings.SKIP_SCREENSHOT_TOOLBAR_ANALYSIS.key,

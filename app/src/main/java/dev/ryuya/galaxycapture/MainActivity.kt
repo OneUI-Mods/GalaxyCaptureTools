@@ -188,13 +188,14 @@ class MainActivity : AppCompatActivity() {
         addVolume(galaxyOptions, "media_volume", R.string.media_recording_volume)
         addVolume(galaxyOptions, "mic_volume", R.string.mic_recording_volume)
         addHeading(galaxyOptions, R.string.section_screenshot)
-        val screenshotPerformance = listOf(
+        val screenshotOptions = listOf(
+            CaptureSettings.HIDE_GAME_SCREENSHOT_TOOLBAR,
             CaptureSettings.SAMSUNG_CAPTURE_STANDBY,
             CaptureSettings.SYSTEM_SCREENSHOT_STANDBY,
             CaptureSettings.SKIP_SCREENSHOT_TOOLBAR_ANALYSIS,
             CaptureSettings.SCREENSHOT_ANALYSIS_CPU_LIMIT,
         )
-        for (setting in screenshotPerformance) {
+        for (setting in screenshotOptions) {
             addSwitch(galaxyOptions, setting.key, setting.title, setting.detail, setting.defaultValue)
         }
         addSwitch(
