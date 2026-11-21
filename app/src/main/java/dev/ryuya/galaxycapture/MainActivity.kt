@@ -188,6 +188,8 @@ class MainActivity : AppCompatActivity() {
         addVolume(galaxyOptions, "media_volume", R.string.media_recording_volume)
         addVolume(galaxyOptions, "mic_volume", R.string.mic_recording_volume)
         addHeading(galaxyOptions, R.string.section_screenshot)
+        val standby = CaptureSettings.SAMSUNG_CAPTURE_STANDBY
+        addSwitch(galaxyOptions, standby.key, standby.title, standby.detail, standby.defaultValue)
         addSwitch(
             galaxyOptions,
             "secure_screenshot",

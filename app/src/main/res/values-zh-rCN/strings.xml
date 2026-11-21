@@ -85,6 +85,8 @@
   <string name="section_capture_controls">录屏操作和截图</string>
   <string name="master_scope_detail">同时开启或关闭 Android 原生（AOSP）和 Galaxy 的所有扩展功能。</string>
   <string name="section_screenshot">屏幕截图</string>
+  <string name="samsung_capture_standby">让 Samsung 截图保持待机</string>
+  <string name="samsung_capture_standby_detail">将 Samsung 截图保留在内存中，减少截图时的启动开销。启用后会增加内存占用。</string>
   <string name="secure_screenshot">解除截图限制</string>
   <string name="secure_screenshot_detail">允许Samsung截图捕获FLAG_SECURE保护的窗口。与录屏设置独立。受保护的视频仍可能显示为黑屏。默认关闭。</string>
   <string name="secure_recording">解除录屏限制</string>

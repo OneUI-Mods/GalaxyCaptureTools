@@ -6,6 +6,13 @@ import kotlin.jvm.JvmStatic
 
 /* One catalog for module UI, Samsung settings, and the provider write allowlist. */
 object CaptureSettings {
+    val SAMSUNG_CAPTURE_STANDBY = Toggle(
+        "samsung_capture_standby",
+        R.string.samsung_capture_standby,
+        R.string.samsung_capture_standby_detail,
+        false,
+    )
+
     @JvmField
     val MASTER: CaptureSettings.Toggle =
         CaptureSettings.Toggle("enabled", R.string.enabled, R.string.master_scope_detail, false)
@@ -89,6 +96,7 @@ object CaptureSettings {
                 R.string.secure_screenshot_detail,
                 false,
             ),
+            SAMSUNG_CAPTURE_STANDBY,
             CaptureSettings.Toggle(
                 "exclude_capture_controls",
                 R.string.exclude_capture_controls,
@@ -123,7 +131,7 @@ object CaptureSettings {
 
     @JvmRecord
     data class Toggle(
-        val key: String?,
+        val key: String,
         val title: Int,
         val detail: Int,
         val defaultValue: Boolean,

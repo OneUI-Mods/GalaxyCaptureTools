@@ -94,8 +94,10 @@ class HookEntry : XposedModule() {
                     if (system) "systemui" else "samsung",
                 )
             try {
-                if (system) SamsungSelection.installSystemUi(runtime, classLoader)
-                else SamsungSelection.installRecorder(runtime, classLoader)
+                if (system) {
+                    SamsungCaptureStandby.install(runtime)
+                    SamsungSelection.installSystemUi(runtime, classLoader)
+                } else SamsungSelection.installRecorder(runtime, classLoader)
             } catch (e: Throwable) {
                 runtime.fail(e)
             }

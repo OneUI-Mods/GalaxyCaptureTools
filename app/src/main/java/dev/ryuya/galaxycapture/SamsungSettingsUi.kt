@@ -290,6 +290,7 @@ object SamsungSettingsUi {
                     ),
                     arrayOf<String?>(
                         "screenshots",
+                        CaptureSettings.SAMSUNG_CAPTURE_STANDBY.key,
                         "secure_screenshot",
                         "exclude_capture_controls",
                     ),

@@ -85,6 +85,8 @@
   <string name="section_capture_controls">録画操作・スクリーンショット</string>
   <string name="master_scope_detail">Android標準（AOSP）とGalaxyの全機能をまとめて切り替えます。</string>
   <string name="section_screenshot">スクリーンショット</string>
+  <string name="samsung_capture_standby">Samsungキャプチャを待機させる</string>
+  <string name="samsung_capture_standby_detail">Samsungキャプチャをメモリに保持し、スクショ時の起動負荷を減らします。有効中はメモリ使用量が増えます。</string>
   <string name="secure_screenshot">スクショの制限を解除</string>
   <string name="secure_screenshot_detail">FLAG_SECUREで保護された画面をSamsungのスクショで撮影します。録画の設定とは独立しています。保護された動画などは黒くなる場合があります。初期設定はOFFです。</string>
   <string name="secure_recording">録画の制限を解除</string>
