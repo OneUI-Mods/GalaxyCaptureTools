@@ -26,6 +26,8 @@ data class Options(
     val recordingIconRight: Boolean,
     val includeCallAudio: Boolean,
     val samsungCaptureStandby: Boolean = false,
+    val systemScreenshotStandby: Boolean = false,
+    val skipScreenshotToolbarAnalysis: Boolean = false,
 ) {
 
     companion object {
@@ -79,10 +81,18 @@ data class Options(
                         CaptureSettings.SAMSUNG_CAPTURE_STANDBY.key,
                         CaptureSettings.SAMSUNG_CAPTURE_STANDBY.defaultValue,
                     ),
+                    b.getBoolean(
+                        CaptureSettings.SYSTEM_SCREENSHOT_STANDBY.key,
+                        CaptureSettings.SYSTEM_SCREENSHOT_STANDBY.defaultValue,
+                    ),
+                    b.getBoolean(
+                        CaptureSettings.SKIP_SCREENSHOT_TOOLBAR_ANALYSIS.key,
+                        CaptureSettings.SKIP_SCREENSHOT_TOOLBAR_ANALYSIS.defaultValue,
+                    ),
                 )
         }
     }
 
     override fun toString(): String =
-        "Options[enabled=$enabled, rotation=$rotation, samsungApp=$samsungApp, singleWindow=$singleWindow, appAudioOnly=$appAudioOnly, ignoreHalfTurns=$ignoreHalfTurns, hideDuplicateIndicator=$hideDuplicateIndicator, speakerMedia=$speakerMedia, excludeCaptureControls=$excludeCaptureControls, hideRecordingControls=$hideRecordingControls, countdown=$countdown, secureScreenshot=$secureScreenshot, secureRecording=$secureRecording, recordingVolume=$recordingVolume, mediaVolume=$mediaVolume, micVolume=$micVolume, recordingIconRight=$recordingIconRight, includeCallAudio=$includeCallAudio, samsungCaptureStandby=$samsungCaptureStandby]"
+        "Options[enabled=$enabled, rotation=$rotation, samsungApp=$samsungApp, singleWindow=$singleWindow, appAudioOnly=$appAudioOnly, ignoreHalfTurns=$ignoreHalfTurns, hideDuplicateIndicator=$hideDuplicateIndicator, speakerMedia=$speakerMedia, excludeCaptureControls=$excludeCaptureControls, hideRecordingControls=$hideRecordingControls, countdown=$countdown, secureScreenshot=$secureScreenshot, secureRecording=$secureRecording, recordingVolume=$recordingVolume, mediaVolume=$mediaVolume, micVolume=$micVolume, recordingIconRight=$recordingIconRight, includeCallAudio=$includeCallAudio, samsungCaptureStandby=$samsungCaptureStandby, systemScreenshotStandby=$systemScreenshotStandby, skipScreenshotToolbarAnalysis=$skipScreenshotToolbarAnalysis]"
 }

@@ -85,6 +85,10 @@
   <string name="section_capture_controls">錄影操作與截圖</string>
   <string name="master_scope_detail">同時開啟或關閉 Android 原生（AOSP）與 Galaxy 的所有擴充功能。</string>
   <string name="section_screenshot">螢幕截圖</string>
+  <string name="skip_screenshot_toolbar_analysis">略過截圖工具列的自動分析</string>
+  <string name="skip_screenshot_toolbar_analysis_detail">降低截圖後的 CPU 負載。工具列不會自動顯示文字擷取及相關操作。截圖仍會正常儲存。</string>
+  <string name="system_screenshot_standby">讓 SystemUI 截圖程序保持待命</string>
+  <string name="system_screenshot_standby_detail">將 SystemUI 的專用截圖程序保留在記憶體中，減少截圖時的啟動負擔。啟用後會增加記憶體用量。</string>
   <string name="samsung_capture_standby">讓 Samsung 截圖保持待命</string>
   <string name="samsung_capture_standby_detail">將 Samsung 截圖保留在記憶體中，減少截圖時的啟動負擔。啟用後會增加記憶體用量。</string>
   <string name="secure_screenshot">解除截圖限制</string>

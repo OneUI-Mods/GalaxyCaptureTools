@@ -291,6 +291,8 @@ object SamsungSettingsUi {
                     arrayOf<String?>(
                         "screenshots",
                         CaptureSettings.SAMSUNG_CAPTURE_STANDBY.key,
+                        CaptureSettings.SYSTEM_SCREENSHOT_STANDBY.key,
+                        CaptureSettings.SKIP_SCREENSHOT_TOOLBAR_ANALYSIS.key,
                         "secure_screenshot",
                         "exclude_capture_controls",
                     ),

@@ -85,6 +85,10 @@
   <string name="section_capture_controls">Recording controls and screenshots</string>
   <string name="master_scope_detail">Turn all extensions for Android (AOSP) and Galaxy on or off together.</string>
   <string name="section_screenshot">Screenshots</string>
+  <string name="skip_screenshot_toolbar_analysis">Skip automatic screenshot toolbar analysis</string>
+  <string name="skip_screenshot_toolbar_analysis_detail">Reduces CPU use just after a screenshot. The toolbar no longer suggests text and related actions automatically. Screenshots still save normally.</string>
+  <string name="system_screenshot_standby">Keep SystemUI’s screenshot process ready</string>
+  <string name="system_screenshot_standby_detail">Prepares Android’s separate screenshot process to reduce startup work when you take a screenshot. Uses extra RAM while enabled.</string>
   <string name="samsung_capture_standby">Keep Samsung Capture ready</string>
   <string name="samsung_capture_standby_detail">Keeps Samsung Capture in memory to reduce startup work for screenshots. Uses extra RAM while enabled.</string>
   <string name="secure_screenshot">Capture restricted screenshots</string>

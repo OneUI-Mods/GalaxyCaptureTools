@@ -12,6 +12,18 @@ object CaptureSettings {
         R.string.samsung_capture_standby_detail,
         false,
     )
+    val SYSTEM_SCREENSHOT_STANDBY = Toggle(
+        "system_screenshot_standby",
+        R.string.system_screenshot_standby,
+        R.string.system_screenshot_standby_detail,
+        false,
+    )
+    val SKIP_SCREENSHOT_TOOLBAR_ANALYSIS = Toggle(
+        "skip_screenshot_toolbar_analysis",
+        R.string.skip_screenshot_toolbar_analysis,
+        R.string.skip_screenshot_toolbar_analysis_detail,
+        false,
+    )
 
     @JvmField
     val MASTER: CaptureSettings.Toggle =
@@ -97,6 +109,8 @@ object CaptureSettings {
                 false,
             ),
             SAMSUNG_CAPTURE_STANDBY,
+            SYSTEM_SCREENSHOT_STANDBY,
+            SKIP_SCREENSHOT_TOOLBAR_ANALYSIS,
             CaptureSettings.Toggle(
                 "exclude_capture_controls",
                 R.string.exclude_capture_controls,

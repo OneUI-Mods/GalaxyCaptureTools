@@ -59,6 +59,7 @@ object SamsungSelection {
 
     @JvmStatic
     fun installRecorder(rt: HookRuntime, loader: ClassLoader?) {
+        ScreenshotToolbarAnalysis.install(rt, loader)
         CaptureControls.install(rt, loader)
         RecordingVolume.install(rt, loader)
         SecureCapture.installRecorder(rt, loader)

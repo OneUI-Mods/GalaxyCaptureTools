@@ -85,6 +85,10 @@
   <string name="section_capture_controls">録画操作・スクリーンショット</string>
   <string name="master_scope_detail">Android標準（AOSP）とGalaxyの全機能をまとめて切り替えます。</string>
   <string name="section_screenshot">スクリーンショット</string>
+  <string name="skip_screenshot_toolbar_analysis">スクショ直後の自動解析を省く</string>
+  <string name="skip_screenshot_toolbar_analysis_detail">撮影直後のCPU負荷を減らします。ツールバーの文字抽出や関連アクションの自動表示が省かれます。画像は通常どおり保存します。</string>
+  <string name="system_screenshot_standby">SystemUIのスクショ処理を待機させる</string>
+  <string name="system_screenshot_standby_detail">SystemUIの撮影専用プロセスをメモリに保持し、スクショ時の起動負荷を減らします。有効中はメモリ使用量が増えます。</string>
   <string name="samsung_capture_standby">Samsungキャプチャを待機させる</string>
   <string name="samsung_capture_standby_detail">Samsungキャプチャをメモリに保持し、スクショ時の起動負荷を減らします。有効中はメモリ使用量が増えます。</string>
   <string name="secure_screenshot">スクショの制限を解除</string>
