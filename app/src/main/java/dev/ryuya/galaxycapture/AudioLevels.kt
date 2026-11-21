@@ -1,5 +1,6 @@
 package dev.ryuya.galaxycapture
 
+import java.util.Arrays
 import kotlin.jvm.JvmRecord
 import kotlin.jvm.JvmStatic
 import kotlin.math.max
@@ -29,12 +30,13 @@ data class AudioLevels(val enabled: Boolean, val media: Int, val mic: Int) {
         fun scale(data: ShortArray, valid: Int, percent: Int) {
             val level = AudioLevels.clamp(percent)
             if (level == 100 || valid <= 0) return
-            var i: Int = 0
             val end = min(data.size, valid)
-            while (i < end) {
-                data[i] = Math.round(data[i] * (level / 100f)).toShort()
-                i++
+            if (level == 0) {
+                Arrays.fill(data, 0, end, 0.toShort())
+                return
             }
+            val gain = level / 100f
+            for (index in 0 until end) data[index] = Math.round(data[index] * gain).toShort()
         }
     }
 
