@@ -63,6 +63,11 @@ class ConfigProvider : ContentProvider() {
             return b
         }
         val uid = Binder.getCallingUid()
+        if (method == ScreenshotAnalysisQuota.REQUEST) {
+            val pid = Binder.getCallingPid()
+            val applied = ScreenshotAnalysisQuota.applyToCaller(c, uid, pid)
+            return Bundle().apply { putBoolean("applied", applied) }
+        }
         val packages = c.getPackageManager().getPackagesForUid(uid)
         val host: Boolean =
             uid == 1000 ||
@@ -84,6 +89,9 @@ class ConfigProvider : ContentProvider() {
             for (setting in CaptureSettings.all()) if (data.containsKey(setting!!.key))
                 edit.putBoolean(setting!!.key, data.getBoolean(setting!!.key))
             edit.apply()
+            if (data.getBoolean(CaptureSettings.SCREENSHOT_ANALYSIS_CPU_LIMIT.key, false)) {
+                ScreenshotAnalysisQuota.requestRoot()
+            }
             Startup.notifyHosts(c)
             return Bundle.EMPTY
         }

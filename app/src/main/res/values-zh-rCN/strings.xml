@@ -85,6 +85,8 @@
   <string name="section_capture_controls">录屏操作和截图</string>
   <string name="master_scope_detail">同时开启或关闭 Android 原生（AOSP）和 Galaxy 的所有扩展功能。</string>
   <string name="section_screenshot">屏幕截图</string>
+  <string name="screenshot_analysis_cpu_limit" formatted="false">限制截图分析使用 10% CPU</string>
+  <string name="screenshot_analysis_cpu_limit_detail" formatted="false">将 Samsung 保存后的分析进程限制为总 CPU 时间的 10%。分析可能需要更长时间。需要 Root 权限。</string>
   <string name="skip_screenshot_toolbar_analysis">跳过截图工具栏的自动分析</string>
   <string name="skip_screenshot_toolbar_analysis_detail">降低截图后的 CPU 负载。工具栏不会自动显示文字提取和相关操作。截图仍会正常保存。</string>
   <string name="system_screenshot_standby">让 SystemUI 截图进程保持待机</string>

@@ -192,6 +192,7 @@ class MainActivity : AppCompatActivity() {
             CaptureSettings.SAMSUNG_CAPTURE_STANDBY,
             CaptureSettings.SYSTEM_SCREENSHOT_STANDBY,
             CaptureSettings.SKIP_SCREENSHOT_TOOLBAR_ANALYSIS,
+            CaptureSettings.SCREENSHOT_ANALYSIS_CPU_LIMIT,
         )
         for (setting in screenshotPerformance) {
             addSwitch(galaxyOptions, setting.key, setting.title, setting.detail, setting.defaultValue)
@@ -445,6 +446,9 @@ class MainActivity : AppCompatActivity() {
             OnCheckedChangeListener { b: CompoundButton?, on: Boolean ->
                 if (syncing) return@OnCheckedChangeListener
                 getSharedPreferences("config", 0).edit().putBoolean(key, on).apply()
+                if (key == CaptureSettings.SCREENSHOT_ANALYSIS_CPU_LIMIT.key && on) {
+                    ScreenshotAnalysisQuota.requestRoot()
+                }
                 notifyConfig()
                 if (key == "enabled" || key == "recording_volume") updateEnabled()
             },

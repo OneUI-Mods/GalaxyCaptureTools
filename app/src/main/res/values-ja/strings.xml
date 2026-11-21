@@ -85,6 +85,8 @@
   <string name="section_capture_controls">録画操作・スクリーンショット</string>
   <string name="master_scope_detail">Android標準（AOSP）とGalaxyの全機能をまとめて切り替えます。</string>
   <string name="section_screenshot">スクリーンショット</string>
+  <string name="screenshot_analysis_cpu_limit" formatted="false">保存後のスクショ解析をCPU 10%に制限</string>
+  <string name="screenshot_analysis_cpu_limit_detail" formatted="false">Samsungの保存後の解析プロセスを、全コア合計のCPU時間の10%に制限します。解析結果が出るまで時間がかかる場合があります。root権限が必要です。</string>
   <string name="skip_screenshot_toolbar_analysis">スクショ直後の自動解析を省く</string>
   <string name="skip_screenshot_toolbar_analysis_detail">撮影直後のCPU負荷を減らします。ツールバーの文字抽出や関連アクションの自動表示が省かれます。画像は通常どおり保存します。</string>
   <string name="system_screenshot_standby">SystemUIのスクショ処理を待機させる</string>

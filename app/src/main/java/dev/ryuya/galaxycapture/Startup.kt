@@ -21,6 +21,7 @@ object Startup {
 
     @JvmStatic
     fun notifyHosts(context: Context) {
+        ScreenshotAnalysisQuota.syncEnabled(context)
         for (pkg in
             arrayOf<String>(
                 "android",

@@ -75,7 +75,11 @@ class HookEntry : XposedModule() {
                             loaded = true
                             val hostContext = param.args!![0] as Context
                             firstUnlock.run(hostContext) {
-                                installHost(hostContext, classLoader, system)
+                                if (Application.getProcessName() == ScreenshotAnalysisQuota.WORKER_PROCESS) {
+                                    ScreenshotAnalysisQuota.installWorkerHook(hostContext, classLoader)
+                                } else {
+                                    installHost(hostContext, classLoader, system)
+                                }
                             }
                         }
                     },

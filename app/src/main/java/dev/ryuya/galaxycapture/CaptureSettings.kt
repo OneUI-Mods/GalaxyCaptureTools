@@ -24,6 +24,12 @@ object CaptureSettings {
         R.string.skip_screenshot_toolbar_analysis_detail,
         false,
     )
+    val SCREENSHOT_ANALYSIS_CPU_LIMIT = Toggle(
+        "screenshot_analysis_cpu_limit",
+        R.string.screenshot_analysis_cpu_limit,
+        R.string.screenshot_analysis_cpu_limit_detail,
+        false,
+    )
 
     @JvmField
     val MASTER: CaptureSettings.Toggle =
@@ -111,6 +117,7 @@ object CaptureSettings {
             SAMSUNG_CAPTURE_STANDBY,
             SYSTEM_SCREENSHOT_STANDBY,
             SKIP_SCREENSHOT_TOOLBAR_ANALYSIS,
+            SCREENSHOT_ANALYSIS_CPU_LIMIT,
             CaptureSettings.Toggle(
                 "exclude_capture_controls",
                 R.string.exclude_capture_controls,
