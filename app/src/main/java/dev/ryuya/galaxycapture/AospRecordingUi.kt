@@ -35,6 +35,12 @@ object AospRecordingUi {
     private val choices: MutableMap<AospRecordingUi.Key?, AospRecordingUi.Choice?> =
         ConcurrentHashMap<AospRecordingUi.Key?, AospRecordingUi.Choice?>()
 
+    internal fun idleForHotReload(): Boolean {
+        val now = SystemClock.elapsedRealtime()
+        return states.values.none { it?.get()?.row?.isAttachedToWindow == true } &&
+            choices.values.none { it != null && it.expires > now }
+    }
+
     @JvmStatic
     fun install(rt: HookRuntime, loader: ClassLoader?) {
         val manager =

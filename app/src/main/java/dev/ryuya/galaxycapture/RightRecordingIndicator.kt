@@ -38,6 +38,9 @@ class RightRecordingIndicator private constructor(runtime: HookRuntime) {
     private val states: MutableMap<Any?, RightRecordingIndicator.State?> =
         WeakHashMap<Any?, RightRecordingIndicator.State?>()
     private var nativeChip: Class<*>? = null
+    private var android16Controller: Class<*>? = null
+    private val pendingAttachments = WeakHashMap<View, OnAttachStateChangeListener>()
+    private var retired = false
     private var failed: Boolean = false
 
     init {
@@ -86,52 +89,14 @@ class RightRecordingIndicator private constructor(runtime: HookRuntime) {
         fragment!!.compatibleDeclaredMethod("onViewCreated", View::class.java, Bundle::class.java)
         fragment!!.compatibleDeclaredMethod("onDestroyView")
         controller!!.compatibleDeclaredMethod("updateAll", String::class.java)
+        android16Controller = controller
         Hooks.hookAllMethods(
             fragment,
             "onViewCreated",
             object : HookCallback() {
                 override fun afterHookedMethod(p: MethodHookParam) {
                     if (failed || p.hasThrowable()) return
-                    try {
-                        val owner = Reflect.getObjectField(p.thisObject!!, "mOngoingCastController")
-                        val root: View? =
-                            Reflect.getObjectField(p.thisObject!!, "mStatusBar") as View?
-                        val chip: View? =
-                            Reflect.getObjectField(p.thisObject!!, "mOngoingCastChip") as View?
-                        check(
-                            !(!controller!!.isInstance(owner) ||
-                                !nativeChip!!.isInstance(chip) ||
-                                ("samsung_ongoing_cast_chip" !=
-                                    RightRecordingIndicator.name(chip!!)))
-                        ) {
-                            "Recording chip binding changed"
-                        }
-                        val id =
-                            root!!
-                                .getResources()
-                                .getIdentifier(
-                                    "status_bar_end_side_content",
-                                    "id",
-                                    "com.android.systemui",
-                                )
-                        val end: View? = if (id == 0) null else root!!.findViewById<View?>(id)
-                        check(
-                            !((end !is LinearLayout) ||
-                                end.getOrientation() != LinearLayout.HORIZONTAL ||
-                                (chip!!.getParent() !is LinearLayout))
-                        ) {
-                            "Status-bar chip containers changed"
-                        }
-                        val prior = states.remove(p.thisObject)
-                        if (prior != null) prior.destroy()
-                        val original = chip!!.parent as LinearLayout
-                        val state = State(root!!, chip, original, end!!, owner)
-                        states.put(p.thisObject, state)
-                        state.observe()
-                        state.queue()
-                    } catch (error: Throwable) {
-                        fail(error)
-                    }
+                    p.thisObject?.let(::bindAndroid16)
                 }
             },
         )
@@ -163,6 +128,7 @@ class RightRecordingIndicator private constructor(runtime: HookRuntime) {
                 main.post(
                     Runnable {
                         for (state in ArrayList<RightRecordingIndicator.State?>(states.values)) {
+                            if (retired) return@Runnable
                             state!!.fitRejected = false
                             state!!.queue()
                         }
@@ -171,6 +137,49 @@ class RightRecordingIndicator private constructor(runtime: HookRuntime) {
             }
         )
         Hooks.log("GalaxyCapture: native Samsung recording chip relocation ready")
+    }
+
+    private fun bindAndroid16(fragment: Any) {
+        try {
+            val owner = Reflect.getObjectField(fragment, "mOngoingCastController")
+            val root: View? =
+                Reflect.getObjectField(fragment, "mStatusBar") as View?
+            val chip: View? =
+                Reflect.getObjectField(fragment, "mOngoingCastChip") as View?
+            check(
+                !(!android16Controller!!.isInstance(owner) ||
+                    !nativeChip!!.isInstance(chip) ||
+                    ("samsung_ongoing_cast_chip" !=
+                        RightRecordingIndicator.name(chip!!)))
+            ) {
+                "Recording chip binding changed"
+            }
+            val id =
+                root!!
+                    .getResources()
+                    .getIdentifier(
+                        "status_bar_end_side_content",
+                        "id",
+                        "com.android.systemui",
+                    )
+            val end: View? = if (id == 0) null else root!!.findViewById<View?>(id)
+            check(
+                !((end !is LinearLayout) ||
+                    end.getOrientation() != LinearLayout.HORIZONTAL ||
+                    (chip!!.getParent() !is LinearLayout))
+            ) {
+                "Status-bar chip containers changed"
+            }
+            val prior = states.remove(fragment)
+            if (prior != null) prior.destroy()
+            val original = chip!!.parent as LinearLayout
+            val state = State(root!!, chip, original, end!!, owner)
+            states.put(fragment, state)
+            state.observe()
+            state.queue()
+        } catch (error: Throwable) {
+            fail(error)
+        }
     }
 
     /* Android 17 binds the native chip through its controller instead of the removed Fragment. */
@@ -208,20 +217,7 @@ class RightRecordingIndicator private constructor(runtime: HookRuntime) {
                     if (p!!.args!![0] !is View) return
                     val chip = p.args[0] as View
                     val owner = p.thisObject
-                    if (chip.isAttachedToWindow()) {
-                        bindAndroid17(owner, chip)
-                    } else {
-                        chip.addOnAttachStateChangeListener(
-                            object : OnAttachStateChangeListener {
-                                override fun onViewAttachedToWindow(view: View) {
-                                    view.removeOnAttachStateChangeListener(this)
-                                    bindAndroid17(owner, view)
-                                }
-
-                                override fun onViewDetachedFromWindow(view: View) {}
-                            }
-                        )
-                    }
+                    observeAndroid17(owner, chip)
                 }
             },
         )
@@ -240,6 +236,7 @@ class RightRecordingIndicator private constructor(runtime: HookRuntime) {
                 main.post(
                     Runnable {
                         for (state in ArrayList<RightRecordingIndicator.State?>(states.values)) {
+                            if (retired) return@Runnable
                             state!!.fitRejected = false
                             state!!.queue()
                         }
@@ -252,8 +249,57 @@ class RightRecordingIndicator private constructor(runtime: HookRuntime) {
         )
     }
 
+    private fun observeAndroid17(owner: Any?, chip: View) {
+        if (retired) return
+        pendingAttachments.remove(chip)?.let(chip::removeOnAttachStateChangeListener)
+        if (chip.isAttachedToWindow) {
+            bindAndroid17(owner, chip)
+            return
+        }
+        val listener = object : OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(view: View) {
+                pendingAttachments.remove(view)
+                view.removeOnAttachStateChangeListener(this)
+                bindAndroid17(owner, view)
+            }
+
+            override fun onViewDetachedFromWindow(view: View) = Unit
+        }
+        pendingAttachments[chip] = listener
+        chip.addOnAttachStateChangeListener(listener)
+    }
+
+    internal fun stateForReload(): Array<Array<WeakReference<*>>> = states.mapNotNull { (owner, state) ->
+        val chip = state?.chip?.get() ?: return@mapNotNull null
+        if (owner == null || !chip.isAttachedToWindow) return@mapNotNull null
+        arrayOf<WeakReference<*>>(WeakReference(owner), WeakReference(chip))
+    }.toTypedArray()
+
+    internal fun canRetire(): Boolean =
+        pendingAttachments.isEmpty() && states.values.none { it?.moving == true }
+
+    internal fun close() {
+        retired = true
+        main.removeCallbacksAndMessages(null)
+        for ((view, listener) in pendingAttachments.toList()) view.removeOnAttachStateChangeListener(listener)
+        pendingAttachments.clear()
+        states.values.toList().forEach { it?.destroy() }
+        states.clear()
+    }
+
+    private fun reconnect(previous: Any?) {
+        for (item in (previous as? Array<*>).orEmpty()) {
+            val pair = item as? Array<*> ?: continue
+            val owner = (pair.getOrNull(0) as? WeakReference<*>)?.get() ?: continue
+            val chip = (pair.getOrNull(1) as? WeakReference<*>)?.get() as? View ?: continue
+            if (!chip.isAttachedToWindow) continue
+            if (android16Controller != null) bindAndroid16(owner)
+            else observeAndroid17(owner, chip)
+        }
+    }
+
     private fun bindAndroid17(owner: Any?, chip: View) {
-        if (failed || !chip.isAttachedToWindow()) return
+        if (failed || retired || !chip.isAttachedToWindow()) return
         try {
             if (Reflect.getObjectField(owner!!, "chipView") !== chip) return
             var previous = states.get(owner)
@@ -561,14 +607,15 @@ class RightRecordingIndicator private constructor(runtime: HookRuntime) {
     }
 
     companion object {
-        @JvmStatic
-        fun install(rt: HookRuntime, loader: ClassLoader?) {
+        internal fun install(rt: HookRuntime, loader: ClassLoader?, previous: Any?): RightRecordingIndicator {
             val bridge = RightRecordingIndicator(rt)
             try {
                 bridge.install(loader)
+                bridge.reconnect(previous)
             } catch (error: Throwable) {
                 bridge.fail(error)
             }
+            return bridge
         }
 
         @JvmStatic

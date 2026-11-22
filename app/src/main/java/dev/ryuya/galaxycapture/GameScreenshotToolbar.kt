@@ -18,7 +18,7 @@ internal object GameScreenshotToolbar {
     private const val FOCUSED_PACKAGE = "extraCurrentFocusedPackage"
     private const val SHOW_TOOLBAR = "isSmartCaptureVisible"
 
-    fun install(runtime: HookRuntime, loader: ClassLoader?) {
+    fun install(runtime: HookRuntime, loader: ClassLoader?): Boolean {
         try {
             val service = Reflect.findClass(SCREENSHOT_UI_SERVICE, loader)
             val createFragment = service.getDeclaredMethod(
@@ -52,8 +52,10 @@ internal object GameScreenshotToolbar {
                     param.args[0] = Intent(intent).putExtra(SCREENSHOT_PARAMS, hiddenToolbar)
                 }
             })
+            return true
         } catch (error: Throwable) {
             Hooks.log("GalaxyCapture in-game screenshot toolbar control unavailable: ${error.javaClass.simpleName}")
+            return false
         }
     }
 

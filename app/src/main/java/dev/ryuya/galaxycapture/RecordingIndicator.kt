@@ -10,9 +10,7 @@ import kotlin.jvm.JvmStatic
 
 /* Removes only the cast icon duplicated by known local recorders; recording UI is untouched. */
 object RecordingIndicator {
-    @JvmStatic
-    fun install(rt: HookRuntime, loader: ClassLoader?) {
-        RightRecordingIndicator.install(rt, loader)
+    internal fun install(rt: HookRuntime, loader: ClassLoader?, previous: Any?): RightRecordingIndicator {
         val controller =
             Reflect.findClass(
                 "com.android.systemui.statusbar.phone.SamsungCastIconController",
@@ -79,5 +77,6 @@ object RecordingIndicator {
                 },
             )
         check(!hooks.isEmpty()) { "Cast indicator callback unavailable" }
+        return RightRecordingIndicator.install(rt, loader, previous)
     }
 }

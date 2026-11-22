@@ -51,6 +51,9 @@ class HostGuard(context: Context, host: String) {
     }
 
     @Synchronized
+    fun canRetire() = !recordingActive && captureOperations == 0
+
+    @Synchronized
     fun allowed(): Boolean {
         return !blocked
     }

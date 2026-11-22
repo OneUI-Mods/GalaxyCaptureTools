@@ -4,11 +4,29 @@ import dev.ryuya.galaxycapture.compat.compatibleName
 import io.github.libxposed.api.XposedInterface
 import java.lang.reflect.Executable
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /** Hooks belong to the currently attached API 102 framework instance. */
 object Hooks {
     @Volatile private var framework: XposedInterface? = null
     private val ids = AtomicLong()
+    private val dispatch = ReentrantReadWriteLock()
+    @Volatile private var managed = false
+    @Volatile private var retired = false
+
+    fun trackForHotReload() { managed = true }
+
+    fun tryRetire(saveAndStop: () -> Boolean): Boolean {
+        val write = dispatch.writeLock()
+        if (!write.tryLock()) return false
+        try {
+            if (!saveAndStop()) return false
+            retired = true
+            return true
+        } finally {
+            write.unlock()
+        }
+    }
 
     @JvmStatic
     fun attach(api: XposedInterface) {
@@ -28,7 +46,19 @@ object Hooks {
                 .hook(method)
                 .setExceptionMode(XposedInterface.ExceptionMode.PASSTHROUGH)
                 .setId("galaxy-${ids.incrementAndGet()}")
-                .intercept(callback::intercept)
+                .intercept { chain ->
+                    if (!managed) callback.intercept(chain)
+                    else if (retired) chain.proceed()
+                    else {
+                        val read = dispatch.readLock()
+                        read.lock()
+                        try {
+                            if (retired) chain.proceed() else callback.intercept(chain)
+                        } finally {
+                            read.unlock()
+                        }
+                    }
+                }
         )
 
     @JvmStatic

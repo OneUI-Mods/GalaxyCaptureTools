@@ -18,6 +18,8 @@ object FrameworkHooks {
     private val display: ThreadLocal<Any?> = ThreadLocal<Any?>()
     private var containerClass: Class<*>? = null
 
+    fun idleForHotReload() = sessions.isEmpty()
+
     @kotlin.jvm.JvmStatic
     fun field(`object`: Any?, name: String?): Any? {
         return Reflect.getObjectField(`object`!!, name!!)

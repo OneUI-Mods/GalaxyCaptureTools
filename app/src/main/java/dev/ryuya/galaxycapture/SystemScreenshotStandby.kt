@@ -7,7 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.graphics.HardwareRenderer
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
 import android.os.Process
 import dev.ryuya.galaxycapture.hook.Hooks
@@ -145,10 +147,41 @@ internal class SystemScreenshotStandby private constructor(private val runtime: 
         private const val SET_PROCESS_LIMIT = "android.permission.SET_PROCESS_LIMIT"
         private val SCREENSHOT_SERVICE = ComponentName(SYSTEM_UI, "$SYSTEM_UI.screenshot.TakeScreenshotService")
 
+        fun isDedicatedScreenshotProcess(): Boolean =
+            Build.VERSION.SDK_INT == 37 && Build.DISPLAY.endsWith("S948QOPU1BZI9") &&
+                Application.getProcessName() == SCREENSHOT_PROCESS
+
         fun install(runtime: HookRuntime) {
-            if (Application.getProcessName() != SYSTEM_UI) return
-            val standby = SystemScreenshotStandby(runtime)
-            val refresh = Runnable(standby::refresh)
+            when (Application.getProcessName()) {
+                SYSTEM_UI -> {
+                    val standby = SystemScreenshotStandby(runtime)
+                    runtime.ownStandby {
+                        standby.warming?.let(standby::finishWarmup)
+                        standby.releaseImportance()
+                    }
+                    val refresh = Runnable(standby::refresh)
+                    runtime.onOptionsChanged(refresh)
+                    runtime.worker.post(refresh)
+                }
+                SCREENSHOT_PROCESS -> if (isDedicatedScreenshotProcess()) warmRendererWhenRequested(runtime)
+            }
+        }
+
+        private fun warmRendererWhenRequested(runtime: HookRuntime) {
+            var requested = false
+            val refresh = Runnable {
+                val options = runtime.options
+                if (requested || options?.enabled != true || !options.systemScreenshotStandby) return@Runnable
+                requested = true
+                try {
+                    HardwareRenderer::class.java.getMethod("preload").invoke(null)
+                    Hooks.log("GalaxyCapture screenshot renderer preload requested")
+                } catch (error: Exception) {
+                    Hooks.log("GalaxyCapture screenshot renderer preload unavailable: ${error.javaClass.simpleName}")
+                } catch (error: LinkageError) {
+                    Hooks.log("GalaxyCapture screenshot renderer preload unavailable: ${error.javaClass.simpleName}")
+                }
+            }
             runtime.onOptionsChanged(refresh)
             runtime.worker.post(refresh)
         }

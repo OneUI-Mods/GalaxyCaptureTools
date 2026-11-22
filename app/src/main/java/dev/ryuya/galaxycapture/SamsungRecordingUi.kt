@@ -54,6 +54,19 @@ object SamsungRecordingUi {
         WeakHashMap<Any?, WeakReference<View?>?>()
     private val main: Handler = Handler(Looper.getMainLooper())
 
+    fun hasAttachedPopup(): Boolean =
+        pendingRoots.values.any { it?.get()?.isAttachedToWindow == true } ||
+            states.values.any {
+                val state = it?.get()
+                state?.sourceRoot?.isAttachedToWindow == true || state?.picker?.isShowing == true
+            }
+
+    fun retire() {
+        main.removeCallbacksAndMessages(null)
+        pendingRoots.clear()
+        states.clear()
+    }
+
     @JvmStatic
     fun state(controller: Any?): SamsungRecordingUi.State? {
         val reference = SamsungRecordingUi.states.get(controller)

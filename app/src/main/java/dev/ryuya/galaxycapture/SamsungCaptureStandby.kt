@@ -81,6 +81,7 @@ internal class SamsungCaptureStandby private constructor(private val runtime: Ho
         fun install(runtime: HookRuntime) {
             if (Application.getProcessName() != SYSTEM_UI) return
             val standby = SamsungCaptureStandby(runtime)
+            runtime.ownStandby { standby.connection?.let(standby::release) }
             val refresh = Runnable(standby::refresh)
             runtime.onOptionsChanged(refresh)
             runtime.worker.post(refresh)

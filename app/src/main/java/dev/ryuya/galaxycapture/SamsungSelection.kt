@@ -34,8 +34,7 @@ object SamsungSelection {
         return SamsungSelection.target
     }
 
-    @JvmStatic
-    fun installSystemUi(rt: HookRuntime, loader: ClassLoader?) {
+    internal fun installSystemUi(rt: HookRuntime, loader: ClassLoader?, previous: Any? = null): RightRecordingIndicator {
         val recorder =
             Reflect.findClass("com.android.systemui.screenrecord.ScreenMediaRecorder", loader)
         Hooks.hookAllMethods(
@@ -52,15 +51,15 @@ object SamsungSelection {
                 }
             },
         )
-        RecordingIndicator.install(rt, loader)
         AospRecordingUi.install(rt, loader)
         AudioScope.installAosp(rt, loader)
+        return RecordingIndicator.install(rt, loader, previous)
     }
 
     @JvmStatic
-    fun installRecorder(rt: HookRuntime, loader: ClassLoader?) {
-        GameScreenshotToolbar.install(rt, loader)
-        ScreenshotToolbarAnalysis.install(rt, loader)
+    fun installRecorder(rt: HookRuntime, loader: ClassLoader?): Boolean {
+        val toolbarControl = GameScreenshotToolbar.install(rt, loader)
+        val analysisControl = ScreenshotToolbarAnalysis.install(rt, loader)
         CaptureControls.install(rt, loader)
         RecordingVolume.install(rt, loader)
         SecureCapture.installRecorder(rt, loader)
@@ -237,7 +236,11 @@ object SamsungSelection {
             },
         )
         AudioScope.installSamsung(rt, loader)
+        return toolbarControl && analysisControl
     }
+
+    fun ownsRecordingState() =
+        picking || approved || target != null || earlyOwner != null || earlyProjection != null
 
     @JvmStatic
     @Synchronized

@@ -10,7 +10,7 @@ internal object ScreenshotToolbarAnalysis {
     private const val CAPTURE = "com.samsung.android.app.smartcapture"
     private const val SCOPE_ENTERED = "screenshotToolbarAnalysisScope"
 
-    fun install(runtime: HookRuntime, loader: ClassLoader?) {
+    fun install(runtime: HookRuntime, loader: ClassLoader?): Boolean {
         try {
             val toolbar = Reflect.findClass("$CAPTURE.screenshot.MainUiViewForStandAlone", loader)
             val savedFile = Reflect.findClass(
@@ -21,7 +21,7 @@ internal object ScreenshotToolbarAnalysis {
             val isPartial = toolbar.getMethod("isPartialCaptureMode")
             val isFlex = toolbar.getMethod("isFlexPanelCaptureMode")
             val textSupported = features.getDeclaredMethod("isTextExtractionSupported", Context::class.java)
-            if (onFileSaved.returnType != Void.TYPE || textSupported.returnType != Boolean::class.javaPrimitiveType) return
+            if (onFileSaved.returnType != Void.TYPE || textSupported.returnType != Boolean::class.javaPrimitiveType) return false
 
             Hooks.deoptimize(onFileSaved)
             val suppress = ThreadLocal<Boolean>()
@@ -50,8 +50,10 @@ internal object ScreenshotToolbarAnalysis {
                 featureHook.unhook()
                 throw error
             }
+            return true
         } catch (error: Throwable) {
             Hooks.log("GalaxyCapture screenshot toolbar analysis control unavailable: ${error.javaClass.simpleName}")
+            return false
         }
     }
 }

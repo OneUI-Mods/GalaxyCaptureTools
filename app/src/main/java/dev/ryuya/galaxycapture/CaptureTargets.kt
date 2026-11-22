@@ -44,64 +44,73 @@ object CaptureTargets {
     @Volatile private var selected: CaptureTargets.Selection? = null
     private var loader: ClassLoader? = null
 
+    // The picker uses these opaque entries until its request expires.
+    fun idleForHotReload(): Boolean {
+        val now = SystemClock.elapsedRealtime()
+        return selected?.let { it.expires <= now } != false &&
+            catalogs.values.none { catalog -> catalog?.values?.any { it != null && it.expires > now } == true }
+    }
+
     @JvmStatic
     fun install(rt: HookRuntime, classes: ClassLoader?) {
         CaptureTargets.loader = classes
-        rt.context.registerReceiver(
-            object : BroadcastReceiver() {
-                override fun onReceive(context: Context, intent: Intent) {
-                    val receiver =
-                        intent.getParcelableExtra<ResultReceiver?>(
-                            "receiver",
-                            ResultReceiver::class.java,
-                        )
-                    if (receiver == null) return
-                    val uid = getSentFromUid()
-                    val packages = context.getPackageManager().getPackagesForUid(uid)
-                    if (
-                        packages == null ||
-                            (!Arrays.asList<String?>(*packages)
-                                .contains("com.samsung.android.app.smartcapture") &&
-                                !Arrays.asList<String?>(*packages).contains("com.android.systemui"))
-                    ) {
-                        Hooks.log("GalaxyCapture target sender rejected; uid=" + uid)
-                        receiver.send(Activity.RESULT_CANCELED, Bundle.EMPTY)
-                        return
-                    }
-                    try {
-                        check(!(!rt.guard.allowed() || !rt.options!!.enabled)) {
-                            "Capture tools disabled"
-                        }
-                        val data = intent.getBundleExtra("data")
-                        val operation = intent.getStringExtra("operation")
-                        val result: Bundle? =
-                            when (if (operation == null) "" else operation) {
-                                "list" ->
-                                    CaptureTargets.catalog(
-                                        rt,
-                                        uid,
-                                        data != null && data.getBoolean("windows", false),
-                                    )
-                                "activate" -> CaptureTargets.activate(rt, uid, data!!)
-                                "audio_uid" -> CaptureTargets.audioUid(uid)
-                                "health" -> Bundle.EMPTY
-                                else -> throw IllegalArgumentException("Unknown target operation")
-                            }
-                        receiver.send(Activity.RESULT_OK, result)
-                    } catch (error: Throwable) {
-                        Hooks.log("GalaxyCapture target request failed: " + error)
-                        Hooks.log(error)
-                        val result = Bundle()
-                        result.putString("error", "Target unavailable")
-                        receiver.send(Activity.RESULT_CANCELED, result)
-                    }
+        val registration = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val receiver =
+                    intent.getParcelableExtra<ResultReceiver?>(
+                        "receiver",
+                        ResultReceiver::class.java,
+                    )
+                if (receiver == null) return
+                val uid = getSentFromUid()
+                val packages = context.getPackageManager().getPackagesForUid(uid)
+                if (
+                    packages == null ||
+                        (!Arrays.asList<String?>(*packages)
+                            .contains("com.samsung.android.app.smartcapture") &&
+                            !Arrays.asList<String?>(*packages).contains("com.android.systemui"))
+                ) {
+                    Hooks.log("GalaxyCapture target sender rejected; uid=" + uid)
+                    receiver.send(Activity.RESULT_CANCELED, Bundle.EMPTY)
+                    return
                 }
-            },
+                try {
+                    check(!(!rt.guard.allowed() || !rt.options!!.enabled)) {
+                        "Capture tools disabled"
+                    }
+                    val data = intent.getBundleExtra("data")
+                    val operation = intent.getStringExtra("operation")
+                    val result: Bundle? =
+                        when (if (operation == null) "" else operation) {
+                            "list" ->
+                                CaptureTargets.catalog(
+                                    rt,
+                                    uid,
+                                    data != null && data.getBoolean("windows", false),
+                                )
+                            "activate" -> CaptureTargets.activate(rt, uid, data!!)
+                            "audio_uid" -> CaptureTargets.audioUid(uid)
+                            "health" -> Bundle.EMPTY
+                            else -> throw IllegalArgumentException("Unknown target operation")
+                        }
+                    receiver.send(Activity.RESULT_OK, result)
+                } catch (error: Throwable) {
+                    Hooks.log("GalaxyCapture target request failed: " + error)
+                    Hooks.log(error)
+                    val result = Bundle()
+                    result.putString("error", "Target unavailable")
+                    receiver.send(Activity.RESULT_CANCELED, result)
+                }
+            }
+        }
+        rt.context.registerReceiver(
+            registration,
             IntentFilter(TargetBridge.ACTION),
             "android.permission.MANAGE_MEDIA_PROJECTION",
             rt.worker,
             Context.RECEIVER_EXPORTED,
         )
+        rt.ownReceiver(registration)
     }
 
     @JvmStatic

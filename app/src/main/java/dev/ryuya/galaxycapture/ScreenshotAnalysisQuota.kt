@@ -12,6 +12,7 @@ import dev.ryuya.galaxycapture.hook.Reflect
 import java.io.File
 import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantReadWriteLock
 
 internal object ScreenshotAnalysisQuota {
     private const val TAG = "CaptureAnalysisQuota"
@@ -21,21 +22,46 @@ internal object ScreenshotAnalysisQuota {
     private const val FLAG_NAME = "screenshot-analysis-quota-enabled"
     private const val SCRIPT = "screenshot-analysis-quota.sh"
     private val workers = mutableMapOf<Int, java.lang.Process>()
+    private val hookCalls = ReentrantReadWriteLock()
+    @Volatile private var retired = false
 
-    fun installWorkerHook(context: Context, loader: ClassLoader?) {
+    fun tryRetireHook(save: () -> Unit): Boolean {
+        val write = hookCalls.writeLock()
+        if (!write.tryLock()) return false
+        return try {
+            save()
+            retired = true
+            true
+        } finally {
+            write.unlock()
+        }
+    }
+
+    fun installWorkerHook(context: Context, loader: ClassLoader?): Boolean {
         try {
             val type = Reflect.findClass("$CAPTURE.solution.scheduling.OnDemandScreenshotWorker", loader)
             val method = type.getDeclaredMethod("startRemoteWork")
-            if (method.returnType.name != "com.google.common.util.concurrent.ListenableFuture") return
+            if (method.returnType.name != "com.google.common.util.concurrent.ListenableFuture") return false
             Hooks.hook(method, object : HookCallback() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
-                    runCatching {
-                        context.contentResolver.call(ConfigProvider.URI!!, REQUEST, null, null)
-                    }.onFailure { Hooks.log("GalaxyCapture analysis quota: ${it.javaClass.simpleName}") }
+                    if (retired) return
+                    val read = hookCalls.readLock()
+                    read.lock()
+                    try {
+                        if (!retired) {
+                            runCatching {
+                                context.contentResolver.call(ConfigProvider.URI!!, REQUEST, null, null)
+                            }.onFailure { Hooks.log("GalaxyCapture analysis quota: ${it.javaClass.simpleName}") }
+                        }
+                    } finally {
+                        read.unlock()
+                    }
                 }
             })
+            return true
         } catch (error: Throwable) {
             Hooks.log("GalaxyCapture analysis quota unavailable: ${error.javaClass.simpleName}")
+            return false
         }
     }
 

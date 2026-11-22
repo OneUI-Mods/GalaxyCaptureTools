@@ -6,6 +6,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.Message
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import android.os.UserManager
 import dev.ryuya.galaxycapture.compat.DexSymbols
 import dev.ryuya.galaxycapture.hook.Hooks
@@ -15,7 +18,7 @@ import kotlin.jvm.JvmField
 import kotlin.math.log
 import kotlin.math.min
 
-class HookRuntime(c: Context, host: String?) {
+class HookRuntime(c: Context, host: String?, configureSymbols: Boolean = true) {
     @JvmField val context: Context
     @JvmField val worker: Handler
     @JvmField val guard: HostGuard
@@ -40,47 +43,84 @@ class HookRuntime(c: Context, host: String?) {
     private var configRetries: Int = 0
     private val configRetry: Runnable = Runnable { this.reload() }
 
+    private val thread = HandlerThread("GalaxyCaptureConfig")
+    private val tasks = ReentrantLock()
+    private val receivers = ArrayList<BroadcastReceiver>()
+    private val retireActions = ArrayList<() -> Unit>()
+    @Volatile private var retired = false
+
+    internal fun tryRetireStandby(save: () -> Unit): Boolean {
+        if (!tryPauseWorker {
+                save()
+                true
+            }) return false
+        closeRetiredWorker()
+        return true
+    }
+
+    internal fun tryPauseWorker(save: () -> Boolean): Boolean {
+        if (!tasks.tryLock()) return false
+        try {
+            if (!save()) return false
+            retired = true
+            return true
+        } finally {
+            tasks.unlock()
+        }
+    }
+
+    internal fun closeRetiredWorker() {
+        worker.removeCallbacksAndMessages(null)
+        thread.quit()
+        for (action in retireActions.asReversed()) {
+            runCatching(action).onFailure { Hooks.log("GalaxyCapture standby cleanup: ${it.javaClass.simpleName}") }
+        }
+        retireActions.clear()
+        for (receiver in receivers) {
+            runCatching { context.unregisterReceiver(receiver) }
+                .onFailure { Hooks.log("GalaxyCapture receiver cleanup: ${it.javaClass.simpleName}") }
+        }
+        receivers.clear()
+        optionListeners.clear()
+    }
+
+    internal fun ownStandby(onRetire: () -> Unit) {
+        retireActions.add(onRetire)
+    }
+
+    internal fun ownReceiver(receiver: BroadcastReceiver) {
+        receivers.add(receiver)
+    }
+
     init {
         context = c
-        DexSymbols.configure(c)
-        val thread = HandlerThread("GalaxyCaptureConfig")
+        if (configureSymbols) DexSymbols.configure(c)
         thread.start()
-        worker = Handler(thread.getLooper())
-        guard = HostGuard(c, host!!)
-        val receiver: BroadcastReceiver? =
-            object : BroadcastReceiver() {
-                override fun onReceive(c: Context?, i: Intent?) {
-                    worker.post(
-                        Runnable {
-                            configRetries = 0
-                            reload()
-                        },
-                    )
+        worker = object : Handler(thread.looper) {
+            override fun dispatchMessage(message: Message) {
+                tasks.withLock {
+                    if (!retired) super.dispatchMessage(message)
                 }
             }
-        c.registerReceiver(
-            receiver,
-            IntentFilter(HookRuntime.CONFIG_CHANGED),
-            ConfigProvider.PERMISSION,
-            worker,
-            Context.RECEIVER_EXPORTED,
-        )
-        c.registerReceiver(
-            object : BroadcastReceiver() {
-                override fun onReceive(c: Context?, i: Intent?) {
-                    worker.post(
-                        Runnable {
-                            configRetries = 0
-                            reload()
-                        },
-                    )
+        }
+        guard = HostGuard(c, host!!)
+        fun updateReceiver() = object : BroadcastReceiver() {
+            override fun onReceive(c: Context?, i: Intent?) {
+                if (retired) return
+                worker.post {
+                    configRetries = 0
+                    reload()
                 }
-            },
-            IntentFilter(Intent.ACTION_USER_UNLOCKED),
-            null,
-            worker,
-            Context.RECEIVER_NOT_EXPORTED,
-        )
+            }
+        }
+        val optionsReceiver = updateReceiver()
+        c.registerReceiver(optionsReceiver, IntentFilter(HookRuntime.CONFIG_CHANGED),
+            ConfigProvider.PERMISSION, worker, Context.RECEIVER_EXPORTED)
+        receivers.add(optionsReceiver)
+        val unlockReceiver = updateReceiver()
+        c.registerReceiver(unlockReceiver, IntentFilter(Intent.ACTION_USER_UNLOCKED),
+            null, worker, Context.RECEIVER_NOT_EXPORTED)
+        receivers.add(unlockReceiver)
         worker.post(Runnable { reload() })
     }
 
