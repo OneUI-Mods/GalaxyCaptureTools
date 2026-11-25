@@ -25,7 +25,7 @@ object SecureCapturePolicy {
     }
 
     @JvmStatic
-    fun onlySecureFlag(reasons: Int, sensitive: Boolean, devicePolicy: Boolean): Boolean {
-        return reasons == 16 && !sensitive && !devicePolicy
+    fun onlySecureFlag(reasons: Int, sensitive: Boolean): Boolean {
+        return reasons == 16 && !sensitive
     }
 }

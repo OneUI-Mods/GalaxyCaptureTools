@@ -1,6 +1,5 @@
 package dev.ryuya.galaxycapture
 
-import android.app.admin.DevicePolicyManager
 import android.graphics.Bitmap
 import android.graphics.Bitmap.Config
 import android.graphics.Color
@@ -91,16 +90,12 @@ object SecureCapture {
                                 p!!.thisObject!!,
                                 "mIsBlockedBySensitiveContents",
                             )
-                        val policy =
-                            rt!!
-                                .context
-                                .getSystemService<DevicePolicyManager?>(
-                                    DevicePolicyManager::class.java
-                                )
-                        val disabled: Boolean =
-                            policy == null || policy.getScreenCaptureDisabled(null)
                         val reason = Reflect.getIntField(p!!.thisObject!!, "mReasonForFailure")
-                        if (SecureCapturePolicy.onlySecureFlag(reason, sensitive, disabled)) {
+                        // This callback runs while WindowManager holds its global lock. The
+                        // framework has already encoded device-policy blocks as reason 32, so
+                        // consulting DevicePolicyManager here is both redundant and unsafe: it
+                        // can invert the WindowManager, device-policy, and ActivityManager locks.
+                        if (SecureCapturePolicy.onlySecureFlag(reason, sensitive)) {
                             Reflect.setIntField(
                                 p!!.thisObject!!,
                                 "mReasonForFailure",
@@ -108,7 +103,7 @@ object SecureCapture {
                             )
                             p.setResult(true)
                         }
-                        shot.allowed = JavaBoolean.TRUE == p.getResult() && !sensitive && !disabled
+                        shot.allowed = JavaBoolean.TRUE == p.getResult() && !sensitive
                     } catch (e: Throwable) {
                         rt!!.fail(e)
                     }

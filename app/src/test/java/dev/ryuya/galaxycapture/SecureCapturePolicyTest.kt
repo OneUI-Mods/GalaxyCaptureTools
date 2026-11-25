@@ -68,11 +68,10 @@ open class SecureCapturePolicyTest {
 
     @Test
     open fun onlyFlagSecureMayBeOverridden() {
-        assertTrue(SecureCapturePolicy.onlySecureFlag(16, false, false))
+        assertTrue(SecureCapturePolicy.onlySecureFlag(16, false))
         for (reason in intArrayOf(0, 1, 2, 4, 8, 32, 48)) assertFalse(
-            SecureCapturePolicy.onlySecureFlag(reason, false, false)
+            SecureCapturePolicy.onlySecureFlag(reason, false)
         )
-        assertFalse(SecureCapturePolicy.onlySecureFlag(16, true, false))
-        assertFalse(SecureCapturePolicy.onlySecureFlag(16, false, true))
+        assertFalse(SecureCapturePolicy.onlySecureFlag(16, true))
     }
 }
