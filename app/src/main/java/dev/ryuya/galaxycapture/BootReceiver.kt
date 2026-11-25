@@ -3,17 +3,28 @@ package dev.ryuya.galaxycapture
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.UserManager
 
-/* No root, UI, foreground service, or crash-guard reset during automatic startup. */
+/* Boot only restores settings. Updates can recover old root helpers once. */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
-        if (intent == null) return
-        val action = intent.getAction()
-        if (
-            Intent.ACTION_BOOT_COMPLETED == action ||
-                Intent.ACTION_LOCKED_BOOT_COMPLETED == action ||
-                Intent.ACTION_MY_PACKAGE_REPLACED == action
-        )
-            Startup.restore(context!!, action != Intent.ACTION_MY_PACKAGE_REPLACED)
+        val app = context ?: return
+        when (intent?.action) {
+            Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_LOCKED_BOOT_COMPLETED -> Startup.restore(app)
+            Intent.ACTION_MY_PACKAGE_REPLACED -> {
+                Startup.restore(app, fromBoot = false)
+                if (app.getSystemService(UserManager::class.java)?.isUserUnlocked != true ||
+                    !ScreenshotAnalysisQuota.needsLegacyRecovery(app)
+                ) return
+                val pending = goAsync() ?: return
+                Thread({
+                    try {
+                        ScreenshotAnalysisQuota.recoverLegacyReaders(app)
+                    } finally {
+                        pending.finish()
+                    }
+                }, "CaptureQuotaRecovery").start()
+            }
+        }
     }
 }

@@ -20,6 +20,7 @@ internal object ScreenshotAnalysisQuota {
     const val WORKER_PROCESS = "$CAPTURE:ondemandscreenshotworker"
     const val REQUEST = "apply_screenshot_analysis_quota"
     private const val FLAG_NAME = "screenshot-analysis-quota-enabled"
+    private const val RECOVERY_MARKER = "screenshot-analysis-quota-recovery-v1"
     private const val SCRIPT = "screenshot-analysis-quota.sh"
     private val workers = mutableMapOf<Int, java.lang.Process>()
     private val hookCalls = ReentrantReadWriteLock()
@@ -78,6 +79,40 @@ internal object ScreenshotAnalysisQuota {
         }.onFailure { Log.w(TAG, "Could not update the quota setting", it) }
     }
 
+    fun needsLegacyRecovery(context: Context): Boolean =
+        context.getSharedPreferences("config", Context.MODE_PRIVATE)
+            .contains(CaptureSettings.SCREENSHOT_ANALYSIS_CPU_LIMIT.key) &&
+            !File(context.filesDir, RECOVERY_MARKER).exists()
+
+    fun recoverLegacyReaders(context: Context) {
+        var root: java.lang.Process? = null
+        try {
+            val capture = context.packageManager.getApplicationInfo(CAPTURE, PackageManager.ApplicationInfoFlags.of(0))
+            if (capture.flags and ApplicationInfo.FLAG_SYSTEM == 0) return
+            val flag = File(context.filesDir, FLAG_NAME)
+            val process = ProcessBuilder(
+                "su", "-c", "timeout -s KILL 5 sh -s -- --recover-legacy ${capture.uid} ${quote(flag)}",
+            ).redirectErrorStream(true).start()
+            root = process
+            context.assets.open(SCRIPT).use { source -> process.outputStream.use { source.copyTo(it) } }
+            if (!process.waitFor(7, TimeUnit.SECONDS) || process.exitValue() != 0) {
+                Log.w(TAG, "Legacy screenshot analysis recovery did not finish")
+                return
+            }
+            val recovered = process.inputStream.bufferedReader().useLines { lines ->
+                lines.count { it.toIntOrNull() != null }
+            }
+            File(context.filesDir, RECOVERY_MARKER).createNewFile()
+            Log.i(TAG, "Recovered $recovered legacy screenshot analysis readers")
+        } catch (error: Exception) {
+            Log.w(TAG, "Could not recover legacy screenshot analysis readers", error)
+        } finally {
+            if (root?.isAlive == true) root.destroy()
+        }
+    }
+
+    private fun quote(file: File): String = "'" + file.absolutePath.replace("'", "'\"'\"'") + "'"
+
     fun requestRoot() {
         Thread({
             try {
@@ -108,8 +143,7 @@ internal object ScreenshotAnalysisQuota {
         var root: java.lang.Process? = null
         try {
             flag.createNewFile()
-            val quotedFlag = "'" + flag.absolutePath.replace("'", "'\"'\"'") + "'"
-            val process = ProcessBuilder("su", "-c", "sh -s -- $pid $uid $quotedFlag")
+            val process = ProcessBuilder("su", "-c", "sh -s -- $pid $uid ${quote(flag)}")
                 .redirectErrorStream(true).start()
             root = process
             context.assets.open(SCRIPT).use { source -> process.outputStream.use { source.copyTo(it) } }

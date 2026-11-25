@@ -1,6 +1,6 @@
 #!/system/bin/sh
 
-pid=$1
+operation=$1
 expected_uid=$2
 enabled_flag=$3
 target=com.samsung.android.app.smartcapture:ondemandscreenshotworker
@@ -11,19 +11,59 @@ stock_group=
 current_path=
 pending_group=
 
-case "$pid:$expected_uid" in
-    *[!0-9:]*|:*|*:) exit 2 ;;
+case "$expected_uid" in
+    ''|*[!0-9]*) exit 2 ;;
 esac
-[ "$pid" -gt 1 ] && [ "$expected_uid" -ge 10000 ] || exit 2
-[ -f "$enabled_flag" ] && [ -f "$cpu_mount/cpu.cfs_quota_us" ] || exit 2
+[ "$expected_uid" -ge 10000 ] || exit 2
 
 process_start() {
-    IFS= read -r stat_line < "/proc/$pid/stat" || return 1
+    IFS= read -r stat_line < "/proc/$1/stat" || return 1
     set -- ${stat_line##*) }
     [ "$#" -ge 20 ] || return 1
     shift 19
     printf '%s\n' "$1"
 }
+
+legacy_shell_matches() {
+    IFS= read -r -d '' executable &&
+        IFS= read -r -d '' script_option &&
+        IFS= read -r -d '' separator &&
+        IFS= read -r -d '' worker_pid &&
+        IFS= read -r -d '' worker_uid &&
+        IFS= read -r -d '' worker_flag &&
+        ! IFS= read -r -d '' extra &&
+        [ "$executable" = sh ] && [ "$script_option" = -s ] &&
+        [ "$separator" = -- ] && [ "$worker_uid" = "$expected_uid" ] &&
+        [ "$worker_flag" = "$enabled_flag" ]
+}
+
+recover_legacy_readers() {
+    # The old quota script waits for tr. Ending that reader lets its EXIT trap
+    # restore the worker's stock CPU group if the original worker is still alive.
+    ps -A -o PID,PPID,UID,NAME | while read -r reader parent uid name; do
+        [ "$uid" = 0 ] && [ "$name" = tr ] || continue
+        reader_start="$(process_start "$reader" 2>/dev/null)" || continue
+        input="$(readlink "/proc/$reader/fd/0" 2>/dev/null)" || continue
+        [ "$(readlink "/proc/$parent/exe" 2>/dev/null)" = /system/bin/sh ] || continue
+        legacy_shell_matches 2>/dev/null < "/proc/$parent/cmdline" || continue
+        case "$worker_pid" in ''|*[!0-9]*) continue ;; esac
+        [ "$input" = "/proc/$worker_pid/cmdline" ] || continue
+        [ "$(process_start "$reader" 2>/dev/null)" = "$reader_start" ] || continue
+        if kill -TERM "$reader" 2>/dev/null; then printf '%s\n' "$reader"; fi
+    done
+}
+
+if [ "$operation" = --recover-legacy ]; then
+    recover_legacy_readers
+    exit
+fi
+
+pid=$operation
+case "$pid" in
+    ''|*[!0-9]*) exit 2 ;;
+esac
+[ "$pid" -gt 1 ] || exit 2
+[ -f "$enabled_flag" ] && [ -f "$cpu_mount/cpu.cfs_quota_us" ] || exit 2
 
 cpu_group() {
     while IFS=: read -r _ controllers path; do
@@ -36,12 +76,15 @@ cpu_group() {
 }
 
 worker_matches() {
-    [ "$(tr '\000' '\n' < "/proc/$pid/cmdline" | head -n 1)" = "$target" ] &&
-        [ "$(awk '/^Uid:/{print $2; exit}' "/proc/$pid/status")" = "$expected_uid" ] &&
-        [ "$(process_start)" = "$start" ]
+    [ "$(process_start "$pid" 2>/dev/null)" = "$start" ] &&
+        [ "$(awk '/^Uid:/{print $2; exit}' "/proc/$pid/status" 2>/dev/null)" = "$expected_uid" ] &&
+        timeout -s KILL 0.2 sh -c '
+            IFS= read -r -d "" name < "/proc/$1/cmdline" && [ "$name" = "$2" ]
+        ' sh "$pid" "$target" &&
+        [ "$(process_start "$pid" 2>/dev/null)" = "$start" ]
 }
 
-start="$(process_start)" || exit 2
+start="$(process_start "$pid")" || exit 2
 case "$start" in ''|*[!0-9]*) exit 2 ;; esac
 worker_matches || exit 2
 group_name="gct-screenshot-analysis-${pid}-${start}"
@@ -51,14 +94,14 @@ quota=$((period * cores / 10))
 
 cleanup() {
     if [ -n "$pending_group" ]; then
-        if [ "$(process_start 2>/dev/null)" = "$start" ] &&
+        if [ "$(process_start "$pid" 2>/dev/null)" = "$start" ] &&
             [ "$(cpu_group 2>/dev/null)" = "${pending_group#"$cpu_mount"}" ]; then
             printf '%s\n' "$pid" > "$parent/cgroup.procs"
         fi
         rmdir "$pending_group" 2>/dev/null || :
     fi
     if [ -n "$current_group" ]; then
-        if [ "$(process_start 2>/dev/null)" = "$start" ] &&
+        if [ "$(process_start "$pid" 2>/dev/null)" = "$start" ] &&
             [ "$(cpu_group 2>/dev/null)" = "$current_path" ]; then
             printf '%s\n' "$pid" > "$stock_group/cgroup.procs"
         fi
@@ -90,7 +133,7 @@ attach "$(cpu_group)" || exit 2
 printf 'READY %s/%s\n' "$quota" "$period"
 # Android can move the worker between its native CPU profiles during the job.
 # Reattach under the new profile only while this process and setting are active.
-while [ -f "$enabled_flag" ] && [ "$(process_start 2>/dev/null)" = "$start" ]; do
+while [ -f "$enabled_flag" ] && [ "$(process_start "$pid" 2>/dev/null)" = "$start" ]; do
     group="$(cpu_group 2>/dev/null)" || break
     if [ "$group" != "$current_path" ]; then attach "$group" || break; fi
     sleep 0.05
