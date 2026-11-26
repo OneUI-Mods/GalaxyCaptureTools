@@ -1,5 +1,7 @@
 # Galaxy Capture Tools
 
+Installation requires Android 17 (API 37) or later.
+
 [日本語](README.md) · English
 
 An experimental Vector module extending Android's stock and Samsung screen-recording and screenshot features.
@@ -30,7 +32,7 @@ Hook initialization that needs settings or cached discovery results waits for th
 
 ## Requirements
 
-Separate compatibility paths support Galaxy S26 Ultra (SM-S948Q) on Android 16 / One UI 8.5 (AZHL) and Android 17 / One UI 9 (BZI9). A supported root environment and Vector with libxposed API 102 are required. See [compatibility information (Japanese)](docs/compatibility/android17.md) for supported Samsung Capture and system versions.
+Targets Galaxy S26 Ultra (SM-S948Q) on Android 17 / One UI 9 (BZI9). A supported root environment and Vector with libxposed API 102 are required. See [compatibility information (Japanese)](docs/compatibility/android17.md) for supported Samsung Capture and system versions.
 
 ## Installation and use
 
@@ -45,7 +47,7 @@ The app has **Common**, **Galaxy**, **Status**, and **About** sections. Common s
 
 Rotation correction is not applied to Samsung's **Part of screen** mode. Aspect-ratio changes unrelated to rotation may retain empty space to avoid cropping content. Leaving a locked capture window produces black or the preceding frame rather than exposing another app. Associated menus and popups may still appear.
 
-Toggle **Common → Audio and display → Include call audio in internal audio**, or the synchronized switch under Samsung Capture's **Custom settings → Audio**. When ON, playback classified as call audio is included; when OFF, it is excluded from internal capture. It defaults OFF and applies from the next recording. Selected-app audio scope and microphone mode are preserved. Android 17 synthetic-audio tests covered selected-app/whole-device Samsung capture with the option ON/OFF and whole-device stock Android capture with it ON/OFF. Actual Discord/Rain call paths and Android 16 call capture have not been verified; this feature remains experimental.
+Toggle **Common → Audio and display → Include call audio in internal audio**, or the synchronized switch under Samsung Capture's **Custom settings → Audio**. When ON, playback classified as call audio is included; when OFF, it is excluded from internal capture. It defaults OFF and applies from the next recording. Selected-app audio scope and microphone mode are preserved. Android 17 synthetic-audio tests covered selected-app/whole-device Samsung capture with the option ON/OFF and whole-device stock Android capture with it ON/OFF. Actual Discord/Rain call paths have not been verified; this feature remains experimental.
 
 Cellular calls, Bluetooth routes, and apps with custom call-audio paths may not be captured. Audio classified as ordinary media, or sound picked up acoustically by the microphone from the speaker, is not excluded solely by turning call-audio capture OFF.
 

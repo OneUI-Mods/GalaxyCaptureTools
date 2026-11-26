@@ -11,10 +11,10 @@ android {
 
     defaultConfig {
         applicationId 'dev.ryuya.galaxycapture'
-        minSdk 35
+        minSdk 37
         targetSdk 37
-        versionCode 50
-        versionName '0.4.26'
+        versionCode 51
+        versionName '0.4.27'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 

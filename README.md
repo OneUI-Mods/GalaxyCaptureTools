@@ -1,5 +1,7 @@
 # Galaxy Capture Tools
 
+インストールにはAndroid 17（API 37）以降が必要です。
+
 [日本語](README.md) · [English](README.en.md)
 
 Android標準とSamsungの画面録画・スクリーンショットを拡張する、実験的なVectorモジュールです。
@@ -30,7 +32,7 @@ Android標準とSamsungの画面録画・スクリーンショットを拡張す
 
 ## 対応環境
 
-Galaxy S26 Ultra（SM-S948Q）のAndroid 16 / One UI 8.5（AZHL）とAndroid 17 / One UI 9（BZI9）を別の互換処理で扱います。対応するroot環境とlibxposed API 102対応Vectorが必要です。Samsungキャプチャやシステムの対応版は[互換性情報](docs/compatibility/android17.md)を参照してください。
+Galaxy S26 Ultra（SM-S948Q）のAndroid 17 / One UI 9（BZI9）が対象です。対応するroot環境とlibxposed API 102対応Vectorが必要です。Samsungキャプチャやシステムの対応版は[互換性情報](docs/compatibility/android17.md)を参照してください。
 
 ## 導入・使い方
 
@@ -45,7 +47,7 @@ Galaxy S26 Ultra（SM-S948Q）のAndroid 16 / One UI 8.5（AZHL）とAndroid 17 
 
 Samsungの「画面の一部」には回転補正を適用しません。回転以外の縦横比変更では、内容を切り落とさないため余白が残る場合があります。固定したウィンドウを離れると、他のアプリを映す代わりに黒画面や直前の映像になります。付属するメニュー・ポップアップが一緒に映る場合もあります。
 
-「共通 → 音声・表示 → 内部音声に通話音声を含める」で切り替えられます。Samsungキャプチャ設定内の「カスタム設定 → 音声」にも同じスイッチがあり、連動します。ONでは通話用に分類された再生音を追加し、OFFでは内部音声から除外します。初期値はOFF、変更は次の録画から反映します。対象アプリのみの指定やマイクの録音モードは維持します。Android 17のテスト用音声で、Samsung録画の対象アプリ／端末全体と通話音声ON／OFF、Android標準録画の端末全体でのON／OFFを確認しています。実際のDiscord／Rainの通話経路やAndroid 16での通話収録は未確認で、通話音声機能は引き続き実験段階です。
+「共通 → 音声・表示 → 内部音声に通話音声を含める」で切り替えられます。Samsungキャプチャ設定内の「カスタム設定 → 音声」にも同じスイッチがあり、連動します。ONでは通話用に分類された再生音を追加し、OFFでは内部音声から除外します。初期値はOFF、変更は次の録画から反映します。対象アプリのみの指定やマイクの録音モードは維持します。Android 17のテスト用音声で、Samsung録画の対象アプリ／端末全体と通話音声ON／OFF、Android標準録画の端末全体でのON／OFFを確認しています。実際のDiscord／Rainの通話経路は未確認で、通話音声機能は引き続き実験段階です。
 
 携帯回線の通話、Bluetoothなどの音声経路、アプリが独自に処理する通話音声は収録できない場合があります。メディア扱いで再生される音声や、スピーカーからマイクへ入る音は、通話音声OFFだけでは除外できません。
 
